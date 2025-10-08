@@ -1,5 +1,5 @@
 [package]
-name = "rust-rs-core"
+name = "merchant-rs-core"
 authors.workspace = true
 edition.workspace = true
 license.workspace = true
