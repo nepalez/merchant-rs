@@ -1,0 +1,14 @@
+[workspace]
+members = [
+    "crates/core",
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Andrew Kozin"]
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/nepalez/merchant-rs"
+version = "0.1.0"
+
+[workspace.dependencies]
