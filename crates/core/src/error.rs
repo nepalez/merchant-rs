@@ -1,6 +1,20 @@
+//! Defines the **canonical error type** (`Error`) and **result alias** (`Result`)
+//! for the entire `merchant-rs` ecosystem.
+//!
+//! This module acts as the **opaque boundary** of the core, ensuring that all
+//! internal, gateway-specific errors are converted into a stable, unified type.
+//! The canonical error allows client code (business logic) to handle faults
+//! consistently, regardless of which payment gateway caused the failure.
+//!
+//! It includes metadata like a canonical error code, the gateway's original
+//! error code, and a flag indicating if the operation is safely retriable.
+
 use serde::{Deserialize, Serialize};
 use std::{error::Error as StdError, fmt};
 use strum_macros::{AsRefStr, Display};
+
+/// Canonical result type used across the crate.
+pub type Result<T> = std::result::Result<T, Error>;
 
 /// Canonical error type for the core.
 /// Used for both Err return values and as an optional field in Response structs.

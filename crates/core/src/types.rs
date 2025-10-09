@@ -1,3 +1,14 @@
+//! Defines all **canonical data structures** used for communication between the
+//! `merchant-rs-core` and its gateway adapters.
+//!
+//! This module ensures **type safety** and consistency across all financial operations.
+//! It includes fundamental types for transactions (requests/responses), financial
+//! entities (currencies, amounts, tokens), and payment sources (cards, bank accounts).
+//!
+//! By making these structures canonical, the core decouples the business logic
+//! from the specific data formats required by external Payment Gateways (PAGs),
+//! upholding the core's role as a stable abstraction layer.
+
 use crate::error::Error;
 use serde::{Deserialize, Serialize};
 use strum_macros::{AsRefStr, Display};
