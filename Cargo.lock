@@ -665,7 +665,6 @@ dependencies = [
  "iso_country",
  "proc-macro2",
  "quote",
- "serde",
 ]
 
 [[package]]
@@ -715,6 +714,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 
 [[package]]
+name = "luhn3"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7c8bb7d3c7294869a522b996ad3e715e905ebb7bf8a18ae422efe771baa67f6"
+
+[[package]]
 name = "memchr"
 version = "2.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -726,10 +731,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "iso_currency",
+ "luhn3",
  "reqwest",
  "rust_decimal",
- "serde",
- "serde_json",
+ "secrecy",
  "strum",
  "strum_macros",
 ]
@@ -1162,6 +1167,15 @@ name = "seahash"
 version = "4.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c107b6f4780854c8b126e228ea8869f4d7b71260f962fefb57b996b8959ba6b"
+
+[[package]]
+name = "secrecy"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e891af845473308773346dc847b2c23ee78fe442e0472ac50e22a18a93d3ae5a"
+dependencies = [
+ "zeroize",
+]
 
 [[package]]
 name = "security-framework"

@@ -9,7 +9,6 @@
 //! It includes metadata like a canonical error code, the gateway's original
 //! error code, and a flag indicating if the operation is safely retriable.
 
-use serde::{Deserialize, Serialize};
 use std::{error::Error as StdError, fmt};
 use strum_macros::{AsRefStr, Display};
 
@@ -18,7 +17,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// Canonical error type for the core.
 /// Used for both Err return values and as an optional field in Response structs.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Error {
     /// The strictly typed canonical error code.
     pub code: ErrorCode,
@@ -34,7 +33,7 @@ pub struct Error {
 
 /// Canonical error codes that can be unambiguously handled by the application.
 /// Adapters must translate gateway-specific errors into this set.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Display, AsRefStr)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
 #[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 pub enum ErrorCode {
     /// General data validation error (invalid CVV, expired card, missing field).
@@ -49,6 +48,32 @@ pub enum ErrorCode {
     Configuration,
     /// An error that does not fit into any other canonical category.
     Other,
+}
+
+impl Error {
+    /// Creates an error with `ErrorCode::ValidationFailed` for internal domain validation issues.
+    /// This is the preferred method for errors raised by types like PrimaryAccountNumber.
+    pub fn validation_failed(message: String) -> Self {
+        Error {
+            code: ErrorCode::ValidationFailed,
+            message,
+            gateway_code: None,
+            is_retriable: false,
+            detail: None,
+        }
+    }
+
+    /// Creates an error with `ErrorCode::Other` for general internal errors
+    /// that do not have a specific canonical code.
+    pub fn other(message: String) -> Self {
+        Error {
+            code: ErrorCode::Other,
+            message,
+            gateway_code: None,
+            is_retriable: false,
+            detail: None,
+        }
+    }
 }
 
 impl fmt::Display for Error {
@@ -81,6 +106,22 @@ impl StdError for Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_validation_failed_constructor() {
+        let error = Error::validation_failed("Invalid format".to_string());
+        assert_eq!(error.code, ErrorCode::ValidationFailed);
+        assert_eq!(error.message, "Invalid format");
+        assert_eq!(error.gateway_code, None);
+        assert_eq!(error.is_retriable, false);
+    }
+
+    #[test]
+    fn test_other_constructor() {
+        let error = Error::other("Internal logic failed".to_string());
+        assert_eq!(error.code, ErrorCode::Other);
+        assert_eq!(error.message, "Internal logic failed");
+    }
 
     #[test]
     fn test_error_display_minimal() {

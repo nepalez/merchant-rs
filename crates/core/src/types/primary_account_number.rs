@@ -1,0 +1,171 @@
+use luhn3;
+use std::convert::TryFrom;
+use std::fmt;
+
+use crate::error::{Error, Result};
+use crate::types::SecretString;
+
+/// List of allowed separators in a PAN input strings.
+const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
+/// Standard fixed mask prefix for logs.
+const FIXED_MASK_PREFIX: &str = "********";
+
+/// Represents a Primary Account Number (PAN),
+/// securely stored and validated against basic invariants.
+///
+/// ## Invariants enforced
+///
+/// The implementation of `TryFrom<String>` ensures that the PAN:
+/// * Contains only digits after successful cleaning and validation.
+/// * Passes a minimal, basic structural check (universal length and MII prefix).
+/// * Passes the Luhn check (Mod 10).
+///
+/// ## Invariants NOT enforced
+///
+/// Full, comprehensive, and up-to-date BIN validation is explicitly **NOT** performed.
+/// It is the responsibility of the Application Layer.
+///
+/// # Security Considerations
+///
+/// * Uses secure storage to ensure memory zeroization after use.
+/// * `Clone` is implemented for request resilience, but the cloned value
+///   is immediately re-wrapped in a new secure container.
+/// * `Debug` implementation masks all but the last four digits as permitted by PCI DSS.
+///   The fixed mask prefix hides the length of the PAN to prevent leakage.
+/// * `Display` is not implemented to prevent accidental leakage,
+///   but access to the first six and last four digits is provided via methods,
+///   as permitted by PCI DSS.
+/// * Full access is only possible via the **unsafe** `with_exposed_secret` method,
+///   which forces developers to acknowledge the handling of sensitive data.
+///
+/// # SAFETY
+///
+/// It is the responsibility of the caller to ensure
+/// that the input string has been sourced securely
+/// and has neither been cloned nor logged
+/// before the construction of the `PrimaryAccountNumber`.
+#[derive(Clone)]
+pub struct PrimaryAccountNumber(SecretString);
+
+// Methods to access the PAN in a controlled manner.
+impl PrimaryAccountNumber {
+    /// Exposes the first six digits of the PAN as a String.
+    #[inline]
+    pub fn first_six(&self) -> String {
+        // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
+        unsafe { self.0.first_six() }
+    }
+
+    /// Exposes the last four digits of the PAN as a String.
+    pub fn last_four(&self) -> String {
+        // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
+        unsafe { self.0.last_four() }
+    }
+
+    /// Exposes the underlying Primary Account Number (PAN) as a string slice.
+    ///
+    /// This method is designed for use by external payment adapter crates ONLY.
+    ///
+    /// # SAFETY
+    ///
+    /// This method is marked `unsafe` because it exposes highly sensitive data to the closure.
+    ///
+    /// The caller **MUST** ensure:
+    /// 1. The processing within the closure does not copy
+    ///    or store the exposed data in unsecured memory.
+    /// 2. The data is consumed immediately and its exposure lifetime
+    ///    is strictly minimal (e.g., for transmission).
+    /// 3. **Any structure or variable containing the exposed `&str` reference
+    ///    MUST NOT escape the closure, and any intermediate structure
+    ///    containing a copy of the raw data (for example, the request)
+    ///    MUST itself guarantee zeroization upon drop.**
+    #[inline]
+    pub unsafe fn with_exposed_secret<T, F>(&self, f: F) -> T
+    where
+        F: FnOnce(&str) -> T,
+    {
+        // Safety: the safety contract is passed to the caller.
+        unsafe { self.0.with_exposed_secret(f) }
+    }
+}
+
+impl TryFrom<String> for PrimaryAccountNumber {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        let number = sanitize(input)?;
+        validate(number.as_str())?;
+        Ok(Self(number.into()))
+    }
+}
+
+impl fmt::Debug for PrimaryAccountNumber {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let masked_number = format!("{FIXED_MASK_PREFIX}{}", self.last_four());
+        f.debug_tuple("PrimaryAccountNumber")
+            .field(&masked_number)
+            .finish()
+    }
+}
+
+fn sanitize(input: String) -> Result<String> {
+    let mut cleaned_number = String::with_capacity(input.len());
+
+    for c in input.chars() {
+        if c.is_ascii_digit() {
+            cleaned_number.push(c);
+        } else if NUMBER_SEPARATORS.contains(&c) {
+            continue;
+        } else {
+            return Err(Error::validation_failed(format!(
+                "Input contains invalid character '{c}'. \
+                    Only digits, spaces, underscores, and hyphens are allowed."
+            )));
+        }
+    }
+
+    Ok(cleaned_number)
+}
+
+fn validate(sanitized_input: &str) -> Result<()> {
+    let len = sanitized_input.len();
+    if len < 13 {
+        Err(Error::validation_failed(
+            "PAN is too short (min length is 13 digits).".to_string(),
+        ))
+    } else if len > 19 {
+        Err(Error::validation_failed(
+            "PAN is too long (max length is 19 digits).".to_string(),
+        ))
+    } else if '0'
+        == sanitized_input
+            .chars()
+            .next()
+            .expect("Checked length above")
+    {
+        Err(Error::validation_failed(
+            "PAN cannot start with '0'.".to_string(),
+        ))
+    } else if !luhn3::valid(sanitized_input.as_bytes()) {
+        Err(Error::validation_failed(
+            "PAN failed the Luhn check.".to_string(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::str::FromStr;
+
+    impl FromStr for PrimaryAccountNumber {
+        type Err = Error;
+
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::try_from(s.to_owned())
+        }
+    }
+}

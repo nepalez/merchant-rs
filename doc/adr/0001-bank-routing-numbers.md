@@ -35,7 +35,3 @@ However, the responsibility for format identification and initiation of validati
 * The Adapter then calls the `merchant-rs-validator` with the explicit format type (e.g., `validator::validate_aba(&raw_number)`).
 
 This preserves the purity of the core data contract while allowing universal validation logic to be reusable.
-
-### Impact
-The core crate remains small, stable, and focused on its data contract.
-Domain-specific complexity is delegated to the adapter implementations, where it is best managed.
