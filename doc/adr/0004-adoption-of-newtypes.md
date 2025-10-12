@@ -1,4 +1,4 @@
-# ADR-0004: Adoption of Newtype Wrappers for Financial Primitives
+# [ADR-0004]: Adoption of Newtype Wrappers for Financial Primitives
 
 ## Context
 

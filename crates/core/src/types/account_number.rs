@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::SecretString;
+use crate::types::{CVV, SafeWrapper, Sanitized, SecretString, Validated};
 
 /// List of allowed separators in account number input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
@@ -66,9 +66,7 @@ impl TryFrom<String> for AccountNumber {
 
     #[inline]
     fn try_from(input: String) -> Result<Self> {
-        let number = sanitize(input)?;
-        validate(number.as_str())?;
-        Ok(Self(number.into()))
+        Self::try_from_string(input)
     }
 }
 
@@ -78,41 +76,55 @@ impl fmt::Debug for AccountNumber {
     }
 }
 
-fn sanitize(input: String) -> Result<String> {
-    let mut cleaned_number = String::with_capacity(input.len());
+// Sealed traits implementations
 
-    for c in input.chars() {
-        if c.is_ascii_digit() {
-            cleaned_number.push(c);
-        } else if NUMBER_SEPARATORS.contains(&c) {
-            continue;
-        } else {
-            return Err(Error::validation_failed(format!(
-                "Input contains invalid character '{c}'.\
-                     Only digits, spaces, and hyphens are allowed.",
-            )));
-        }
+impl SafeWrapper for AccountNumber {
+    type Inner = SecretString;
+
+    fn wrap(inner: SecretString) -> Self {
+        Self(inner)
     }
-
-    Ok(cleaned_number)
 }
 
-fn validate(sanitized_input: &str) -> Result<()> {
-    let len = sanitized_input.len();
+impl Sanitized for AccountNumber {
+    fn sanitize(input: String) -> Result<String> {
+        let mut cleaned_number = String::with_capacity(input.len());
 
-    // Account numbers widely vary, but must have some digits.
-    if len < MIN_ACCOUNT_LENGTH {
-        Err(Error::validation_failed(format!(
-            "Account Number length ({len}) is below the minimum required length ({} digits).",
-            MIN_ACCOUNT_LENGTH
-        )))
-    } else if len > MAX_ACCOUNT_LENGTH {
-        Err(Error::validation_failed(format!(
-            "Account Number length ({len}) exceeds the maximum allowed length ({} digits).",
-            MAX_ACCOUNT_LENGTH
-        )))
-    } else {
-        Ok(())
+        for c in input.chars() {
+            if c.is_ascii_digit() {
+                cleaned_number.push(c);
+            } else if NUMBER_SEPARATORS.contains(&c) {
+                continue;
+            } else {
+                return Err(Error::validation_failed(format!(
+                    "Input contains invalid character '{c}'.\
+                     Only digits, spaces, and hyphens are allowed.",
+                )));
+            }
+        }
+
+        Ok(cleaned_number)
+    }
+}
+
+impl Validated for AccountNumber {
+    fn validate(sanitized_input: &str) -> Result<()> {
+        let len = sanitized_input.len();
+
+        // Account numbers widely vary, but must have some digits.
+        if len < MIN_ACCOUNT_LENGTH {
+            Err(Error::validation_failed(format!(
+                "Account Number length ({len}) is below the minimum required length ({} digits).",
+                MIN_ACCOUNT_LENGTH
+            )))
+        } else if len > MAX_ACCOUNT_LENGTH {
+            Err(Error::validation_failed(format!(
+                "Account Number length ({len}) exceeds the maximum allowed length ({} digits).",
+                MAX_ACCOUNT_LENGTH
+            )))
+        } else {
+            Ok(())
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-# ADR-0003: Segregation of Identity/Capability (Gateway) and Transactional Logic (Authorizable)
+# [ADR-0003]: Segregation of Identity/Capability (Gateway) and Transactional Logic (Authorizable)
 
 ## Context
 

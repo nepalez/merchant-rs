@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::SecretString;
+use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
 
 /// List of allowed separators in a PAN input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
@@ -47,19 +47,18 @@ const FIXED_MASK_PREFIX: &str = "********";
 #[derive(Clone)]
 pub struct PrimaryAccountNumber(SecretString);
 
-// Methods to access the PAN in a controlled manner.
 impl PrimaryAccountNumber {
     /// Exposes the first six digits of the PAN as a String.
     #[inline]
     pub fn first_six(&self) -> String {
         // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
-        unsafe { self.0.first_six() }
+        unsafe { self.0.first_chars(6) }.to_owned()
     }
 
     /// Exposes the last four digits of the PAN as a String.
     pub fn last_four(&self) -> String {
         // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
-        unsafe { self.0.last_four() }
+        unsafe { self.0.last_chars(4) }.to_owned()
     }
 
     /// Exposes the underlying Primary Account Number (PAN) as a string slice.
@@ -84,7 +83,7 @@ impl PrimaryAccountNumber {
     where
         F: FnOnce(&str) -> T,
     {
-        // Safety: the safety contract is passed to the caller.
+        // SAFETY: the safety contract is passed to the caller.
         unsafe { self.0.with_exposed_secret(f) }
     }
 }
@@ -94,65 +93,79 @@ impl TryFrom<String> for PrimaryAccountNumber {
 
     #[inline]
     fn try_from(input: String) -> Result<Self> {
-        let number = sanitize(input)?;
-        validate(number.as_str())?;
-        Ok(Self(number.into()))
+        Self::try_from_string(input)
     }
 }
 
 impl fmt::Debug for PrimaryAccountNumber {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let masked_number = format!("{FIXED_MASK_PREFIX}{}", self.last_four());
+        // Safety: Safe as it its explicitly enabled by PCI DSS for PANs
+        let last_four = unsafe { self.0.last_chars(4) };
+        let masked_number = format!("{FIXED_MASK_PREFIX}{}", last_four);
         f.debug_tuple("PrimaryAccountNumber")
             .field(&masked_number)
             .finish()
     }
 }
 
-fn sanitize(input: String) -> Result<String> {
-    let mut cleaned_number = String::with_capacity(input.len());
+// Sealed traits implementations
 
-    for c in input.chars() {
-        if c.is_ascii_digit() {
-            cleaned_number.push(c);
-        } else if NUMBER_SEPARATORS.contains(&c) {
-            continue;
-        } else {
-            return Err(Error::validation_failed(format!(
-                "Input contains invalid character '{c}'. \
+impl Sanitized for PrimaryAccountNumber {
+    fn sanitize(input: String) -> Result<String> {
+        let mut output = String::with_capacity(input.len());
+
+        for c in input.chars() {
+            if c.is_ascii_digit() {
+                output.push(c);
+            } else if NUMBER_SEPARATORS.contains(&c) {
+                continue;
+            } else {
+                return Err(Error::validation_failed(format!(
+                    "Input contains invalid character '{c}'. \
                     Only digits, spaces, underscores, and hyphens are allowed."
-            )));
+                )));
+            }
         }
-    }
 
-    Ok(cleaned_number)
+        Ok(output)
+    }
 }
 
-fn validate(sanitized_input: &str) -> Result<()> {
-    let len = sanitized_input.len();
-    if len < 13 {
-        Err(Error::validation_failed(
-            "PAN is too short (min length is 13 digits).".to_string(),
-        ))
-    } else if len > 19 {
-        Err(Error::validation_failed(
-            "PAN is too long (max length is 19 digits).".to_string(),
-        ))
-    } else if '0'
-        == sanitized_input
-            .chars()
-            .next()
-            .expect("Checked length above")
-    {
-        Err(Error::validation_failed(
-            "PAN cannot start with '0'.".to_string(),
-        ))
-    } else if !luhn3::valid(sanitized_input.as_bytes()) {
-        Err(Error::validation_failed(
-            "PAN failed the Luhn check.".to_string(),
-        ))
-    } else {
-        Ok(())
+impl Validated for PrimaryAccountNumber {
+    fn validate(sanitized_input: &str) -> Result<()> {
+        let len = sanitized_input.len();
+        if len < 13 {
+            Err(Error::validation_failed(
+                "PAN is too short (min length is 13 digits).".to_string(),
+            ))
+        } else if len > 19 {
+            Err(Error::validation_failed(
+                "PAN is too long (max length is 19 digits).".to_string(),
+            ))
+        } else if '0'
+            == sanitized_input
+                .chars()
+                .next()
+                .expect("Checked length above")
+        {
+            Err(Error::validation_failed(
+                "PAN cannot start with '0'.".to_string(),
+            ))
+        } else if !luhn3::valid(sanitized_input.as_bytes()) {
+            Err(Error::validation_failed(
+                "PAN failed the Luhn check.".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl SafeWrapper for PrimaryAccountNumber {
+    type Inner = SecretString;
+
+    fn wrap(inner: SecretString) -> Self {
+        Self(inner)
     }
 }
 

@@ -1,4 +1,4 @@
-# ADR-0005: Decouple CardNumber BIN/Length Validation from Core
+# [ADR-0005]: Decouple CardNumber BIN/Length Validation from Core
 
 ## Context
 

@@ -1,4 +1,4 @@
-# ADR-0001: Bank Routing Number Design
+# [ADR-0001]: Bank Routing Number Design
 
 ## Context
 The core crate requires a canonical type to represent bank account details for ACH, SEPA, and other non-card payment rails. The field routing_number must accommodate various country-specific formats, such as US ABA, European SWIFT/BIC, UK Sort Codes, and Australian BSB.

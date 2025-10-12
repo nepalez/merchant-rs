@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::SecretString;
+use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
 
 /// Standard fixed mask for logs.
 const FIXED_MASK: &str = "***";
@@ -52,9 +52,7 @@ impl TryFrom<String> for CVV {
 
     #[inline]
     fn try_from(input: String) -> Result<Self> {
-        let value = sanitize(input);
-        validate(&value)?;
-        Ok(Self(value.into()))
+        Self::try_from_string(input)
     }
 }
 
@@ -64,29 +62,39 @@ impl fmt::Debug for CVV {
     }
 }
 
-fn sanitize(input: String) -> String {
-    input
+// Sealed traits implementations
+
+impl Sanitized for CVV {}
+
+impl Validated for CVV {
+    fn validate(input: &str) -> Result<()> {
+        let len = input.len();
+
+        if len < 3 {
+            Err(Error::validation_failed(format!(
+                "CVV length is too short: {}. Minimum length is 3.",
+                len
+            )))
+        } else if len > 4 {
+            Err(Error::validation_failed(format!(
+                "CVV length is too long: {}. Maximum length is 4.",
+                len
+            )))
+        } else if !input.chars().all(|c| c.is_ascii_digit()) {
+            Err(Error::validation_failed(
+                "CVV must contain only digits (0-9)".to_string(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
 }
 
-fn validate(input: &str) -> Result<()> {
-    let len = input.len();
+impl SafeWrapper for CVV {
+    type Inner = SecretString;
 
-    if len < 3 {
-        Err(Error::validation_failed(format!(
-            "CVV length is too short: {}. Minimum length is 3.",
-            len
-        )))
-    } else if len > 4 {
-        Err(Error::validation_failed(format!(
-            "CVV length is too long: {}. Maximum length is 4.",
-            len
-        )))
-    } else if !input.chars().all(|c| c.is_ascii_digit()) {
-        Err(Error::validation_failed(
-            "CVV must contain only digits (0-9)".to_string(),
-        ))
-    } else {
-        Ok(())
+    fn wrap(inner: SecretString) -> Self {
+        Self(inner)
     }
 }
 

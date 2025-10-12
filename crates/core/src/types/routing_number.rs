@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::SecretString;
+use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
 
 /// List of allowed separators in routing number input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
@@ -64,9 +64,7 @@ impl TryFrom<String> for RoutingNumber {
 
     #[inline]
     fn try_from(input: String) -> Result<Self> {
-        let number = sanitize(input)?;
-        validate(number.as_str())?;
-        Ok(Self(number.into()))
+        Self::try_from_string(input)
     }
 }
 
@@ -76,35 +74,49 @@ impl fmt::Debug for RoutingNumber {
     }
 }
 
-fn sanitize(input: String) -> Result<String> {
-    let mut cleaned_number = String::with_capacity(input.len());
+// Sealed traits implementations
 
-    for c in input.chars() {
-        if c.is_ascii_digit() {
-            cleaned_number.push(c);
-        } else if NUMBER_SEPARATORS.contains(&c) {
-            continue;
-        } else {
-            return Err(Error::validation_failed(format!(
-                "Input contains invalid character '{c}'.\
+impl Sanitized for RoutingNumber {
+    fn sanitize(input: String) -> Result<String> {
+        let mut output = String::with_capacity(input.len());
+
+        for c in input.chars() {
+            if c.is_ascii_digit() {
+                output.push(c);
+            } else if NUMBER_SEPARATORS.contains(&c) {
+                continue;
+            } else {
+                return Err(Error::validation_failed(format!(
+                    "Input contains invalid character '{c}'.\
                      Only digits, spaces, and hyphens are allowed.",
-            )));
+                )));
+            }
         }
-    }
 
-    Ok(cleaned_number)
+        Ok(output)
+    }
 }
 
-fn validate(sanitized_input: &str) -> Result<()> {
-    let len = sanitized_input.len();
+impl Validated for RoutingNumber {
+    fn validate(sanitized_input: &str) -> Result<()> {
+        let len = sanitized_input.len();
 
-    if len != ROUTING_LENGTH {
-        Err(Error::validation_failed(format!(
-            "Routing Number length ({len}) must be exactly {} digits.",
-            ROUTING_LENGTH
-        )))
-    } else {
-        Ok(())
+        if len != ROUTING_LENGTH {
+            Err(Error::validation_failed(format!(
+                "Routing Number length ({len}) must be exactly {} digits.",
+                ROUTING_LENGTH
+            )))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl SafeWrapper for RoutingNumber {
+    type Inner = SecretString;
+
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
     }
 }
 

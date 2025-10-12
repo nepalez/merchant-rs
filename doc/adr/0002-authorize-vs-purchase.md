@@ -1,4 +1,4 @@
-# ADR-0002: Canonical Transaction Initiation Method (Authorize vs. Purchase)
+# [ADR-0002]: Canonical Transaction Initiation Method (Authorize vs. Purchase)
 
 ## Context
 

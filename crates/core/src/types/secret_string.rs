@@ -30,14 +30,13 @@ impl SecretString {
     /// This method is marked `unsafe` to signal that exposing
     /// even a partial part of the sensitive data should be done
     /// with care and full awareness of the implications.
-    ///
-    /// The caller **MUST** ensure that the secret string stored in the container
-    /// is long enough (> 13 characters) to avoid leaking the essential part of the data.
-    /// The limit of 13 characters is chosen as it is the minimum length of a valid PAN,
-    /// for which the PCI DSS explicitly allows exposing the first six digits.
-    pub unsafe fn first_six(&self) -> String {
+    /// 
+    /// Every wrapper **MUST** ensure that the secret string stored in the container
+    /// is long enough to avoid leaking the essential part of the data,
+    /// and the exposition is compliant with the relevant regulations.
+    pub unsafe fn first_chars(&self, number: usize) -> &str {
         let full_token_slice = self.0.expose_secret();
-        full_token_slice[..6].to_owned()
+        &full_token_slice[..number]
     }
 
     /// Exposes the last four digits of the PAN as a String.
@@ -52,9 +51,9 @@ impl SecretString {
     /// is long enough (> 13 characters) to avoid leaking the essential part of the data.
     /// The limit of 13 characters is chosen as it is the minimum length of a valid PAN,
     /// for which the PCI DSS explicitly allows exposing the first six digits.
-    pub unsafe fn last_four(&self) -> String {
+    pub unsafe fn last_chars(&self, number: usize) -> &str {
         let full_token_slice = self.0.expose_secret();
-        full_token_slice[full_token_slice.len() - 4..].to_owned()
+        &full_token_slice[full_token_slice.len() - number..]
     }
 
     /// Exposes the underlying Primary Account Number (PAN) as a string slice.

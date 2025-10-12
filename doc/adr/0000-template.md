@@ -45,8 +45,3 @@
 
 // Detail any required follow-up tasks, documentation updates, delegation of responsibilities, or enforcement rules that result directly from this decision.
 // This section should clearly state who is responsible for what.
-
-## Implementation Example
-
-// Provide a small code snippet, configuration, or structural diagram to illustrate the decision's impact on the code or system architecture.
-// Comments within the snippet must be in English.

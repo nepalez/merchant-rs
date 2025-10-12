@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::SecretString;
+use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
 
 /// Minimum token length, typically 16 (to mimic PAN length).
 const MIN_TOKEN_LENGTH: usize = 16;
@@ -17,22 +17,13 @@ const FIXED_MASK_PREFIX: &str = "********";
 pub struct PaymentToken(SecretString);
 
 impl PaymentToken {
-    /// Exposes the first six characters of the token as a String.
-    #[inline]
-    pub fn first_six(&self) -> String {
-        // SAFETY: Safe as the length of the token is 16+ characters, which is greater
-        //         than a minimal length of PAN (13 characters) for which
-        //         exposing first six digits is explicitly permitted by PCI DSS.
-        unsafe { self.0.first_six() }
-    }
-
     /// Exposes the last four characters of the token as a String.
     #[inline]
     pub fn last_four(&self) -> String {
         // SAFETY: Safe as the length of the token is 16+ characters, which is greater
         //         than a minimal length of PAN (13 characters) for which
         //         exposing last four digits is explicitly permitted by PCI DSS.
-        unsafe { self.0.last_four() }
+        unsafe { self.0.last_chars(4) }.to_owned()
     }
 
     /// Returns the inner payment token string slice.
@@ -57,7 +48,7 @@ impl PaymentToken {
     where
         F: FnOnce(&str) -> T,
     {
-        // Safety: the safety contract is passed to the caller.
+        // SAFETY: the safety contract is passed to the caller.
         unsafe { self.0.with_exposed_secret(f) }
     }
 }
@@ -67,39 +58,55 @@ impl TryFrom<String> for PaymentToken {
 
     #[inline]
     fn try_from(input: String) -> Result<Self> {
-        validate(input.as_str())?;
-        Ok(Self(input.into()))
+        Self::try_from_string(input)
     }
 }
 
 impl fmt::Debug for PaymentToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let masked_number = format!("{FIXED_MASK_PREFIX}{}", self.last_four());
+        // SAFETY: Explicitly enabled by PCI DSS for PANs which are even shorter than tokens.
+        let last_four = unsafe { self.0.last_chars(4) };
+        let masked_number = format!("{FIXED_MASK_PREFIX}{}", last_four);
         f.debug_tuple("PrimaryAccountNumber")
             .field(&masked_number)
             .finish()
     }
 }
 
-fn validate(input: &str) -> Result<()> {
-    let len = input.len();
+// Sealed traits implementations
 
-    if input.trim() != input {
-        Err(Error::validation_failed(
-            "Payment token contains invalid leading or trailing whitespace".to_string(),
-        ))
-    } else if len < MIN_TOKEN_LENGTH {
-        Err(Error::validation_failed(format!(
-            "Payment token length ({len}) is below the minimum required length ({}).",
-            MIN_TOKEN_LENGTH
-        )))
-    } else if len > MAX_TOKEN_LENGTH {
-        Err(Error::validation_failed(format!(
-            "Payment token length ({len}) exceeds the maximum allowed length ({}).",
-            MAX_TOKEN_LENGTH
-        )))
-    } else {
-        Ok(())
+// The token should never be modified. Any inconsistency is treated as an error.
+impl Sanitized for PaymentToken {}
+
+impl Validated for PaymentToken {
+    fn validate(input: &str) -> Result<()> {
+        let len = input.len();
+
+        if input.trim() != input {
+            Err(Error::validation_failed(
+                "Payment token contains invalid leading or trailing whitespace".to_string(),
+            ))
+        } else if len < MIN_TOKEN_LENGTH {
+            Err(Error::validation_failed(format!(
+                "Payment token length ({len}) is below the minimum required length ({}).",
+                MIN_TOKEN_LENGTH
+            )))
+        } else if len > MAX_TOKEN_LENGTH {
+            Err(Error::validation_failed(format!(
+                "Payment token length ({len}) exceeds the maximum allowed length ({}).",
+                MAX_TOKEN_LENGTH
+            )))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl SafeWrapper for PaymentToken {
+    type Inner = String;
+
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner.into())
     }
 }
 

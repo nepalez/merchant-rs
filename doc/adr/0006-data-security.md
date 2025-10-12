@@ -1,4 +1,4 @@
-# ADR-0006: Data Security and Handling of Sensitive Financial Primitives
+# [ADR-0006]: Data Security and Handling of Sensitive Financial Primitives
 
 ## Context
 
