@@ -16,7 +16,7 @@ pub(crate) trait SafeWrapper: Sanitized + Validated + Sized {
     /// Constructs an instance of Self from a raw input string.
     #[inline]
     fn try_from_string(input: String) -> crate::Result<Self> {
-        let sanitized = Self::sanitize(input)?;
+        let sanitized = Self::sanitize(input);
         Self::validate(&sanitized)?;
         Ok(Self::wrap(sanitized.into()))
     }

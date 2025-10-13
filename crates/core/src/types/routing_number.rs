@@ -87,12 +87,7 @@ impl fmt::Debug for RoutingNumber {
 // Sealed traits implementations
 
 impl Sanitized for RoutingNumber {
-    fn sanitize(input: String) -> Result<String> {
-        Ok(input
-            .chars()
-            .filter(|c| !NUMBER_SEPARATORS.contains(c))
-            .collect())
-    }
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
 }
 
 impl Validated for RoutingNumber {

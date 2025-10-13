@@ -110,24 +110,7 @@ impl fmt::Debug for PrimaryAccountNumber {
 // Sealed traits implementations
 
 impl Sanitized for PrimaryAccountNumber {
-    fn sanitize(input: String) -> Result<String> {
-        let mut output = String::with_capacity(input.len());
-
-        for c in input.chars() {
-            if c.is_ascii_digit() {
-                output.push(c);
-            } else if NUMBER_SEPARATORS.contains(&c) {
-                continue;
-            } else {
-                return Err(Error::validation_failed(format!(
-                    "Input contains invalid character '{c}'. \
-                    Only digits, spaces, underscores, and hyphens are allowed."
-                )));
-            }
-        }
-
-        Ok(output)
-    }
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
 }
 
 impl Validated for PrimaryAccountNumber {

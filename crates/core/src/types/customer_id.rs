@@ -54,14 +54,7 @@ impl fmt::Debug for CustomerId {
 // Sealed traits implementations
 
 impl Sanitized for CustomerId {
-    fn sanitize(input: String) -> Result<String> {
-        let trimmed = input.trim();
-        if trimmed.len() == input.len() {
-            Ok(input)
-        } else {
-            Ok(trimmed.to_string())
-        }
-    }
+    const TRIM: bool = true;
 }
 
 impl Validated for CustomerId {

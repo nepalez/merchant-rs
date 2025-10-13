@@ -26,14 +26,7 @@ impl TryFrom<String> for MerchantReferenceId {
 // Sealed traits implementations
 
 impl Sanitized for MerchantReferenceId {
-    fn sanitize(input: String) -> Result<String> {
-        let trimmed = input.trim();
-        if trimmed.len() == input.len() {
-            Ok(input)
-        } else {
-            Ok(trimmed.to_string())
-        }
-    }
+    const TRIM: bool = true;
 }
 
 impl Validated for MerchantReferenceId {

@@ -57,12 +57,7 @@ impl fmt::Debug for AuthorizationCode {
 // Sealed traits implementations
 
 impl Sanitized for AuthorizationCode {
-    fn sanitize(input: String) -> Result<String> {
-        Ok(input
-            .chars()
-            .filter(|c| !c.is_whitespace() && *c != '-')
-            .collect())
-    }
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-");
 }
 
 impl Validated for AuthorizationCode {

@@ -94,12 +94,7 @@ impl SafeWrapper for AccountNumber {
 }
 
 impl Sanitized for AccountNumber {
-    fn sanitize(input: String) -> Result<String> {
-        Ok(input
-            .chars()
-            .filter(|c| !NUMBER_SEPARATORS.contains(c))
-            .collect())
-    }
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
 }
 
 impl Validated for AccountNumber {
