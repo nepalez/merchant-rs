@@ -9,8 +9,10 @@ const TYPE_NAME: &str = "Merchant reference ID";
 
 /// Merchant's internal reference identifier for the transaction.
 ///
+/// # Input Constraints
 /// Max length 64: High limit for global PAGs (AliPay, Worldpay, Adyen) and complex
 /// internal references. Follows ISO 20022 pain.001 merchant reference practices.
+///
 /// Sanitization: Only trims. Other symbols (e.g., "$") must cause validation failure.
 #[derive(Clone, Debug)]
 pub struct MerchantReferenceId(String);
@@ -38,28 +40,9 @@ impl Sanitized for MerchantReferenceId {
 }
 
 impl Validated for MerchantReferenceId {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else if !input
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
-        {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only alphanumeric characters, hyphens, underscores, and dots"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Merchant reference ID";
+    const MAX_LENGTH: usize = 64;
+    const EXTRA_CHARS: Option<&'static str> = Some("-_.");
 }
 
 impl SafeWrapper for MerchantReferenceId {

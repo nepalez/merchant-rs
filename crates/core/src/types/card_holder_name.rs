@@ -12,6 +12,7 @@ const DEBUG_MASK: &str = "***";
 ///
 /// # Input Constraints
 /// Max length 50: EMV and ISO/IEC 7813 standard for embossed cardholder names.
+///
 /// Sanitization: Minimal (trim). Any non-Latin character (e.g., Cyrillic, Chinese)
 /// must fail validation, not be transliterated/filtered.
 ///
@@ -62,28 +63,29 @@ impl Sanitized for CardHolderName {
 }
 
 impl Validated for CardHolderName {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
+    const TYPE_NAME: &'static str = "Cardholder name";
+    const MAX_LENGTH: usize = 50;
+    // Custom use for this type: see implementation below!
+    const EXTRA_CHARS: Option<&'static str> = Some(" -'.");
 
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else if !input
+    #[inline]
+    fn validate(input: &str) -> Result<()> {
+        Self::validate_length(input)?;
+
+        // Safe unwrap as per definition above
+        let extra = Self::EXTRA_CHARS.unwrap();
+        if !input
             .chars()
-            .all(|c| c.is_ascii_alphabetic() || matches!(c, ' ' | '-' | '\'' | '.'))
+            .all(|c| c.is_ascii_alphabetic() || extra.contains(c))
         {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only ASCII letters, spaces, \
-                and standard punctuation (-, ', .)"
-            )))
-        } else {
-            Ok(())
+            return Err(Error::validation_failed(format!(
+                "{} must contain only ASCII letters and '{}'",
+                Self::TYPE_NAME,
+                extra
+            )));
         }
+
+        Ok(())
     }
 }
 

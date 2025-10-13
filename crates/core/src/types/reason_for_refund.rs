@@ -14,6 +14,7 @@ const TYPE_NAME: &str = "Reason for refund";
 /// payment gateways (Stripe, PayPal, Adyen).
 /// Cannot be empty - if no reason is provided, use `None` at the API level rather
 /// than constructing an empty `ReasonForRefund`.
+///
 /// Sanitization: None needed, as all characters are technically allowed within
 /// the length limit.
 ///
@@ -50,21 +51,10 @@ impl Sanitized for ReasonForRefund {
 }
 
 impl Validated for ReasonForRefund {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty. Use None if reason is not provided"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Reason for refund";
+    const MAX_LENGTH: usize = 255;
+    // Skip chars validation
+    const EXTRA_CHARS: Option<&'static str> = None;
 }
 
 impl SafeWrapper for ReasonForRefund {

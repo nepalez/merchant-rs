@@ -108,24 +108,10 @@ impl Sanitized for AccountNumber {
 }
 
 impl Validated for AccountNumber {
-    fn validate(sanitized_input: &str) -> Result<()> {
-        let len = sanitized_input.len();
-
-        // Account numbers widely vary, but must have some digits.
-        if len < MIN_ACCOUNT_LENGTH {
-            Err(Error::validation_failed(format!(
-                "Account Number length ({len}) is below the minimum required length ({} digits).",
-                MIN_ACCOUNT_LENGTH
-            )))
-        } else if len > MAX_ACCOUNT_LENGTH {
-            Err(Error::validation_failed(format!(
-                "Account Number length ({len}) exceeds the maximum allowed length ({} digits).",
-                MAX_ACCOUNT_LENGTH
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Account Number";
+    const MIN_LENGTH: usize = 4;
+    const MAX_LENGTH: usize = 20;
+    const EXTRA_CHARS: Option<&'static str> = None;
 }
 
 #[cfg(test)]

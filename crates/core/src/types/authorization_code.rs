@@ -19,6 +19,7 @@ const DEBUG_MASK: &str = "***";
 /// - ISO 8583 compliant systems: exactly 6 numeric digits
 /// - Authorize.Net and similar: exactly 6 alphanumeric characters
 /// - Regional processors: may use 7-10 characters
+///
 /// Sanitization: Aggressive removal of common separators (' ', '-') often used
 /// in user input (e.g., "123-456"), as they are guaranteed non-data.
 ///
@@ -59,30 +60,19 @@ impl fmt::Debug for AuthorizationCode {
 
 impl Sanitized for AuthorizationCode {
     fn sanitize(input: String) -> Result<String> {
-        Ok(input.chars().filter(|c| !c.is_whitespace() && *c != '-').collect())
+        Ok(input
+            .chars()
+            .filter(|c| !c.is_whitespace() && *c != '-')
+            .collect())
     }
 }
 
 impl Validated for AuthorizationCode {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len < MIN_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) is below minimum ({MIN_LENGTH} characters)"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH} characters)"
-            )))
-        } else if !input.chars().all(|c| c.is_ascii_alphanumeric()) {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only alphanumeric characters"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Authorization code";
+    const MIN_LENGTH: usize = 6;
+    const MAX_LENGTH: usize = 10;
+    // Strictly alphanumeric (letters and digits only)
+    const EXTRA_CHARS: Option<&'static str> = Some("");
 }
 
 impl SafeWrapper for AuthorizationCode {

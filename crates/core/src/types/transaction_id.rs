@@ -8,8 +8,10 @@ const TYPE_NAME: &str = "Transaction ID";
 
 /// External transaction identifier from payment gateway.
 ///
+/// # Input Constraints
 /// Max length 64: Covers crypto hashes and long PAG IDs (UPI, Stripe, PayPal).
 /// Follows common payment gateway identifier formats (alphanumeric with separators).
+///
 /// Sanitization: Only trims. Any symbol (e.g., '.') must fail validation to maintain
 /// strict API format integrity.
 #[derive(Clone, Debug)]
@@ -38,28 +40,9 @@ impl Sanitized for TransactionId {
 }
 
 impl Validated for TransactionId {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else if !input
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_'))
-        {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only alphanumeric characters, hyphens, and underscores"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Transaction ID";
+    const MAX_LENGTH: usize = 64;
+    const EXTRA_CHARS: Option<&'static str> = Some("-_");
 }
 
 impl SafeWrapper for TransactionId {

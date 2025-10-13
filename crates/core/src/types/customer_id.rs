@@ -15,6 +15,7 @@ const DEBUG_MASK: &str = "***";
 /// Follows common payment gateway practices for customer reference IDs.
 /// Character set includes alphanumeric and common separators (-, _, .) used across
 /// major payment platforms.
+///
 /// Sanitization: Only trims whitespace (common user/system error).
 /// Any other non-compliant char will fail validation.
 ///
@@ -66,29 +67,9 @@ impl Sanitized for CustomerId {
 }
 
 impl Validated for CustomerId {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else if !input
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
-        {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only alphanumeric characters, hyphens, \
-                underscores, and dots"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Customer ID";
+    const MAX_LENGTH: usize = 50;
+    const EXTRA_CHARS: Option<&'static str> = Some("-_.");
 }
 
 impl SafeWrapper for CustomerId {

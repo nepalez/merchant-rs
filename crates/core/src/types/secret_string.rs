@@ -30,7 +30,7 @@ impl SecretString {
     /// This method is marked `unsafe` to signal that exposing
     /// even a partial part of the sensitive data should be done
     /// with care and full awareness of the implications.
-    /// 
+    ///
     /// Every wrapper **MUST** ensure that the secret string stored in the container
     /// is long enough to avoid leaking the essential part of the data,
     /// and the exposition is compliant with the relevant regulations.

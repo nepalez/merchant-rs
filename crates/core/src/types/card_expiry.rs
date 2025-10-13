@@ -27,29 +27,6 @@ impl CardExpiry {
         Ok(CardExpiry { month, year })
     }
 
-    /// Performs structural validation of the month and year range.
-    /// Uses the same validation style as other sensitive data types.
-    fn validate(month: u8, year: u16) -> Result<(), Error> {
-        if month == 0 || month > 12 {
-            Err(Error::validation_failed(format!(
-                "Expiration month must be between 1 and 12, received {}",
-                month
-            )))
-        } else if year < MIN_YEAR {
-            Err(Error::validation_failed(format!(
-                "Expiration year ({}) is below the minimum required year ({}).",
-                year, MIN_YEAR
-            )))
-        } else if year > MAX_YEAR {
-            Err(Error::validation_failed(format!(
-                "Expiration year ({}) exceeds the maximum allowed year ({}).",
-                year, MAX_YEAR
-            )))
-        } else {
-            Ok(())
-        }
-    }
-
     /// Returns the expiration month (1-12).
     #[inline]
     pub fn month(&self) -> u8 {
@@ -60,6 +37,32 @@ impl CardExpiry {
     #[inline]
     pub fn year(&self) -> u16 {
         self.year
+    }
+
+    #[inline]
+    fn validate(month: u8, year: u16) -> Result<(), Error> {
+        if month == 0 || month > 12 {
+            return Err(Error::validation_failed(format!(
+                "Expiration month must be between 1 and 12, received {}",
+                month
+            )));
+        }
+
+        if year < MIN_YEAR {
+            return Err(Error::validation_failed(format!(
+                "Expiration year ({}) is below the minimum required year ({})",
+                year, MIN_YEAR
+            )));
+        }
+
+        if year > MAX_YEAR {
+            return Err(Error::validation_failed(format!(
+                "Expiration year ({}) exceeds the maximum allowed year ({})",
+                year, MAX_YEAR
+            )));
+        }
+
+        Ok(())
     }
 }
 

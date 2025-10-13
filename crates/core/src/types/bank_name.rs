@@ -9,12 +9,16 @@ const TYPE_NAME: &str = "Bank name";
 
 /// Legal name of the financial institution.
 ///
+/// # Input Constraints
 /// Max length 100: Set for robust internal storage of long legal bank names
 /// (e.g., "The Hongkong and Shanghai Banking Corporation Limited").
+/// Min length 2: Rejects accidental single-character input while accommodating
+/// short bank names (e.g., "N26", Chinese bank abbreviations like "MB").
 /// Character set follows ISO 20022 / SWIFT standards for bank names, allowing
 /// alphanumeric, spaces, and common punctuation (-, ., ,, ', &, parentheses, /).
 /// The slash is included for branch designations used in some jurisdictions
 /// (e.g., "HSBC Bank USA, N.A. / California Branch").
+///
 /// Sanitization: Only trims. Full legal name should be kept intact for internal use;
 /// reliance is on validation.
 #[derive(Clone, Debug)]
@@ -43,29 +47,10 @@ impl Sanitized for BankName {
 }
 
 impl Validated for BankName {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
-
-        if len == 0 {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} cannot be empty"
-            )))
-        } else if len > MAX_LENGTH {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} length ({len}) exceeds maximum ({MAX_LENGTH})"
-            )))
-        } else if !input.chars().all(|c| {
-            c.is_ascii_alphanumeric()
-                || matches!(c, ' ' | '-' | '.' | ',' | '\'' | '&' | '(' | ')' | '/')
-        }) {
-            Err(Error::validation_failed(format!(
-                "{TYPE_NAME} must contain only alphanumeric characters, spaces, \
-                        and standard punctuation (-, ., ,, ', &, parentheses, /)"
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Bank name";
+    const MIN_LENGTH: usize = 2;
+    const MAX_LENGTH: usize = 100;
+    const EXTRA_CHARS: Option<&'static str> = Some(" -.,\'&()/");
 }
 
 impl SafeWrapper for BankName {

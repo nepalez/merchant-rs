@@ -98,18 +98,10 @@ impl Sanitized for RoutingNumber {
 }
 
 impl Validated for RoutingNumber {
-    fn validate(sanitized_input: &str) -> Result<()> {
-        let len = sanitized_input.len();
-
-        if len != ROUTING_LENGTH {
-            Err(Error::validation_failed(format!(
-                "Routing Number length ({len}) must be exactly {} digits.",
-                ROUTING_LENGTH
-            )))
-        } else {
-            Ok(())
-        }
-    }
+    const TYPE_NAME: &'static str = "Routing Number";
+    const MIN_LENGTH: usize = 9;
+    const MAX_LENGTH: usize = 9;
+    const EXTRA_CHARS: Option<&'static str> = None;
 }
 
 impl SafeWrapper for RoutingNumber {

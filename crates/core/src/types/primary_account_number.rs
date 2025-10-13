@@ -132,32 +132,30 @@ impl Sanitized for PrimaryAccountNumber {
 }
 
 impl Validated for PrimaryAccountNumber {
-    fn validate(sanitized_input: &str) -> Result<()> {
-        let len = sanitized_input.len();
-        if len < 13 {
-            Err(Error::validation_failed(
-                "PAN is too short (min length is 13 digits).".to_string(),
-            ))
-        } else if len > 19 {
-            Err(Error::validation_failed(
-                "PAN is too long (max length is 19 digits).".to_string(),
-            ))
-        } else if '0'
-            == sanitized_input
-                .chars()
-                .next()
-                .expect("Checked length above")
-        {
-            Err(Error::validation_failed(
-                "PAN cannot start with '0'.".to_string(),
-            ))
-        } else if !luhn3::valid(sanitized_input.as_bytes()) {
-            Err(Error::validation_failed(
-                "PAN failed the Luhn check.".to_string(),
-            ))
-        } else {
-            Ok(())
+    const TYPE_NAME: &'static str = "PAN";
+    const MIN_LENGTH: usize = 13;
+    const MAX_LENGTH: usize = 19;
+    const EXTRA_CHARS: Option<&'static str> = None;
+
+    #[inline]
+    fn validate(input: &str) -> Result<()> {
+        Self::validate_length(input)?;
+
+        if input.starts_with('0') {
+            return Err(Error::validation_failed(format!(
+                "{} cannot start with '0'",
+                Self::TYPE_NAME
+            )));
         }
+
+        if !luhn3::valid(input.as_bytes()) {
+            return Err(Error::validation_failed(format!(
+                "{} failed the Luhn check",
+                Self::TYPE_NAME
+            )));
+        }
+
+        Ok(())
     }
 }
 

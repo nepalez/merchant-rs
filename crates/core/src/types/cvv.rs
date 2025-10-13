@@ -67,26 +67,24 @@ impl fmt::Debug for CVV {
 impl Sanitized for CVV {}
 
 impl Validated for CVV {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
+    const TYPE_NAME: &'static str = "CVV";
+    const MIN_LENGTH: usize = 3;
+    const MAX_LENGTH: usize = 4;
+    // Use custom validation of strict ASCII digits only
+    const EXTRA_CHARS: Option<&'static str> = None;
 
-        if len < 3 {
-            Err(Error::validation_failed(format!(
-                "CVV length is too short: {}. Minimum length is 3.",
-                len
-            )))
-        } else if len > 4 {
-            Err(Error::validation_failed(format!(
-                "CVV length is too long: {}. Maximum length is 4.",
-                len
-            )))
-        } else if !input.chars().all(|c| c.is_ascii_digit()) {
-            Err(Error::validation_failed(
-                "CVV must contain only digits (0-9)".to_string(),
-            ))
-        } else {
-            Ok(())
+    #[inline]
+    fn validate(input: &str) -> Result<()> {
+        Self::validate_length(input)?;
+
+        if !input.chars().all(|c| c.is_ascii_digit()) {
+            return Err(Error::validation_failed(format!(
+                "{} must contain digits (0-9) only",
+                Self::TYPE_NAME,
+            )));
         }
+
+        Ok(())
     }
 }
 

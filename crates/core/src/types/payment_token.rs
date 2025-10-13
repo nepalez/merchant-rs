@@ -79,26 +79,23 @@ impl fmt::Debug for PaymentToken {
 impl Sanitized for PaymentToken {}
 
 impl Validated for PaymentToken {
-    fn validate(input: &str) -> Result<()> {
-        let len = input.len();
+    const TYPE_NAME: &'static str = "Payment token";
+    const MIN_LENGTH: usize = 16;
+    const MAX_LENGTH: usize = 4096;
+    const EXTRA_CHARS: Option<&'static str> = None;
 
+    #[inline]
+    fn validate(input: &str) -> Result<()> {
         if input.trim() != input {
-            Err(Error::validation_failed(
-                "Payment token contains invalid leading or trailing whitespace".to_string(),
-            ))
-        } else if len < MIN_TOKEN_LENGTH {
-            Err(Error::validation_failed(format!(
-                "Payment token length ({len}) is below the minimum required length ({}).",
-                MIN_TOKEN_LENGTH
-            )))
-        } else if len > MAX_TOKEN_LENGTH {
-            Err(Error::validation_failed(format!(
-                "Payment token length ({len}) exceeds the maximum allowed length ({}).",
-                MAX_TOKEN_LENGTH
-            )))
-        } else {
-            Ok(())
+            return Err(Error::validation_failed(format!(
+                "{} contains invalid leading or trailing whitespace",
+                Self::TYPE_NAME
+            )));
         }
+
+        Self::validate_length(input)?;
+
+        Ok(())
     }
 }
 
