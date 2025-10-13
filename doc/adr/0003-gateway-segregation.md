@@ -1,54 +1,42 @@
-# [ADR-0003]: Segregation of Identity/Capability (Gateway) and Transactional Logic (Authorizable)
+# [ADR-0003]: Gateway Trait Segregation
 
 ## Context
 
-The design of the `merchant-rs-core` API must maintain maximum modularity and strictly adhere to the **Interface Segregation Principle (ISP)**.
+Payment gateways have varying capabilities. Some support two-step authorization with delayed capture (`Stripe`, `Braintree`), others only immediate settlement (many crypto processors). Some allow refunds, others do not. Some support tokenization, others require client-side token creation.
 
-In our system, two distinct concerns are managed:
-1.  Gateway Identity and Capabilities: The minimal contract required to identify the adapter (`fn id()`) and declare its features via **Associated Types** (e.g., `TransactionFlow`).
-2.  Core Transactional Logic: Methods executing the primary financial operations (`authorize`, `void`).
+## Problem
 
-An independent functionality, such as **Tokenization (`Tokenizable`)**, requires access only to the adapter's **Identity and Capabilities**. Merging these contracts would force independent traits to depend on methods they do not use, directly violating the ISP.
+The architectural question: Should gateway adapters implement a monolithic interface with all possible operations, or segregated traits based on actual capabilities?
 
 ## Decision
 
-The core contracts shall be explicitly segregated into two distinct traits:
+Apply Interface Segregation Principle: segregate traits by capability rather than requiring a monolithic gateway interface.
 
-* `Gateway`: This trait will define the **minimal, foundational contract**. Its sole responsibility is to define the adapter's **Identity** and the **Manifest of Capabilities** via all associated types.
-    * *Role:* Serves as the dependency for all traits requiring only identification or capability checks (e.g., `Tokenizable`).
-* `Authorizable`: This trait will define the **core transactional functional methods** (`authorize`, `void`).
-    * *Dependency:* It must inherit the `Gateway` trait as its supertrait (`pub trait Authorizable: Gateway`).
-    * *Role:* Serves as the dependency for all traits extending transactional capabilities (e.g., `Capturable`, `Refundable`).
+**Core transaction traits:**
+- `Authorizable`: mandatory for all gateways (authorize and void operations)
+- `Capturable`: optional, only for gateways supporting two-step flows
+- `Refundable`: optional, only for gateways supporting refunds
 
-This creates a clear hierarchy where `Gateway` is the root of all dependencies.
+**Extension traits follow the same principle** (per [ADR-0001]):
+- `Tokenizable` (`vault` extension): only for gateways with server-side tokenization
+- `ThreeDSecure` (`3ds` extension): only for gateways supporting authentication
+- `CustomerVault` (`vault` extension): only for gateways with customer storage
 
-## Alternatives Considered
-
-### Merge `Gateway` and `Authorizable` into one monolithic trait
-
-* *Rejection:* Directly **violates ISP**. It would force independent traits like `Tokenizable` to depend on and implement the full transaction lifecycle methods (`authorize`, `void`), which are unnecessary for tokenization functionality.
-
-### Use Default Methods for transactional logic in `Gateway`
-
-* *Rejection:* This violates the **"Thin Core" principle** and shifts capability checking from desirable compile-time verification to a runtime error check, diminishing the value of Rust's type system.
-
-### Define `Authorizable` methods with complex generic constraints to disable them for certain types
-
-* *Rejection:* Significantly reduces API readability and maintainability. Trait segregation is the more idiomatic and simpler pattern in Rust for this specific architectural problem.
+Gateway adapters implement only the traits matching their actual capabilities. This enables the modular extension architecture described in the [ADR-0001].
 
 ## Consequences
 
 ### Pros
-
-* **ISP Compliance:** Ensured, as traits like `Tokenizable` depend only on the minimal necessary contract (`Gateway`).
-* **Clean Hierarchy:** Establishes a logical dependency flow: **Identity/Capabilities** $\rightarrow$ **Core Transaction** $\rightarrow$ **Extensions**.
-* **Correct Modeling:** Correctly models independent operations (like tokenization) as peer operations to authorization.
-* **Type Safety Integration:** Seamlessly integrates with the **Associated Type Dispatch (ATD)** mechanism, as `Gateway` is the single source of truth for all capability checks.
+- Adapters not forced to implement unsupported operations with stub/error responses
+- Clear compile-time contract: trait presence indicates capability
+- Easier to understand adapter capabilities through implemented traits
+- Supports modular extensions without core dependencies
 
 ### Cons
+- Client code must check trait bounds at compile time or handle missing capabilities at runtime
+- More traits to understand compared to single monolithic interface
 
-* **Minimal Boilerplate Increase:** Transactional adapters must explicitly implement both `Gateway` and `Authorizable`, a minor cost for significant architectural safety.
+## Alternatives Considered
 
-## Action: Enforced Dependency Rule
-
-The core development team must adhere to the rule that any new transactional traits (e.g., `SubscriptionManagement`) are declared as supertraits of `Authorizable`, and any new independent utility traits (e.g., `StatusCheckable`) are declared as supertraits of `Gateway`.
+### Monolithic Gateway trait
+Single trait with all operations (`authorize`, `capture`, `refund`, `tokenize`, etc.). Rejected because it forces adapters to implement unsupported operations, typically returning "not supported" errors at runtime rather than preventing misuse at compile time. Violates Interface Segregation Principle and prevents clean extension architecture.

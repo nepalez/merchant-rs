@@ -14,7 +14,18 @@ const MAX_ACCOUNT_LENGTH: usize = 20;
 const FIXED_MASK: &str = "********";
 
 /// Represents a bank account number, securely stored and validated.
-/// Validation is minimal due to extreme regional variability.
+///
+/// # Regional Variability and Standards
+///
+/// Account numbers vary significantly by region and banking system:
+/// - **IBAN (ISO 13616)**: Alphanumeric, up to 34 characters (e.g., "DE89370400440532013000")
+/// - **US/Japan/Australia**: Typically numeric only (e.g., "1234567890")
+/// - **SEPA/Europe**: IBAN format (alphanumeric)
+///
+/// This type accepts alphanumeric characters (A-Z, 0-9) after removing common separators
+/// (spaces, hyphens, underscores) to accommodate international standards including IBAN.
+/// Gateway-specific validators MUST enforce stricter rules where applicable
+/// (e.g., numeric-only for US ACH transfers).
 ///
 /// # SAFETY
 ///
@@ -88,22 +99,10 @@ impl SafeWrapper for AccountNumber {
 
 impl Sanitized for AccountNumber {
     fn sanitize(input: String) -> Result<String> {
-        let mut cleaned_number = String::with_capacity(input.len());
-
-        for c in input.chars() {
-            if c.is_ascii_digit() {
-                cleaned_number.push(c);
-            } else if NUMBER_SEPARATORS.contains(&c) {
-                continue;
-            } else {
-                return Err(Error::validation_failed(format!(
-                    "Input contains invalid character '{c}'.\
-                     Only digits, spaces, and hyphens are allowed.",
-                )));
-            }
-        }
-
-        Ok(cleaned_number)
+        Ok(input
+            .chars()
+            .filter(|c| !NUMBER_SEPARATORS.contains(c))
+            .collect())
     }
 }
 
@@ -111,7 +110,8 @@ impl Validated for AccountNumber {
     const TYPE_NAME: &'static str = "Account Number";
     const MIN_LENGTH: usize = 4;
     const MAX_LENGTH: usize = 20;
-    const EXTRA_CHARS: Option<&'static str> = None;
+    // Checks that the account number contains alphanumeric characters only.
+    const EXTRA_CHARS: Option<&'static str> = Some("");
 }
 
 #[cfg(test)]

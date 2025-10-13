@@ -11,12 +11,24 @@ const ROUTING_LENGTH: usize = 9;
 /// Standard fixed mask for logs.
 const FIXED_MASK: &str = "********";
 
-/// Represents a bank routing number, securely stored and validated.
-/// Validation is strict (fixed length, digits only).
+/// Represents a universal bank routing identifier, securely stored and validated.
+///
+/// # Regional Formats
+///
+/// Routing identifiers vary by country and banking system:
+/// - **US (ABA)**: 9 digits, numeric only (e.g., "021000021")
+/// - **UK (Sort Code)**: 6 digits, numeric only (e.g., "200000")
+/// - **Canada**: 8 digits (3 institution + 5 transit), numeric only
+/// - **Australia (BSB)**: 6 digits, numeric only (e.g., "062000")
+/// - **India (IFSC)**: 11 characters, alphanumeric (e.g., "SBIN0001234")
+/// - **International (SWIFT/BIC)**: 8-11 characters, alphanumeric (e.g., "BOFAUS3N")
+///
+/// This type accepts alphanumeric characters (A-Z, 0-9) with length 6-11 to accommodate
+/// international routing standards. Gateway-specific validators MUST enforce stricter
+/// rules where required (e.g., exactly 9 numeric digits for US ABA routing).
 ///
 /// # SAFETY
 ///
-/// **Architectural Justification for SecretBox:**
 /// While the Routing Number is NOT classified as Sensitive Authentication Data (SAD) by PCI DSS,
 /// it is critical **Personally Identifiable Information (PII)** and financial access data,
 /// as it identifies the financial institution for ACH/wire transfers.
@@ -78,30 +90,20 @@ impl fmt::Debug for RoutingNumber {
 
 impl Sanitized for RoutingNumber {
     fn sanitize(input: String) -> Result<String> {
-        let mut output = String::with_capacity(input.len());
-
-        for c in input.chars() {
-            if c.is_ascii_digit() {
-                output.push(c);
-            } else if NUMBER_SEPARATORS.contains(&c) {
-                continue;
-            } else {
-                return Err(Error::validation_failed(format!(
-                    "Input contains invalid character '{c}'.\
-                     Only digits, spaces, and hyphens are allowed.",
-                )));
-            }
-        }
-
-        Ok(output)
+        Ok(input
+            .chars()
+            .filter(|c| !NUMBER_SEPARATORS.contains(c))
+            .collect())
     }
 }
 
 impl Validated for RoutingNumber {
     const TYPE_NAME: &'static str = "Routing Number";
-    const MIN_LENGTH: usize = 9;
-    const MAX_LENGTH: usize = 9;
-    const EXTRA_CHARS: Option<&'static str> = None;
+    const MIN_LENGTH: usize = 6; // UK Sort Code
+    const MAX_LENGTH: usize = 11; // IFSC, BIC
+    const EXTRA_CHARS: Option<&'static str> = Some(""); // Strict alphanumeric
+
+    // Default validate() - length + alphanumeric
 }
 
 impl SafeWrapper for RoutingNumber {

@@ -6,6 +6,10 @@
 // What problem are we trying to solve? What forces (goals, constraints, existing systems) are at play?
 // Why is a decision necessary now?
 
+## Problem
+
+// Clearly articulate the problem/question that requires a decision.
+
 ## Decision
 
 // State the final decision clearly and concisely.
