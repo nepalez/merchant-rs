@@ -1,11 +1,9 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
+use crate::error::*;
+use crate::internal::*;
 
-const MAX_LENGTH: usize = 50;
-const TYPE_NAME: &str = "Cardholder name";
 const DEBUG_MASK: &str = "***";
 
 /// Cardholder name as it appears on the payment card.

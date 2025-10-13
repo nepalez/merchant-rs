@@ -1,11 +1,8 @@
 // bank_name.rs
 use std::convert::TryFrom;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
-
-const MAX_LENGTH: usize = 100;
-const TYPE_NAME: &str = "Bank name";
+use crate::error::*;
+use crate::internal::*;
 
 /// Legal name of the financial institution.
 ///

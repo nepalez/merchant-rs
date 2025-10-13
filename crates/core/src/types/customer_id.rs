@@ -1,11 +1,9 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
+use crate::error::*;
+use crate::internal::*;
 
-const MAX_LENGTH: usize = 50;
-const TYPE_NAME: &str = "Customer ID";
 const DEBUG_MASK: &str = "***";
 
 /// Customer identifier from external vault or payment system.

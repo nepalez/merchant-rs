@@ -2,14 +2,10 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use crate::error::{Error, Result};
-use crate::types::{CVV, SafeWrapper, Sanitized, SecretString, Validated};
+use crate::internal::*;
 
 /// List of allowed separators in account number input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
-/// The minimum required length for a bank account number (digits only).
-const MIN_ACCOUNT_LENGTH: usize = 4;
-/// The maximum allowed length for a bank account number (digits only).
-const MAX_ACCOUNT_LENGTH: usize = 20;
 /// Standard fixed mask for logs.
 const FIXED_MASK: &str = "********";
 

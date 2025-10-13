@@ -1,11 +1,8 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
-
-const MAX_LENGTH: usize = 255;
-const TYPE_NAME: &str = "Reason for refund";
+use crate::error::*;
+use crate::internal::*;
 
 /// Optional administrative text explaining the reason for a refund.
 ///

@@ -1,13 +1,9 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
+use crate::error::*;
+use crate::internal::*;
 
-/// Minimum token length, typically 16 (to mimic PAN length).
-const MIN_TOKEN_LENGTH: usize = 16;
-/// Maximum token length to prevent Denial-of-Service (DoS) attacks via overly large input.
-const MAX_TOKEN_LENGTH: usize = 4096;
 /// Standard fixed mask prefix for logs.
 const FIXED_MASK_PREFIX: &str = "********";
 

@@ -1,10 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
-
-const MAX_LENGTH: usize = 64;
-const TYPE_NAME: &str = "Refund ID";
+use crate::error::*;
+use crate::internal::*;
 
 /// External refund identifier from payment gateway.
 ///

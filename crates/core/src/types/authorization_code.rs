@@ -1,11 +1,9 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
+use crate::error::*;
+use crate::internal::*;
 
-const MAX_LENGTH: usize = 10;
-const MIN_LENGTH: usize = 6;
 const TYPE_NAME: &str = "Authorization code";
 const DEBUG_MASK: &str = "***";
 

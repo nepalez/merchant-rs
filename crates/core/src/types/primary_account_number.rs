@@ -1,9 +1,8 @@
-use luhn3;
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
+use crate::error::*;
+use crate::internal::*;
 
 /// List of allowed separators in a PAN input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];

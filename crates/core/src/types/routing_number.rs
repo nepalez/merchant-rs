@@ -1,13 +1,11 @@
 use std::convert::TryFrom;
 use std::fmt;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, SecretString, Validated};
+use crate::error::*;
+use crate::internal::*;
 
 /// List of allowed separators in routing number input strings.
 const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
-/// The required length for a bank routing number (digits only), typically 9 for ABA.
-const ROUTING_LENGTH: usize = 9;
 /// Standard fixed mask for logs.
 const FIXED_MASK: &str = "********";
 

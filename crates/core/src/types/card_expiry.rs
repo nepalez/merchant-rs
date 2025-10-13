@@ -2,12 +2,6 @@ use std::cmp::Ordering;
 
 use crate::error::{Error, ErrorCode};
 
-// Constants derived from historical and practical standards
-/// Year of first widespread modern payment cards
-const MIN_YEAR: u16 = 1970;
-/// Practical upper limit for card expiration year to avoid unrealistic dates
-const MAX_YEAR: u16 = 2050;
-
 /// Represents a validated card expiration date (Month and 4-digit Year).
 /// This type guarantees that month and year values are structurally valid (within defined range).
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -38,32 +32,6 @@ impl CardExpiry {
     pub fn year(&self) -> u16 {
         self.year
     }
-
-    #[inline]
-    fn validate(month: u8, year: u16) -> Result<(), Error> {
-        if month == 0 || month > 12 {
-            return Err(Error::validation_failed(format!(
-                "Expiration month must be between 1 and 12, received {}",
-                month
-            )));
-        }
-
-        if year < MIN_YEAR {
-            return Err(Error::validation_failed(format!(
-                "Expiration year ({}) is below the minimum required year ({})",
-                year, MIN_YEAR
-            )));
-        }
-
-        if year > MAX_YEAR {
-            return Err(Error::validation_failed(format!(
-                "Expiration year ({}) exceeds the maximum allowed year ({})",
-                year, MAX_YEAR
-            )));
-        }
-
-        Ok(())
-    }
 }
 
 impl Ord for CardExpiry {
@@ -75,5 +43,42 @@ impl Ord for CardExpiry {
 impl PartialOrd for CardExpiry {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+// Custom validation logic
+impl CardExpiry {
+    // Constants derived from historical and practical standards
+    /// Year of first widespread modern payment cards
+    const MIN_YEAR: u16 = 1970;
+    /// Practical upper limit for card expiration year to avoid unrealistic dates
+    const MAX_YEAR: u16 = 2050;
+
+    #[inline]
+    fn validate(month: u8, year: u16) -> Result<(), Error> {
+        if month == 0 || month > 12 {
+            return Err(Error::validation_failed(format!(
+                "Expiration month must be between 1 and 12, received {}",
+                month
+            )));
+        }
+
+        if year < Self::MIN_YEAR {
+            return Err(Error::validation_failed(format!(
+                "Expiration year ({}) is below the minimum required year ({})",
+                year,
+                Self::MIN_YEAR
+            )));
+        }
+
+        if year > Self::MAX_YEAR {
+            return Err(Error::validation_failed(format!(
+                "Expiration year ({}) exceeds the maximum allowed year ({})",
+                year,
+                Self::MAX_YEAR
+            )));
+        }
+
+        Ok(())
     }
 }

@@ -1,10 +1,7 @@
 use std::convert::TryFrom;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
-
-const MAX_LENGTH: usize = 64;
-const TYPE_NAME: &str = "Transaction ID";
+use crate::error::*;
+use crate::internal::*;
 
 /// External transaction identifier from payment gateway.
 ///

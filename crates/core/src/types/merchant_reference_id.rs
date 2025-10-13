@@ -1,11 +1,8 @@
 // merchant_reference_id.rs
 use std::convert::TryFrom;
 
-use crate::error::{Error, Result};
-use crate::types::{SafeWrapper, Sanitized, Validated};
-
-const MAX_LENGTH: usize = 64;
-const TYPE_NAME: &str = "Merchant reference ID";
+use crate::error::*;
+use crate::internal::*;
 
 /// Merchant's internal reference identifier for the transaction.
 ///

@@ -2,6 +2,11 @@
 #![allow(dead_code)]
 #![allow(unused_crate_dependencies)]
 
-pub mod error;
+mod error;
+mod internal;
 mod traits;
-pub mod types;
+mod types;
+
+pub use error::*;
+pub use traits::*;
+pub use types::*;
