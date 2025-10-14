@@ -41,32 +41,35 @@ const FIXED_MASK: &str = "********";
 #[derive(Clone)]
 pub struct RoutingNumber(SecretString);
 
-impl RoutingNumber {
-    /// Exposes the underlying Routing Number as a string slice.
-    ///
-    /// This method is designed for use by external payment adapter crates ONLY.
-    ///
-    /// # SAFETY
-    ///
-    /// This method is marked `unsafe` because it exposes highly sensitive data to the closure.
-    ///
-    /// The caller **MUST** ensure:
-    /// 1. The processing within the closure does not copy
-    ///    or store the exposed data in unsecured memory.
-    /// 2. The data is consumed immediately and its exposure lifetime
-    ///    is strictly minimal (e.g., for transmission).
-    /// 3. **Any structure or variable containing the exposed `&str` reference
-    ///    MUST NOT escape the closure, and any intermediate structure
-    ///    containing a copy of the raw data (for example, the request)
-    ///    MUST itself guarantee zeroization upon drop.**
+// SAFETY:
+//
+// The trait is safely implemented because:
+// 1. The type is wrapped in SecretString, which ensures memory is zeroed on drop,
+// 2. The Debug implementation masks the value with a fixed mask,
+//    preventing accidental exposure of sensitive financial PII in logs.
+unsafe impl SafeWrapper for RoutingNumber {
+    type Inner = SecretString;
+
     #[inline]
-    pub unsafe fn with_exposed_secret<T, F>(&self, f: F) -> T
-    where
-        F: FnOnce(&str) -> T,
-    {
-        // Safety: the safety contract is passed to the caller.
-        unsafe { self.0.with_exposed_secret(f) }
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
     }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
+    }
+}
+
+impl Sanitized for RoutingNumber {
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
+}
+
+impl Validated for RoutingNumber {
+    const TYPE_NAME: &'static str = "RoutingNumber";
+    const MIN_LENGTH: usize = 6; // UK Sort Code
+    const MAX_LENGTH: usize = 11; // IFSC, BIC
+    const EXTRA_CHARS: Option<&'static str> = Some(""); // Strict alphanumeric
 }
 
 impl TryFrom<String> for RoutingNumber {
@@ -79,31 +82,9 @@ impl TryFrom<String> for RoutingNumber {
 }
 
 impl fmt::Debug for RoutingNumber {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("RoutingNumber").field(&FIXED_MASK).finish()
-    }
-}
-
-// Sealed traits implementations
-
-impl Sanitized for RoutingNumber {
-    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
-}
-
-impl Validated for RoutingNumber {
-    const TYPE_NAME: &'static str = "Routing Number";
-    const MIN_LENGTH: usize = 6; // UK Sort Code
-    const MAX_LENGTH: usize = 11; // IFSC, BIC
-    const EXTRA_CHARS: Option<&'static str> = Some(""); // Strict alphanumeric
-
-    // Default validate() - length + alphanumeric
-}
-
-impl SafeWrapper for RoutingNumber {
-    type Inner = SecretString;
-
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner)
+        self.masked_debug(f)
     }
 }
 

@@ -30,31 +30,40 @@ impl TryFrom<String> for CardHolderName {
     }
 }
 
-// The first+last approach provides debugging context
-// while ensuring multiple names collapse to the same mask
-// (e.g., "Y", "Young Shy" and "Yury" all become "Y***Y"),
-// thus preventing name reconstruction.
-impl fmt::Debug for CardHolderName {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let first_char = self.0.chars().next().unwrap();
-        let last_char = self.0.chars().next_back().unwrap();
-        let masked = format!(
-            "{}{DEBUG_MASK}{}",
-            first_char.to_uppercase(),
-            last_char.to_uppercase(),
-        );
-        f.debug_tuple("CardHolderName").field(&masked).finish()
+// SAFETY:
+//
+// The trait is safely implemented because:
+// 1. String is used as the inner type because cardholder name is not considered
+//    "sensitive" under PCI DSS. However, it is direct PII under GDPR/CCPA,
+//    so we still implement masking in Debug.
+// 2. Exposes 1 first and 1 last char, both capitalized, in Debug implementation
+//    which with a help of mask in between doesn't reveal the name, but
+//    mixes it with other names having the same first and last letters.
+// 3. Validation ensures that the name has at least 1 character,
+//    which prevents out-of-bounds error in Debug implementation.
+unsafe impl SafeWrapper for CardHolderName {
+    type Inner = String;
+
+    const FIRST_CHARS: usize = 1;
+    const LAST_CHARS: usize = 1;
+
+    #[inline]
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
-
-// Sealed traits implementations
 
 impl Sanitized for CardHolderName {
     const TRIM: bool = true;
 }
 
 impl Validated for CardHolderName {
-    const TYPE_NAME: &'static str = "Cardholder name";
+    const TYPE_NAME: &'static str = "CardHolderName";
     const MAX_LENGTH: usize = 50;
     // Custom use for this type: see implementation below!
     const EXTRA_CHARS: Option<&'static str> = Some(" -'.");
@@ -80,10 +89,9 @@ impl Validated for CardHolderName {
     }
 }
 
-impl SafeWrapper for CardHolderName {
-    type Inner = String;
-
-    fn wrap(inner: String) -> Self {
-        Self(inner)
+impl fmt::Debug for CardHolderName {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.masked_debug(f)
     }
 }

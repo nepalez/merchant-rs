@@ -21,32 +21,37 @@ use crate::internal::*;
 #[derive(Clone, Debug)]
 pub struct BankName(String);
 
-impl TryFrom<String> for BankName {
-    type Error = Error;
+// SAFETY: The trait is safely implemented because this type is not considered sensitive data.
+unsafe impl SafeWrapper for BankName {
+    type Inner = String;
 
     #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
-
-// Sealed traits implementations
 
 impl Sanitized for BankName {
     const TRIM: bool = true;
 }
 
 impl Validated for BankName {
-    const TYPE_NAME: &'static str = "Bank name";
+    const TYPE_NAME: &'static str = "BankName";
     const MIN_LENGTH: usize = 2;
     const MAX_LENGTH: usize = 100;
     const EXTRA_CHARS: Option<&'static str> = Some(" -.,\'&()/");
 }
 
-impl SafeWrapper for BankName {
-    type Inner = String;
+impl TryFrom<String> for BankName {
+    type Error = Error;
 
-    fn wrap(inner: String) -> Self {
-        Self(inner)
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        Self::try_from_string(input)
     }
 }

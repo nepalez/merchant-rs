@@ -66,7 +66,6 @@ pub(crate) trait Validated {
         Ok(())
     }
 
-    #[inline]
     fn validate_charset(input: &str) -> crate::Result<()> {
         let extra = Self::EXTRA_CHARS.unwrap(); // Safe: checked in validate()
 

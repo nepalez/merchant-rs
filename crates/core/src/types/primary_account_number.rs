@@ -46,68 +46,30 @@ const FIXED_MASK_PREFIX: &str = "********";
 #[derive(Clone)]
 pub struct PrimaryAccountNumber(SecretString);
 
-impl PrimaryAccountNumber {
-    /// Exposes the first six digits of the PAN as a String.
-    #[inline]
-    pub fn first_six(&self) -> String {
-        // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
-        unsafe { self.0.first_chars(6) }.to_owned()
-    }
+// SAFETY:
+//
+// The trait is safely implemented because:
+// 1. The wrapper uses SecretString as inner type, which guarantees memory zeroization on drop.
+// 2. The Debug implementation masks all but the first 6 and the last 4 characters of the PAN,
+//    which is explicitly allowed by PCI DSS for Primary Account Numbers (PANs).
+// 3. The validation ensures that the PAN has at least 13 characters, so it is guaranteed
+//    to have at least 6 characters to show from every side.
+unsafe impl SafeWrapper for PrimaryAccountNumber {
+    type Inner = SecretString;
 
-    /// Exposes the last four digits of the PAN as a String.
-    pub fn last_four(&self) -> String {
-        // SAFETY: Safe as it its explicitly enabled by PCI DSS for PANs.
-        unsafe { self.0.last_chars(4) }.to_owned()
-    }
-
-    /// Exposes the underlying Primary Account Number (PAN) as a string slice.
-    ///
-    /// This method is designed for use by external payment adapter crates ONLY.
-    ///
-    /// # SAFETY
-    ///
-    /// This method is marked `unsafe` because it exposes highly sensitive data to the closure.
-    ///
-    /// The caller **MUST** ensure:
-    /// 1. The processing within the closure does not copy
-    ///    or store the exposed data in unsecured memory.
-    /// 2. The data is consumed immediately and its exposure lifetime
-    ///    is strictly minimal (e.g., for transmission).
-    /// 3. **Any structure or variable containing the exposed `&str` reference
-    ///    MUST NOT escape the closure, and any intermediate structure
-    ///    containing a copy of the raw data (for example, the request)
-    ///    MUST itself guarantee zeroization upon drop.**
-    #[inline]
-    pub unsafe fn with_exposed_secret<T, F>(&self, f: F) -> T
-    where
-        F: FnOnce(&str) -> T,
-    {
-        // SAFETY: the safety contract is passed to the caller.
-        unsafe { self.0.with_exposed_secret(f) }
-    }
-}
-
-impl TryFrom<String> for PrimaryAccountNumber {
-    type Error = Error;
+    const FIRST_CHARS: usize = 6;
+    const LAST_CHARS: usize = 4;
 
     #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
-
-impl fmt::Debug for PrimaryAccountNumber {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Safety: Safe as it its explicitly enabled by PCI DSS for PANs
-        let last_four = unsafe { self.0.last_chars(4) };
-        let masked_number = format!("{FIXED_MASK_PREFIX}{}", last_four);
-        f.debug_tuple("PrimaryAccountNumber")
-            .field(&masked_number)
-            .finish()
-    }
-}
-
-// Sealed traits implementations
 
 impl Sanitized for PrimaryAccountNumber {
     const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
@@ -141,11 +103,19 @@ impl Validated for PrimaryAccountNumber {
     }
 }
 
-impl SafeWrapper for PrimaryAccountNumber {
-    type Inner = SecretString;
+impl TryFrom<String> for PrimaryAccountNumber {
+    type Error = Error;
 
-    fn wrap(inner: SecretString) -> Self {
-        Self(inner)
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        Self::try_from_string(input)
+    }
+}
+
+impl fmt::Debug for PrimaryAccountNumber {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.masked_debug(f)
     }
 }
 

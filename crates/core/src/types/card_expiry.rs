@@ -16,6 +16,7 @@ impl CardExpiry {
     /// The input must provide the month (1-12) and the full 4-digit year.
     /// This method enforces structural validity (range checks) but does not check
     /// for expiration against the current time.
+    #[inline]
     pub fn new(month: u8, year: u16) -> Result<Self, Error> {
         CardExpiry::validate(month, year)?;
         Ok(CardExpiry { month, year })
@@ -41,6 +42,7 @@ impl Ord for CardExpiry {
 }
 
 impl PartialOrd for CardExpiry {
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }

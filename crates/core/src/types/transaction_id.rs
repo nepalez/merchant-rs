@@ -14,31 +14,36 @@ use crate::internal::*;
 #[derive(Clone, Debug)]
 pub struct TransactionId(String);
 
-impl TryFrom<String> for TransactionId {
-    type Error = Error;
+// SAFETY: The trait is safely implemented because the type is not considered sensitive.
+unsafe impl SafeWrapper for TransactionId {
+    type Inner = String;
 
     #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
-
-// Sealed traits implementations
 
 impl Sanitized for TransactionId {
     const TRIM: bool = true;
 }
 
 impl Validated for TransactionId {
-    const TYPE_NAME: &'static str = "Transaction ID";
+    const TYPE_NAME: &'static str = "TransactionId";
     const MAX_LENGTH: usize = 64;
     const EXTRA_CHARS: Option<&'static str> = Some("-_");
 }
 
-impl SafeWrapper for TransactionId {
-    type Inner = String;
+impl TryFrom<String> for TransactionId {
+    type Error = Error;
 
-    fn wrap(inner: String) -> Self {
-        Self(inner)
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        Self::try_from_string(input)
     }
 }

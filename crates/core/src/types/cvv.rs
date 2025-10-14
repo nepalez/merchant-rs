@@ -42,27 +42,29 @@ impl CVV {
     where
         F: FnOnce(&str) -> T,
     {
-        // Safety: the safety contract is passed to the caller.
+        // SAFETY: the safety contract is passed to the caller.
         unsafe { self.0.with_exposed_secret(f) }
     }
 }
 
-impl TryFrom<String> for CVV {
-    type Error = Error;
+// SAFETY:
+//
+// The trait is safely implemented because:
+// 1. SecretString is used as the inner type which ensures memory zeroization on drop.
+// 2. No characters are exposed in Debug implementation, only a fixed mask is shown.
+unsafe impl SafeWrapper for CVV {
+    type Inner = SecretString;
 
     #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
-
-impl fmt::Debug for CVV {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_tuple("AccountNumber").field(&FIXED_MASK).finish()
-    }
-}
-
-// Sealed traits implementations
 
 impl Sanitized for CVV {}
 
@@ -88,11 +90,19 @@ impl Validated for CVV {
     }
 }
 
-impl SafeWrapper for CVV {
-    type Inner = SecretString;
+impl TryFrom<String> for CVV {
+    type Error = Error;
 
-    fn wrap(inner: SecretString) -> Self {
-        Self(inner)
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        Self::try_from_string(input)
+    }
+}
+
+impl fmt::Debug for CVV {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.masked_debug(f)
     }
 }
 

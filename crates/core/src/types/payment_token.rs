@@ -4,74 +4,37 @@ use std::fmt;
 use crate::error::*;
 use crate::internal::*;
 
-/// Standard fixed mask prefix for logs.
-const FIXED_MASK_PREFIX: &str = "********";
-
 /// A Tokenized Payment Credential (e.g., from a payment processor or vault).
 /// Wraps secrecy::SecretBox<String> to ensure memory is zeroed on drop and value is masked in Debug/Display.
 #[derive(Clone)]
 pub struct PaymentToken(SecretString);
 
-impl PaymentToken {
-    /// Exposes the last four characters of the token as a String.
+// SAFETY:
+//
+// The trait is safely implemented because:
+// 1. The type is wrapped in SecretString, which ensures memory is zeroed on drop,
+// 2. The Debug implementation masks all but the last four characters of the token,
+//    which is explicitly allowed by PCI DSS for Primary Account Numbers (PANs),
+//    and tokens has more symbols than PANs.
+// 3. The validation ensures that the token has at least 16 characters,
+//    so it is guaranteed to have at least 4 characters to show.
+unsafe impl SafeWrapper for PaymentToken {
+    type Inner = SecretString;
+
+    const LAST_CHARS: usize = 4;
+
     #[inline]
-    pub fn last_four(&self) -> String {
-        // SAFETY: Safe as the length of the token is 16+ characters, which is greater
-        //         than a minimal length of PAN (13 characters) for which
-        //         exposing last four digits is explicitly permitted by PCI DSS.
-        unsafe { self.0.last_chars(4) }.to_owned()
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
     }
 
-    /// Returns the inner payment token string slice.
-    ///
-    /// This method is designed for use by external payment adapter crates ONLY.
-    ///
-    /// # SAFETY
-    ///
-    /// This method is marked `unsafe` because it exposes highly sensitive data to the closure.
-    ///
-    /// The caller **MUST** ensure:
-    /// 1. The processing within the closure does not copy
-    ///    or store the exposed data in unsecured memory.
-    /// 2. The data is consumed immediately and its exposure lifetime
-    ///    is strictly minimal (e.g., for transmission).
-    /// 3. **Any structure or variable containing the exposed `&str` reference
-    ///    MUST NOT escape the closure, and any intermediate structure
-    ///    containing a copy of the raw data (for example, the request)
-    ///    MUST itself guarantee zeroization upon drop.**
     #[inline]
-    pub unsafe fn with_exposed_secret<T, F>(&self, f: F) -> T
-    where
-        F: FnOnce(&str) -> T,
-    {
-        // SAFETY: the safety contract is passed to the caller.
-        unsafe { self.0.with_exposed_secret(f) }
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
     }
 }
 
-impl TryFrom<String> for PaymentToken {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
-    }
-}
-
-impl fmt::Debug for PaymentToken {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // SAFETY: Explicitly enabled by PCI DSS for PANs which are even shorter than tokens.
-        let last_four = unsafe { self.0.last_chars(4) };
-        let masked_number = format!("{FIXED_MASK_PREFIX}{}", last_four);
-        f.debug_tuple("PrimaryAccountNumber")
-            .field(&masked_number)
-            .finish()
-    }
-}
-
-// Sealed traits implementations
-
-// The token should never be modified. Any inconsistency is treated as an error.
+// The token should never be modified. Any extra chars are treated as an error.
 impl Sanitized for PaymentToken {}
 
 impl Validated for PaymentToken {
@@ -95,11 +58,19 @@ impl Validated for PaymentToken {
     }
 }
 
-impl SafeWrapper for PaymentToken {
-    type Inner = String;
+impl TryFrom<String> for PaymentToken {
+    type Error = Error;
 
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner.into())
+    #[inline]
+    fn try_from(input: String) -> Result<Self> {
+        Self::try_from_string(input)
+    }
+}
+
+impl fmt::Debug for PaymentToken {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.masked_debug(f)
     }
 }
 

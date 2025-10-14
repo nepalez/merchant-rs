@@ -4,9 +4,6 @@ use std::fmt;
 use crate::error::*;
 use crate::internal::*;
 
-const TYPE_NAME: &str = "Authorization code";
-const DEBUG_MASK: &str = "***";
-
 /// Authorization code from card issuer.
 ///
 /// # Input Constraints
@@ -29,6 +26,41 @@ const DEBUG_MASK: &str = "***";
 #[derive(Clone)]
 pub struct AuthorizationCode(String);
 
+// SAFETY
+//
+// The trait is safely implemented because:
+// 1. The wrapper uses a string as inner type because this code is not a PII.
+// 2. Exposition of the uppercased first and last characters won't leak the code in total.
+// 3. The validation rules guarantee that the inner data has at least 6 characters.
+unsafe impl SafeWrapper for AuthorizationCode {
+    type Inner = String;
+
+    const FIRST_CHARS: usize = 1;
+    const LAST_CHARS: usize = 1;
+
+    #[inline]
+    fn wrap(inner: Self::Inner) -> Self {
+        Self(inner)
+    }
+
+    #[inline]
+    unsafe fn inner(&self) -> &Self::Inner {
+        &self.0
+    }
+}
+
+impl Sanitized for AuthorizationCode {
+    const CHARS_TO_REMOVE: Option<&'static str> = Some("-");
+}
+
+impl Validated for AuthorizationCode {
+    const TYPE_NAME: &'static str = "AuthorizationCode";
+    const MIN_LENGTH: usize = 6;
+    const MAX_LENGTH: usize = 10;
+    // Strictly alphanumeric (letters and digits only)
+    const EXTRA_CHARS: Option<&'static str> = Some("");
+}
+
 impl TryFrom<String> for AuthorizationCode {
     type Error = Error;
 
@@ -42,36 +74,8 @@ impl TryFrom<String> for AuthorizationCode {
 // Multiple codes collapse to the same mask (e.g., "ABC123" and "A12BC3" both become
 // "A***3"), preventing code reconstruction.
 impl fmt::Debug for AuthorizationCode {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let first_char = self.0.chars().next().unwrap();
-        let last_char = self.0.chars().next_back().unwrap();
-        let masked = format!(
-            "{}{DEBUG_MASK}{}",
-            first_char.to_uppercase(),
-            last_char.to_uppercase(),
-        );
-        f.debug_tuple("AuthorizationCode").field(&masked).finish()
-    }
-}
-
-// Sealed traits implementations
-
-impl Sanitized for AuthorizationCode {
-    const CHARS_TO_REMOVE: Option<&'static str> = Some("-");
-}
-
-impl Validated for AuthorizationCode {
-    const TYPE_NAME: &'static str = "Authorization code";
-    const MIN_LENGTH: usize = 6;
-    const MAX_LENGTH: usize = 10;
-    // Strictly alphanumeric (letters and digits only)
-    const EXTRA_CHARS: Option<&'static str> = Some("");
-}
-
-impl SafeWrapper for AuthorizationCode {
-    type Inner = String;
-
-    fn wrap(inner: String) -> Self {
-        Self(inner)
+        self.masked_debug(f)
     }
 }
