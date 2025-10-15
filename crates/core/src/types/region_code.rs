@@ -5,34 +5,44 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{sanitized::*, validated::*};
 
-/// Merchant's internal reference identifier for a transaction
+/// Region code (state, province, etc.) in addresses
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 1-255 characters
+/// * length: 1-3 characters,
+/// * case-insensitive (converted to uppercase)
 ///
 /// # Data Protection
-/// This identifier is specifically designed for public usage and does not contain sensitive information.
+/// Region codes are NOT considered PII in any reasonable context,
+/// as they represent broad geographic areas that cannot identify individuals.
 ///
 /// Consequently, both `Debug` and `Display` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
-pub struct MerchantReferenceId(String);
+pub struct RegionCode(String);
 
-impl FromStr for MerchantReferenceId {
+impl FromStr for RegionCode {
     type Err = Error;
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        let original = Self::sanitize(input).validated()?;
+        Ok(Self(original.0.to_uppercase()))
+    }
+}
+
+impl fmt::Display for RegionCode {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for MerchantReferenceId {
+impl<'a> Sanitized<'a> for RegionCode {
     type Input = &'a str;
 
     #[inline]
@@ -43,9 +53,9 @@ impl<'a> Sanitized<'a> for MerchantReferenceId {
     }
 }
 
-impl Validated for MerchantReferenceId {
+impl Validated for RegionCode {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 255)
+        validate_length(&self.0, 1, 3)
     }
 }

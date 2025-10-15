@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::error::{Error, Result};
 use crate::traits::{Authorizable, Gateway, TransactionFlow};
-use crate::types::{AuthorizationId, MerchantReferenceId, Money, TransactionId, TransactionStatus};
+use crate::types::*;
 
 /// Optional trait for payment gateways that support completing a two-step flow.
 ///
@@ -27,7 +27,7 @@ impl TransactionFlow for TwoStepFlow {}
 #[derive(Debug, Clone)]
 pub struct CaptureRequest {
     /// ID of the original authorization transaction returned by the gateway.
-    pub authorization_id: AuthorizationId,
+    pub transaction_id: TransactionId,
     /// The exact amount to capture. Must be less than or equal to the authorized amount.
     pub amount_to_capture: Money,
     /// Unique ID provided by the merchant for tracing the capture operation.
@@ -37,8 +37,6 @@ pub struct CaptureRequest {
 /// Response body after a successful or failed capture.
 #[derive(Debug, Clone)]
 pub struct CaptureResponse {
-    /// Indicates if the operation was successful.
-    pub is_success: bool,
     /// The new transaction ID for the capture operation.
     pub transaction_id: TransactionId,
     /// The canonical status (Should be Captured or Failed).

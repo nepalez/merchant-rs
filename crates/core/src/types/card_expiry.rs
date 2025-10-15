@@ -1,10 +1,27 @@
 use std::cmp::Ordering;
+use std::fmt;
+use zeroize_derive::ZeroizeOnDrop;
 
-use crate::error::{Error, ErrorCode};
+use crate::error::Error;
+use crate::internal::{Masked, validated::*};
 
-/// Represents a validated card expiration date (Month and 4-digit Year).
-/// This type guarantees that month and year values are structurally valid (within defined range).
-#[derive(Clone, Debug, Eq, PartialEq)]
+const FIRST_CREDIT_CARD_YEAR: u16 = 1950;
+const MAX_SUPPORTED_YEAR: u16 = 2050;
+
+/// Card expiration date (month and year)
+///
+/// # Validation
+/// * month: 1-12,
+/// * year: 1950-2050
+///
+/// # Data Protection
+/// PCI DSS does not consider card expiration dates sensitive data,
+/// as they cannot be used alone to authorize transactions.
+///
+/// As such, they are:
+/// * not masked in logs (via `Debug` implementation),
+/// * exposed via safe public methods `month()` and `year()`.
+#[derive(Clone, Eq, PartialEq, ZeroizeOnDrop)]
 pub struct CardExpiry {
     month: u8,
     year: u16,
@@ -17,9 +34,12 @@ impl CardExpiry {
     /// This method enforces structural validity (range checks) but does not check
     /// for expiration against the current time.
     #[inline]
-    pub fn new(month: u8, year: u16) -> Result<Self, Error> {
-        CardExpiry::validate(month, year)?;
-        Ok(CardExpiry { month, year })
+    pub fn new(month: &u8, year: &u16) -> Result<Self, Error> {
+        Self {
+            month: *month,
+            year: *year,
+        }
+        .validated()
     }
 
     /// Returns the expiration month (1-12).
@@ -36,6 +56,7 @@ impl CardExpiry {
 }
 
 impl Ord for CardExpiry {
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         (self.year, self.month).cmp(&(other.year, other.month))
     }
@@ -48,39 +69,19 @@ impl PartialOrd for CardExpiry {
     }
 }
 
-// Custom validation logic
-impl CardExpiry {
-    // Constants derived from historical and practical standards
-    /// Year of first widespread modern payment cards
-    const MIN_YEAR: u16 = 1970;
-    /// Practical upper limit for card expiration year to avoid unrealistic dates
-    const MAX_YEAR: u16 = 2050;
-
+impl fmt::Debug for CardExpiry {
     #[inline]
-    fn validate(month: u8, year: u16) -> Result<(), Error> {
-        if month == 0 || month > 12 {
-            return Err(Error::validation_failed(format!(
-                "Expiration month must be between 1 and 12, received {}",
-                month
-            )));
-        }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:02}/{:04}", self.month, self.year)
+    }
+}
 
-        if year < Self::MIN_YEAR {
-            return Err(Error::validation_failed(format!(
-                "Expiration year ({}) is below the minimum required year ({})",
-                year,
-                Self::MIN_YEAR
-            )));
-        }
+// --- Sealed traits (not parts of the public API) ---
 
-        if year > Self::MAX_YEAR {
-            return Err(Error::validation_failed(format!(
-                "Expiration year ({}) exceeds the maximum allowed year ({})",
-                year,
-                Self::MAX_YEAR
-            )));
-        }
-
-        Ok(())
+impl Validated for CardExpiry {
+    #[inline]
+    fn validate(&self) -> Result<(), String> {
+        validate_year(&self.year, FIRST_CREDIT_CARD_YEAR, MAX_SUPPORTED_YEAR)?;
+        validate_month(&self.month)
     }
 }

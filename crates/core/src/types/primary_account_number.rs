@@ -1,134 +1,107 @@
 use std::convert::TryFrom;
 use std::fmt;
+use std::str::FromStr;
+use zeroize_derive::ZeroizeOnDrop;
 
-use crate::error::*;
-use crate::internal::*;
+use crate::error::Error;
+use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 
-/// List of allowed separators in a PAN input strings.
-const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
-/// Standard fixed mask prefix for logs.
-const FIXED_MASK_PREFIX: &str = "********";
+/// Primary account number (PAN) from a payment card
+///
+/// # Sanitization
+/// * removes dashes, underscores and spaces (common separators),
+/// * removes all ASCII control characters like newlines, tabs, etc.
+///
+/// # Validation
+/// * length: 13-19 characters,
+/// * only digits are allowed,
+/// * cannot start with 0,
+/// * must pass the Luhn check (Mod 10)
+///
+/// # Data Protection
+/// PCI DSS classifies PAN as sensitive authentication data (SAD) that provides
+/// full access to cardholder funds and enables fraudulent transactions.
+///
+/// As such, it is:
+/// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
+/// * exposed via the **unsafe** `with_exposed_secret` method only,
+///   forcing gateway developers to acknowledge the handling of sensitive data.
+#[derive(Clone, ZeroizeOnDrop)]
+pub struct PrimaryAccountNumber(String);
 
-/// Represents a Primary Account Number (PAN),
-/// securely stored and validated against basic invariants.
-///
-/// ## Invariants enforced
-///
-/// The implementation of `TryFrom<String>` ensures that the PAN:
-/// * Contains only digits after successful cleaning and validation.
-/// * Passes a minimal, basic structural check (universal length and MII prefix).
-/// * Passes the Luhn check (Mod 10).
-///
-/// ## Invariants NOT enforced
-///
-/// Full, comprehensive, and up-to-date BIN validation is explicitly **NOT** performed.
-/// It is the responsibility of the Application Layer.
-///
-/// # Security Considerations
-///
-/// * Uses secure storage to ensure memory zeroization after use.
-/// * `Clone` is implemented for request resilience, but the cloned value
-///   is immediately re-wrapped in a new secure container.
-/// * `Debug` implementation masks all but the last four digits as permitted by PCI DSS.
-///   The fixed mask prefix hides the length of the PAN to prevent leakage.
-/// * `Display` is not implemented to prevent accidental leakage,
-///   but access to the first six and last four digits is provided via methods,
-///   as permitted by PCI DSS.
-/// * Full access is only possible via the **unsafe** `with_exposed_secret` method,
-///   which forces developers to acknowledge the handling of sensitive data.
-///
-/// # SAFETY
-///
-/// It is the responsibility of the caller to ensure
-/// that the input string has been sourced securely
-/// and has neither been cloned nor logged
-/// before the construction of the `PrimaryAccountNumber`.
-#[derive(Clone)]
-pub struct PrimaryAccountNumber(SecretString);
-
-// SAFETY:
-//
-// The trait is safely implemented because:
-// 1. The wrapper uses SecretString as inner type, which guarantees memory zeroization on drop.
-// 2. The Debug implementation masks all but the first 6 and the last 4 characters of the PAN,
-//    which is explicitly allowed by PCI DSS for Primary Account Numbers (PANs).
-// 3. The validation ensures that the PAN has at least 13 characters, so it is guaranteed
-//    to have at least 6 characters to show from every side.
-unsafe impl SafeWrapper for PrimaryAccountNumber {
-    type Inner = SecretString;
-
-    const FIRST_CHARS: usize = 6;
-    const LAST_CHARS: usize = 4;
+impl FromStr for PrimaryAccountNumber {
+    type Err = Error;
 
     #[inline]
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner)
-    }
-
-    #[inline]
-    unsafe fn inner(&self) -> &Self::Inner {
-        &self.0
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self::sanitize(input).validated()
     }
 }
 
-impl Sanitized for PrimaryAccountNumber {
-    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
-}
-
-impl Validated for PrimaryAccountNumber {
-    const TYPE_NAME: &'static str = "PAN";
-    const MIN_LENGTH: usize = 13;
-    const MAX_LENGTH: usize = 19;
-    const EXTRA_CHARS: Option<&'static str> = None;
+impl<'a> HighlySecret<'a> for PrimaryAccountNumber {
+    type Exposed = &'a str;
 
     #[inline]
-    fn validate(input: &str) -> Result<()> {
-        Self::validate_length(input)?;
-
-        if input.starts_with('0') {
-            return Err(Error::validation_failed(format!(
-                "{} cannot start with '0'",
-                Self::TYPE_NAME
-            )));
-        }
-
-        if !luhn3::valid(input.as_bytes()) {
-            return Err(Error::validation_failed(format!(
-                "{} failed the Luhn check",
-                Self::TYPE_NAME
-            )));
-        }
-
-        Ok(())
-    }
-}
-
-impl TryFrom<String> for PrimaryAccountNumber {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
+    where
+        F: FnOnce(Self::Exposed) -> T,
+    {
+        f(self.0.as_str())
     }
 }
 
 impl fmt::Debug for PrimaryAccountNumber {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.masked_debug(f)
+        <Self as Masked>::masked_debug(self, f)
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-    use std::str::FromStr;
+// --- Sealed traits (not parts of the public API) ---
 
-    impl FromStr for PrimaryAccountNumber {
-        type Err = Error;
+impl<'a> Sanitized<'a> for PrimaryAccountNumber {
+    type Input = &'a str;
 
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::try_from(s.to_owned())
+    #[inline]
+    fn sanitize(input: Self::Input) -> Self {
+        let mut output = Self(String::with_capacity(input.len()));
+        filter_characters(&mut output.0, input, "-_");
+        output
+    }
+}
+
+impl Validated for PrimaryAccountNumber {
+    #[inline]
+    fn validate(&self) -> Result<(), String> {
+        validate_length(&self.0, 13, 19)?;
+        validate_alphanumeric(&self.0, "")?;
+
+        if self.0.starts_with('0') {
+            Err("cannot start with 0".to_string())?;
         }
+        // Safety: under the hood the function copies bytes from the input,
+        //         but assign them to the same variable/memory location
+        //         during the iteration cycle, so only the last char is left
+        //         in the stack memory without zeroization.
+        if !luhn3::valid(self.0.as_bytes()) {
+            Err("failed the Luhn check".to_string())?;
+        }
+
+        Ok(())
+    }
+}
+
+// SAFETY: The trait is safely implemented because exposing the last 4 characters:
+// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+//    due to fallbacks to the empty strings,
+// 2. Nor leaks the essential part of the sensitive VALID data which has at least 13 chars
+//    (and this is explicitly enabled by the PCI DSS requirements).
+unsafe impl Masked for PrimaryAccountNumber {
+    const TYPE_WRAPPER: &'static str = "PrimaryAccountNumber";
+
+    #[inline]
+    fn last_chars(&self) -> String {
+        let len = self.0.len();
+        self.0.get(len - 4..len).unwrap_or_default().to_uppercase()
     }
 }

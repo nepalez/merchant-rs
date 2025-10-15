@@ -1,74 +1,76 @@
-use std::convert::TryFrom;
+use crate::error::Error;
+use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 use std::fmt;
+use std::str::FromStr;
+use zeroize_derive::ZeroizeOnDrop;
 
-use crate::error::*;
-use crate::internal::*;
-
-/// Optional administrative text explaining the reason for a refund.
+/// Optional administrative text explaining the reason for a refund
 ///
-/// # Input Constraints
-/// Max length 255: Standard limit for optional administrative text fields across
-/// payment gateways (Stripe, PayPal, Adyen).
-/// Cannot be empty - if no reason is provided, use `None` at the API level rather
-/// than constructing an empty `ReasonForRefund`.
+/// # Sanitization
+/// * trims leading and trailing whitespace
+/// * removes all ASCII control characters like newlines, tabs, etc.
 ///
-/// Sanitization: None needed, as all characters are technically allowed within
-/// the length limit.
+/// # Validation
+/// * length: 1-255 characters
 ///
-/// # Security
-/// Debug implementation shows only the length of the content. Free-text fields may
-/// contain arbitrary PII (names, emails, phone numbers) if merchants are poorly trained.
-/// Showing length only prevents accidental PII exposure while maintaining debugging
-/// utility.
-#[derive(Clone)]
+/// # Data Protection
+/// Free-text fields may contain arbitrary PII (names, emails, phone numbers)
+/// if merchants are poorly trained. Showing length only prevents accidental PII
+/// exposure while maintaining the debugging utility.
+///
+/// As such, it is:
+/// * masked in logs (via `Debug` implementation) to display only the length of the content,
+/// * exposed via the **unsafe** `as_str` method only,
+///   forcing gateway developers to acknowledge the handling of sensitive data.
+#[derive(Clone, ZeroizeOnDrop)]
 pub struct ReasonForRefund(String);
 
-// SAFETY:
-//
-// The trait is safely implemented because:
-// 1. The type by itself does not contain sensitive data, but the Debug
-//    implementation prevents accidental exposure of arbitrary PII in logs.
-// 2. The debug implementation is customized and does not expose any part of the inner string,
-//    only its length.
-unsafe impl SafeWrapper for ReasonForRefund {
-    type Inner = String;
+impl FromStr for ReasonForRefund {
+    type Err = Error;
 
     #[inline]
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner)
-    }
-
-    #[inline]
-    unsafe fn inner(&self) -> &Self::Inner {
-        &self.0
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        Self(input.to_string()).validated()
     }
 }
 
-impl Sanitized for ReasonForRefund {}
+impl fmt::Debug for ReasonForRefund {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.masked_debug(f)
+    }
+}
+
+impl PersonalData for ReasonForRefund {
+    unsafe fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+// --- Sealed traits (not parts of the public API) ---
+
+impl<'a> Sanitized<'a> for ReasonForRefund {
+    type Input = &'a str;
+
+    fn sanitize(input: Self::Input) -> Self {
+        let mut output = Self(String::with_capacity(input.len()));
+        trim_whitespaces(&mut output.0, input);
+        output
+    }
+}
 
 impl Validated for ReasonForRefund {
-    const TYPE_NAME: &'static str = "ReasonForRefund";
-    const MAX_LENGTH: usize = 255;
-    // Skip chars validation
-    const EXTRA_CHARS: Option<&'static str> = None;
-}
-
-impl TryFrom<String> for ReasonForRefund {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn validate(&self) -> std::result::Result<(), String> {
+        validate_length(&self.0, 1, 255)
     }
 }
 
-// Length-only display prevents exposure of arbitrary customer data that may be
-// included in refund reasons.
-impl fmt::Debug for ReasonForRefund {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let masked = format!("[{} chars]", self.0.len());
-        f.debug_tuple(<Self as Validated>::TYPE_NAME)
-            .field(&masked)
-            .finish()
+// SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
+unsafe impl Masked for ReasonForRefund {
+    const TYPE_WRAPPER: &'static str = "ReasonForRefund";
+
+    fn masked_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let masked = format!("[{} chars]", self.0.chars().count());
+        f.debug_tuple(Self::TYPE_WRAPPER).field(&masked).finish()
     }
 }

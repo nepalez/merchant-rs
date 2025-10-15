@@ -1,8 +1,34 @@
 use iso_currency::Currency;
 use rust_decimal::Decimal;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Monetary value with currency
+///
+/// # Data Protection
+/// Money values are not considered sensitive data,
+/// as they represent transaction amounts that can be shared publicly.
+///
+/// As such, they are:
+/// * not masked in logs (via `Debug` implementation),
+/// * exposed via safe public methods `amount()` and `currency()`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Money {
-    pub amount: Decimal,
-    pub currency: Currency,
+    amount: Decimal,
+    currency: Currency,
+}
+
+impl Money {
+    #[inline]
+    pub fn new(amount: Decimal, currency: Currency) -> Self {
+        Self { amount, currency }
+    }
+
+    #[inline]
+    pub fn amount(&self) -> Decimal {
+        self.amount
+    }
+
+    #[inline]
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
 }

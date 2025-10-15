@@ -2,9 +2,7 @@ use async_trait::async_trait;
 
 use crate::error::{Error, Result};
 use crate::traits::{Authorizable, Gateway, RefundsCapability};
-use crate::types::{
-    MerchantReferenceId, Money, ReasonForRefund, RefundId, TransactionId, TransactionStatus,
-};
+use crate::types::*;
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]
@@ -39,10 +37,8 @@ pub struct RefundRequest {
 /// Response body after a successful or failed refund.
 #[derive(Debug, Clone)]
 pub struct RefundResponse {
-    /// Indicates if the operation was successful.
-    pub is_success: bool,
     /// The unique ID returned by the gateway for the refund record.
-    pub refund_id: RefundId,
+    pub transaction_id: TransactionId,
     /// The canonical status (Should be Refunded or Failed).
     pub status: TransactionStatus,
     /// The final amount successfully refunded.

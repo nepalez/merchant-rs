@@ -14,7 +14,6 @@ mod authorizable;
 mod capturable;
 mod gateway;
 mod refundable;
-mod tokenization;
 
 pub use authorizable::*;
 pub use capturable::*;

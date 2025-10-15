@@ -1,97 +1,95 @@
-use std::convert::TryFrom;
 use std::fmt;
+use std::str::FromStr;
+use zeroize_derive::ZeroizeOnDrop;
 
-use crate::error::*;
-use crate::internal::*;
+use crate::error::Error;
+use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 
-const DEBUG_MASK: &str = "***";
-
-/// Cardholder name as it appears on the payment card.
+/// Cardholder name as it appears on a payment card
 ///
-/// # Input Constraints
-/// Max length 50: EMV and ISO/IEC 7813 standard for embossed cardholder names.
+/// # Sanitization
+/// * trims whitespaces,
+/// * removes all ASCII control characters like newlines, tabs, etc.
 ///
-/// Sanitization: Minimal (trim). Any non-Latin character (e.g., Cyrillic, Chinese)
-/// must fail validation, not be transliterated/filtered.
+/// # Validation
+/// * length: 3-26 characters (EMV and ISO/IEC 7813 standard),
+/// * only ASCII alphabetic characters, spaces, dashes, apostrophes and dots are allowed,
+/// * any non-Latin character (e.g., Cyrillic, Chinese) fails validation
 ///
-/// # Security
-/// Debug implementation masks all characters except first and last, both capitalized.
-/// This is direct PII under GDPR/CCPA and must be protected in logs despite PCI DSS
-/// not requiring cardholder name masking.
-#[derive(Clone)]
+/// # Data Protection
+/// While PCI DSS does NOT classify cardholder names as sensitive authentication data (SAD),
+/// they are critical PII and financial access data that can be associated with their owners.
+///
+/// As such, they are:
+/// * masked in logs (via `Debug` implementation) to display
+///   the first and last characters (both in the upper case) only,
+///   which prevents leaking short names,
+/// * exposed via the **unsafe** `as_str` method only,
+///   forcing gateway developers to acknowledge the handling of sensitive data.
+#[derive(Clone, ZeroizeOnDrop)]
 pub struct CardHolderName(String);
 
-impl TryFrom<String> for CardHolderName {
-    type Error = Error;
+impl FromStr for CardHolderName {
+    type Err = Error;
 
     #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
-    }
-}
-
-// SAFETY:
-//
-// The trait is safely implemented because:
-// 1. String is used as the inner type because cardholder name is not considered
-//    "sensitive" under PCI DSS. However, it is direct PII under GDPR/CCPA,
-//    so we still implement masking in Debug.
-// 2. Exposes 1 first and 1 last char, both capitalized, in Debug implementation
-//    which with a help of mask in between doesn't reveal the name, but
-//    mixes it with other names having the same first and last letters.
-// 3. Validation ensures that the name has at least 1 character,
-//    which prevents out-of-bounds error in Debug implementation.
-unsafe impl SafeWrapper for CardHolderName {
-    type Inner = String;
-
-    const FIRST_CHARS: usize = 1;
-    const LAST_CHARS: usize = 1;
-
-    #[inline]
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner)
-    }
-
-    #[inline]
-    unsafe fn inner(&self) -> &Self::Inner {
-        &self.0
-    }
-}
-
-impl Sanitized for CardHolderName {
-    const TRIM: bool = true;
-}
-
-impl Validated for CardHolderName {
-    const TYPE_NAME: &'static str = "CardHolderName";
-    const MAX_LENGTH: usize = 50;
-    // Custom use for this type: see implementation below!
-    const EXTRA_CHARS: Option<&'static str> = Some(" -'.");
-
-    #[inline]
-    fn validate(input: &str) -> Result<()> {
-        Self::validate_length(input)?;
-
-        // Safe unwrap as per definition above
-        let extra = Self::EXTRA_CHARS.unwrap();
-        if !input
-            .chars()
-            .all(|c| c.is_ascii_alphabetic() || extra.contains(c))
-        {
-            return Err(Error::validation_failed(format!(
-                "{} must contain only ASCII letters and '{}'",
-                Self::TYPE_NAME,
-                extra
-            )));
-        }
-
-        Ok(())
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let original = Self::sanitize(input).validated()?;
+        Ok(Self(original.0.to_uppercase()))
     }
 }
 
 impl fmt::Debug for CardHolderName {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.masked_debug(f)
+        <Self as Masked>::masked_debug(self, f)
+    }
+}
+
+impl PersonalData for CardHolderName {
+    #[inline]
+    unsafe fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
+// --- Sealed traits (not parts of the public API) ---
+
+impl<'a> Sanitized<'a> for CardHolderName {
+    type Input = &'a str;
+
+    #[inline]
+    fn sanitize(input: Self::Input) -> Self {
+        let mut output = Self(String::with_capacity(input.len()));
+        trim_whitespaces(&mut output.0, input);
+        output
+    }
+}
+
+impl Validated for CardHolderName {
+    #[inline]
+    fn validate(&self) -> Result<(), String> {
+        validate_length(&self.0, 3, 26)?;
+        validate_alphabetic(&self.0, " -'.")
+    }
+}
+
+// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
+// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+//    due to fallbacks to the empty strings,
+// 2. Nor leaks the essential part of the sensitive VALID data
+//    due to hiding the real length of the name.
+unsafe impl Masked for CardHolderName {
+    const TYPE_WRAPPER: &'static str = "CardHolderName";
+
+    #[inline]
+    fn first_chars(&self) -> String {
+        self.0.get(0..1).unwrap_or_default().to_string()
+    }
+
+    #[inline]
+    fn last_chars(&self) -> String {
+        let len = self.0.len();
+        self.0.get(len - 1..len).unwrap_or_default().to_string()
     }
 }

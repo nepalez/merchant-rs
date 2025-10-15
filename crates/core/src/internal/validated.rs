@@ -1,90 +1,130 @@
 use crate::Error;
+use std::fmt::Debug;
+use std::str::FromStr;
 
 /// Sealed trait for types that require domain validation of their input.
 ///
 /// Validation occurs on the *sanitized* input and typically includes:
 /// - Length checks (min/max)
-/// - Character set validation (alphanumeric + optional extra characters)
+/// - Character set validation (alphanumeric and optional extra characters)
 /// - Domain-specific rules (e.g., Luhn check for PAN)
 ///
 /// # Default Implementation
 ///
 /// The default `validate()` implementation covers most cases:
 /// 1. Validates length against `MIN_LENGTH` and `MAX_LENGTH`
-/// 2. If `EXTRA_CHARS` is `Some`, validates charset (alphanumeric + extras)
+/// 2. If `EXTRA_CHARS` is `Some`, validates charset (alphanumeric and extras)
 ///
 /// Override `validate()` for domain-specific rules.
-pub(crate) trait Validated {
-    const TYPE_NAME: &'static str;
-    const MIN_LENGTH: usize = 1;
-    const MAX_LENGTH: usize;
+pub(crate) trait Validated: Sized + Debug {
+    fn validate(&self) -> Result<(), String>;
 
-    /// Additional allowed characters beyond alphanumeric.
-    /// - `None`: No charset validation
-    /// - `Some("")`: Strict alphanumeric only
-    /// - `Some("-_")`: Alphanumeric + specified characters
-    const EXTRA_CHARS: Option<&'static str> = None;
+    fn validated(self) -> Result<Self, Error> {
+        self.validate()
+            .map_err(|msg| Error::validation_failed(format!("{self:?} {msg}")))?;
+        Ok(self)
+    }
+}
 
-    #[inline]
-    fn validate(input: &str) -> crate::Result<()> {
-        Self::validate_length(input)?;
-
-        if Self::EXTRA_CHARS.is_some() {
-            Self::validate_charset(input)?;
-        }
-
+#[inline]
+pub(crate) fn validate_length(input: &str, min: usize, max: usize) -> Result<(), String> {
+    // validate chars, not bytes!
+    let len = input.chars().count();
+    if len < min || len > max {
+        Err(format!("length is out of range ({}-{})", min, max))
+    } else {
         Ok(())
     }
+}
 
-    #[inline]
-    fn validate_length(input: &str) -> crate::Result<()> {
-        let len = input.len();
+#[inline]
+pub(crate) fn validate_alphanumeric(input: &str, extra: &str) -> Result<(), String> {
+    for c in input.chars() {
+        if !c.is_ascii_alphanumeric() && !extra.contains(c) {
+            return Err(format!("contains invalid character `{c}`"));
+        }
+    }
+    Ok(())
+}
 
-        if len < Self::MIN_LENGTH {
-            let message = if Self::MIN_LENGTH == 1 {
-                format!("{} cannot be empty", Self::TYPE_NAME)
+#[inline]
+pub(crate) fn validate_alphabetic(input: &str, extra: &str) -> Result<(), String> {
+    for c in input.chars() {
+        if !c.is_ascii_alphabetic() && !extra.contains(c) {
+            return Err(format!("contains invalid character `{c}`"));
+        }
+    }
+    Ok(())
+}
+
+#[inline]
+pub(crate) fn validate_digits(input: &str, extra: &str) -> Result<(), String> {
+    for c in input.chars() {
+        if !c.is_ascii_digit() && !extra.contains(c) {
+            return Err(format!("contains invalid character `{c}`"));
+        }
+    }
+    Ok(())
+}
+
+#[inline]
+pub(crate) fn validate_whitelist(input: &str, allowed: &str) -> Result<(), String> {
+    for c in input.chars() {
+        if !allowed.contains(c) {
+            return Err(format!("contains invalid character `{c}`"));
+        }
+    }
+    Ok(())
+}
+
+#[inline]
+pub(crate) fn validate_month(input: &u8) -> Result<(), String> {
+    if !(1..=12).contains(input) {
+        Err("month is out of range (1-12)".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+pub(crate) fn validate_year(input: &u16, min: u16, max: u16) -> Result<(), String> {
+    if *input < min || *input > max {
+        Err(format!("year is out of range ({}-{})", min, max))
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+pub(crate) fn validate_day(day: &u8, month: &u8, year: &u16) -> Result<(), String> {
+    validate_month(month)?;
+
+    if *day == 0 {
+        Err("day cannot be zero".to_string())
+    } else if *day > days_in_month(year, month) {
+        Err("day is out of range for given month and year".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+#[inline]
+fn is_leap_year(year: &u16) -> bool {
+    year.is_multiple_of(4) && (!year.is_multiple_of(100) || year.is_multiple_of(400))
+}
+
+#[inline]
+fn days_in_month(year: &u16, month: &u8) -> u8 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if is_leap_year(year) {
+                29
             } else {
-                format!(
-                    "{} length ({}) is below minimum ({})",
-                    Self::TYPE_NAME,
-                    len,
-                    Self::MIN_LENGTH
-                )
-            };
-            return Err(Error::validation_failed(message));
-        }
-
-        if len > Self::MAX_LENGTH {
-            return Err(Error::validation_failed(format!(
-                "{} length ({}) exceeds maximum ({})",
-                Self::TYPE_NAME,
-                len,
-                Self::MAX_LENGTH
-            )));
-        }
-
-        Ok(())
-    }
-
-    fn validate_charset(input: &str) -> crate::Result<()> {
-        let extra = Self::EXTRA_CHARS.unwrap(); // Safe: checked in validate()
-
-        for c in input.chars() {
-            if !c.is_ascii_alphanumeric() && !extra.contains(c) {
-                let description = if extra.is_empty() {
-                    "alphanumeric characters".to_string()
-                } else {
-                    format!("alphanumeric characters and '{}'", extra)
-                };
-
-                return Err(Error::validation_failed(format!(
-                    "{} must contain only {}",
-                    Self::TYPE_NAME,
-                    description
-                )));
+                28
             }
         }
-
-        Ok(())
+        _ => 0,
     }
 }

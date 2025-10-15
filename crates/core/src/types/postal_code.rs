@@ -1,3 +1,4 @@
+use codes_iso_3166::part_1;
 use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
@@ -5,30 +6,30 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 
-const DEBUG_MASK: &str = "***";
-
-/// User identifier from an external vault or payment system
+/// Postal code used in addresses
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 1-255 characters
+/// * length: 3-10 characters,
+/// * only alphanumeric characters, spaces and dashes are allowed
 ///
 /// # Data Protection
-/// User IDs enable transaction correlation and user profiling,
-/// and are considered PII (Personal Identifiable Information).
+/// Postal codes can identify specific geographic areas
+/// and when combined with other data, enable person identification,
+/// making them PII (Personal Identifiable Information).
 ///
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
-///   the first 4 and the last 4 characters but not leaving less than 8 characters masked.
+///   up to the first 2 characters but no more than 1/3 of the code length,
 /// * exposed via the **unsafe** `as_str` method only,
 ///   forcing gateway developers to acknowledge the handling of sensitive data.
 #[derive(Clone, ZeroizeOnDrop)]
-pub struct CustomerId(String);
+pub struct PostalCode(String);
 
-impl FromStr for CustomerId {
+impl FromStr for PostalCode {
     type Err = Error;
 
     #[inline]
@@ -37,14 +38,15 @@ impl FromStr for CustomerId {
     }
 }
 
-impl fmt::Debug for CustomerId {
+impl fmt::Debug for PostalCode {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
     }
 }
 
-impl PersonalData for CustomerId {
+impl PersonalData for PostalCode {
+    #[inline]
     unsafe fn as_str(&self) -> &str {
         self.0.as_str()
     }
@@ -52,7 +54,7 @@ impl PersonalData for CustomerId {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for CustomerId {
+impl<'a> Sanitized<'a> for PostalCode {
     type Input = &'a str;
 
     #[inline]
@@ -63,29 +65,27 @@ impl<'a> Sanitized<'a> for CustomerId {
     }
 }
 
-impl Validated for CustomerId {
+impl Validated for PostalCode {
+    // We don't care about zeroization of the temporary data, that is not PII.
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 255)
+        validate_length(&self.0, 3, 10)?;
+        validate_alphanumeric(&self.0, "- ")
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 4 and last 4 characters
-// (but not leaving less than 8 characters masked):
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data by itself,
-// 2. Nor leaks the essential part of the sensitive VALID data.
-unsafe impl Masked for CustomerId {
-    const TYPE_WRAPPER: &'static str = "CustomerId";
+// SAFETY: The trait is safely implemented because exposing
+// up to the first 2 characters, but no more than 1/3 of the code length:
+// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+//    due to fallbacks to the empty strings,
+// 2. Nor leaks the sensitive VALID data because the first part of the code
+//    points out to a broad geographical area.
+unsafe impl Masked for PostalCode {
+    const TYPE_WRAPPER: &'static str = "PostalCode";
 
     #[inline]
     fn first_chars(&self) -> String {
-        let len = self.0.len().saturating_sub(8).saturating_div(2).min(4);
-        self.0.get(0..len).unwrap_or_default().to_string()
-    }
-
-    #[inline]
-    fn last_chars(&self) -> String {
-        let len = self.0.len().saturating_sub(8).saturating_div(2).min(4);
+        let len = (self.0.len() / 3).min(2);
         self.0.get(0..len).unwrap_or_default().to_string()
     }
 }

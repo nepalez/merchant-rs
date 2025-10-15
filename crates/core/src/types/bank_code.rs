@@ -5,47 +5,58 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{sanitized::*, validated::*};
 
-/// Merchant's internal reference identifier for a transaction
+/// Code identifying the bank
 ///
 /// # Sanitization
-/// * trims whitespaces,
+/// * removes characters used in financial systems for formatting: spaces, dashes, dots, slashes,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 1-255 characters
+/// * length: 2-34 characters,
+/// * only alphanumeric characters are allowed
+///
+/// The adapter implementation can apply stricter validation rules later.
 ///
 /// # Data Protection
-/// This identifier is specifically designed for public usage and does not contain sensitive information.
+/// This is a public value, neither secret nor even PII.
 ///
 /// Consequently, both `Debug` and `Display` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
-pub struct MerchantReferenceId(String);
+pub struct BankCode(String);
 
-impl FromStr for MerchantReferenceId {
+impl FromStr for BankCode {
     type Err = Error;
 
     #[inline]
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+    fn from_str(input: &str) -> Result<Self, Error> {
         Self::sanitize(input).validated()
+    }
+}
+
+impl fmt::Display for BankCode {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
     }
 }
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for MerchantReferenceId {
+impl<'a> Sanitized<'a> for BankCode {
     type Input = &'a str;
 
     #[inline]
     fn sanitize(input: Self::Input) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
-        trim_whitespaces(&mut output.0, input);
+        filter_characters(&mut output.0, input, ".-/");
         output
     }
 }
 
-impl Validated for MerchantReferenceId {
+impl Validated for BankCode {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 255)
+        validate_length(&self.0, 2, 34)?;
+        validate_alphanumeric(&self.0, "")
     }
 }

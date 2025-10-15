@@ -5,23 +5,24 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{sanitized::*, validated::*};
 
-/// Merchant's internal reference identifier for a transaction
+/// City name in addresses
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 1-255 characters
+/// * length: 1-100 characters
 ///
 /// # Data Protection
-/// This identifier is specifically designed for public usage and does not contain sensitive information.
+/// City names are NOT considered PII in any reasonable context,
+/// as they represent broad geographic areas that cannot identify individuals.
 ///
 /// Consequently, both `Debug` and `Display` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
-pub struct MerchantReferenceId(String);
+pub struct City(String);
 
-impl FromStr for MerchantReferenceId {
+impl FromStr for City {
     type Err = Error;
 
     #[inline]
@@ -30,9 +31,16 @@ impl FromStr for MerchantReferenceId {
     }
 }
 
+impl fmt::Display for City {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for MerchantReferenceId {
+impl<'a> Sanitized<'a> for City {
     type Input = &'a str;
 
     #[inline]
@@ -43,9 +51,9 @@ impl<'a> Sanitized<'a> for MerchantReferenceId {
     }
 }
 
-impl Validated for MerchantReferenceId {
+impl Validated for City {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 255)
+        validate_length(&self.0, 1, 100)
     }
 }

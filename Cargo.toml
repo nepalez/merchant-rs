@@ -16,11 +16,13 @@ repository = "https://github.com/nepalez/merchant-rs"
 version = "0.1.0"
 
 [workspace.dependencies]
-async-trait = "~0.1.89"
-iso_currency = { version = "~0.5.3", default-features = false }
-luhn3 = { version = "^1.1.0", default-features = false }
-reqwest = "~0.12.23"
-rust_decimal = "^1.38"
-secrecy = { version = "^0.10.3", default-features = false }
-strum = { version = "~0.27.2", default-features = false }
-strum_macros = "~0.27.2"
+async-trait = { version = "0.1", default-features = false }
+codes-iso-3166 = { version = "0.1", default-features = false }
+email_address = { version = "0.2", default-features = false }
+iban_validate = { version = "5", default-features = false }
+iso_currency = { version = "0.5", default-features = false }
+luhn3 = { version = "1", default-features = false }
+rust_decimal = { version = "1", default-features = false }
+strum_macros = {  version = "0.27", default-features = false }
+zeroize = { version = "1", default-features = false }
+zeroize_derive = { version = "1", default-features = false }

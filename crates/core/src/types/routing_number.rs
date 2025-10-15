@@ -1,83 +1,43 @@
-use std::convert::TryFrom;
 use std::fmt;
+use std::str::FromStr;
+use zeroize_derive::ZeroizeOnDrop;
 
-use crate::error::*;
-use crate::internal::*;
+use crate::error::Error;
+use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 
-/// List of allowed separators in routing number input strings.
-const NUMBER_SEPARATORS: [char; 3] = [' ', '-', '_'];
-/// Standard fixed mask for logs.
-const FIXED_MASK: &str = "********";
+/// Universal bank routing identifier
+///
+/// Used for ABA, Sort Code, BSB, IFSC, SWIFT/BIC, etc.
+///
+/// # Sanitization
+/// * removes common separators: spaces, dashes, underscores and dots,
+/// * removes all ASCII control characters like newlines, tabs, etc.
+///
+/// # Validation
+/// * length: 6-11 characters,
+/// * only alphanumeric characters are allowed
+///
+/// # Data Protection
+/// While PCI DSS does NOT classify routing numbers as sensitive authentication data (SAD),
+/// they identify specific bank branches and can be used
+/// with account numbers for unauthorized transfers,
+/// making them critical financial access data.
+///
+/// As such, they are:
+/// * masked in logs (via `Debug` implementation) to display
+///   the first and last characters (both in the upper case) only,
+/// * exposed via the **unsafe** `as_str` method only,
+///   forcing gateway developers to acknowledge the handling of sensitive data.
+#[derive(Clone, ZeroizeOnDrop)]
+pub struct RoutingNumber(String);
 
-/// Represents a universal bank routing identifier, securely stored and validated.
-///
-/// # Regional Formats
-///
-/// Routing identifiers vary by country and banking system:
-/// - **US (ABA)**: 9 digits, numeric only (e.g., "021000021")
-/// - **UK (Sort Code)**: 6 digits, numeric only (e.g., "200000")
-/// - **Canada**: 8 digits (3 institution + 5 transit), numeric only
-/// - **Australia (BSB)**: 6 digits, numeric only (e.g., "062000")
-/// - **India (IFSC)**: 11 characters, alphanumeric (e.g., "SBIN0001234")
-/// - **International (SWIFT/BIC)**: 8-11 characters, alphanumeric (e.g., "BOFAUS3N")
-///
-/// This type accepts alphanumeric characters (A-Z, 0-9) with length 6-11 to accommodate
-/// international routing standards. Gateway-specific validators MUST enforce stricter
-/// rules where required (e.g., exactly 9 numeric digits for US ABA routing).
-///
-/// # SAFETY
-///
-/// While the Routing Number is NOT classified as Sensitive Authentication Data (SAD) by PCI DSS,
-/// it is critical **Personally Identifiable Information (PII)** and financial access data,
-/// as it identifies the financial institution for ACH/wire transfers.
-/// To enforce Defense-in-Depth, ensure guaranteed log masking, and prevent accidental data leakage,
-/// it is treated with the same rigor as other sensitive data.
-///
-/// * The memory is forcefully zeroed on drop (guaranteed by SecretBox).
-/// * The value is masked in `Debug` for log safety.
-/// * Cloning is allowed for request resilience, but the cloned value is immediately re-wrapped in a new `SecretBox`.
-/// * The value can only be accessed via the **unsafe** `with_exposed_secret` method, which forces developers to
-///   acknowledge the handling of sensitive financial PII.
-#[derive(Clone)]
-pub struct RoutingNumber(SecretString);
-
-// SAFETY:
-//
-// The trait is safely implemented because:
-// 1. The type is wrapped in SecretString, which ensures memory is zeroed on drop,
-// 2. The Debug implementation masks the value with a fixed mask,
-//    preventing accidental exposure of sensitive financial PII in logs.
-unsafe impl SafeWrapper for RoutingNumber {
-    type Inner = SecretString;
+impl FromStr for RoutingNumber {
+    type Err = Error;
 
     #[inline]
-    fn wrap(inner: Self::Inner) -> Self {
-        Self(inner)
-    }
-
-    #[inline]
-    unsafe fn inner(&self) -> &Self::Inner {
-        &self.0
-    }
-}
-
-impl Sanitized for RoutingNumber {
-    const CHARS_TO_REMOVE: Option<&'static str> = Some("-_");
-}
-
-impl Validated for RoutingNumber {
-    const TYPE_NAME: &'static str = "RoutingNumber";
-    const MIN_LENGTH: usize = 6; // UK Sort Code
-    const MAX_LENGTH: usize = 11; // IFSC, BIC
-    const EXTRA_CHARS: Option<&'static str> = Some(""); // Strict alphanumeric
-}
-
-impl TryFrom<String> for RoutingNumber {
-    type Error = Error;
-
-    #[inline]
-    fn try_from(input: String) -> Result<Self> {
-        Self::try_from_string(input)
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        let original = Self::sanitize(input).validated()?;
+        Ok(Self(original.0.to_uppercase()))
     }
 }
 
@@ -88,16 +48,49 @@ impl fmt::Debug for RoutingNumber {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::str::FromStr;
+impl PersonalData for RoutingNumber {
+    #[inline]
+    unsafe fn as_str(&self) -> &str {
+        self.0.as_str()
+    }
+}
 
-    impl FromStr for RoutingNumber {
-        type Err = Error;
+// --- Sealed traits (not parts of the public API) ---
 
-        fn from_str(s: &str) -> Result<Self> {
-            Self::try_from(s.to_owned())
-        }
+impl<'a> Sanitized<'a> for RoutingNumber {
+    type Input = &'a str;
+
+    #[inline]
+    fn sanitize(input: Self::Input) -> Self {
+        let mut output = Self(String::with_capacity(input.len()));
+        filter_characters(&mut output.0, input, "-_.");
+        output
+    }
+}
+
+impl Validated for RoutingNumber {
+    #[inline]
+    fn validate(&self) -> Result<(), String> {
+        validate_length(&self.0, 6, 11)?;
+        validate_alphanumeric(&self.0, "")
+    }
+}
+
+// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
+// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+//    due to fallbacks to the empty strings,
+// 2. Nor leaks the essential part of the sensitive VALID data which has at least 6 chars.
+unsafe impl Masked for RoutingNumber {
+    const TYPE_WRAPPER: &'static str = "RoutingNumber";
+
+    #[inline]
+    fn first_chars(&self) -> String {
+        self.0.get(0..1).unwrap_or_default().to_uppercase()
+    }
+
+    #[inline]
+    fn last_chars(&self) -> String {
+        let len = self.0.len();
+        self.0.get(len - 1..len).unwrap_or_default().to_uppercase()
     }
 }

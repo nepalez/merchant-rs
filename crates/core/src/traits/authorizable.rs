@@ -2,12 +2,9 @@ use async_trait::async_trait;
 
 use crate::error::{Error, Result};
 use crate::traits::Gateway;
-use crate::types::{
-    AccountNumber, AuthorizationCode, AuthorizationId, BankName, CustomerId, MerchantReferenceId,
-    Money, PaymentSource, PaymentToken, RoutingNumber, TransactionId, TransactionStatus,
-};
+use crate::types::*;
 
-/// Core trait for initiating a payment transaction (Authorize or Sale) and subsequent void.
+/// Core trait for initiating a payment transaction (Authorize or Sale) and later void.
 /// Every standard payment gateway adapter MUST implement this trait.
 #[async_trait]
 pub trait Authorizable: Gateway {
@@ -43,8 +40,6 @@ pub struct AuthorizationRequest {
 /// Response body after an authorization attempt.
 #[derive(Debug, Clone)]
 pub struct AuthorizationResponse {
-    /// Indicates if the transaction was successful (e.g., `Authorized` or `Captured`).
-    pub is_success: bool,
     /// The unique transaction ID returned by the payment gateway.
     pub transaction_id: TransactionId,
     /// The canonical status of the transaction.
@@ -58,8 +53,8 @@ pub struct AuthorizationResponse {
 /// Request body for voiding (canceling) a pending authorization.
 #[derive(Debug, Clone)]
 pub struct VoidRequest {
-    /// ID of the authorization to void.
-    pub authorization_id: AuthorizationId,
+    /// ID of the original transaction to void.
+    pub transaction_id: TransactionId,
     /// Unique ID provided by the merchant for tracing the void operation.
     pub merchant_reference_id: MerchantReferenceId,
 }
@@ -67,8 +62,6 @@ pub struct VoidRequest {
 /// Response body after a successful or failed void operation.
 #[derive(Debug, Clone)]
 pub struct VoidResponse {
-    /// Indicates if the operation was successful.
-    pub is_success: bool,
     /// The transaction ID associated with the void operation.
     pub transaction_id: TransactionId,
     /// The canonical status (Should be Voided or Failed).
