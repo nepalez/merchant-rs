@@ -1,8 +1,9 @@
-use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
+
+use crate::error::Error;
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Optional administrative text explaining the reason for a refund
 ///
@@ -20,8 +21,8 @@ use zeroize_derive::ZeroizeOnDrop;
 ///
 /// As such, it is:
 /// * masked in logs (via `Debug` implementation) to display only the length of the content,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct ReasonForRefund(String);
 
@@ -38,12 +39,6 @@ impl fmt::Debug for ReasonForRefund {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for ReasonForRefund {
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -64,8 +59,14 @@ impl Validated for ReasonForRefund {
 }
 
 // SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
-unsafe impl Masked for ReasonForRefund {
+unsafe impl Exposed for ReasonForRefund {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "ReasonForRefund";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     fn masked_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let masked = format!("[{} chars]", self.0.chars().count());

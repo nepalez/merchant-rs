@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// User identifier from an external vault or payment system
 ///
@@ -21,8 +21,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first 4 and the last 4 characters but not leaving less than 8 characters masked.
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct CustomerId(String);
 
@@ -39,12 +39,6 @@ impl fmt::Debug for CustomerId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for CustomerId {
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -70,8 +64,14 @@ impl Validated for CustomerId {
 // (but not leaving less than 8 characters masked):
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data by itself,
 // 2. Nor leaks the essential part of the sensitive VALID data.
-unsafe impl Masked for CustomerId {
+unsafe impl Exposed for CustomerId {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "CustomerId";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

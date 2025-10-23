@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Card Verification Value (CVV/CVC/CID)
 ///
@@ -21,8 +21,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 ///
 /// As such, it is:
 /// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct CVV(String);
@@ -39,19 +39,7 @@ impl FromStr for CVV {
 impl fmt::Debug for CVV {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl<'a> HighlySecret<'a> for CVV {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -80,6 +68,12 @@ impl Validated for CVV {
 
 // SAFETY: The trait is safely implemented as it does NOT expose any part of CVV,
 // fully protecting this sensitive authentication data in all contexts.
-unsafe impl Masked for CVV {
+unsafe impl Exposed for CVV {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "CVV";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 }

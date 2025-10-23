@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Universal bank routing identifier
 ///
@@ -26,8 +26,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters (both in the upper case) only,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct RoutingNumber(String);
 
@@ -45,13 +45,6 @@ impl fmt::Debug for RoutingNumber {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for RoutingNumber {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -78,8 +71,14 @@ impl Validated for RoutingNumber {
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 6 chars.
-unsafe impl Masked for RoutingNumber {
+unsafe impl Exposed for RoutingNumber {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "RoutingNumber";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

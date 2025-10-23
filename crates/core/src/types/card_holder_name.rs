@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Cardholder name as it appears on a payment card
 ///
@@ -24,8 +24,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters (both in the upper case) only,
 ///   which prevents leaking short names,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct CardHolderName(String);
 
@@ -42,14 +42,7 @@ impl FromStr for CardHolderName {
 impl fmt::Debug for CardHolderName {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl PersonalData for CardHolderName {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -77,8 +70,15 @@ impl Validated for CardHolderName {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data
 //    due to hiding the real length of the name.
-unsafe impl Masked for CardHolderName {
+unsafe impl Exposed for CardHolderName {
+    type Output<'a> = &'a str;
+
     const TYPE_WRAPPER: &'static str = "CardHolderName";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

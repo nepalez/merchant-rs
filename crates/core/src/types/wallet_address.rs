@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Cryptocurrency wallet address
 ///
@@ -22,8 +22,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first 6 and last 6 characters only,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct WalletAddress(String);
 
@@ -39,14 +39,7 @@ impl FromStr for WalletAddress {
 impl fmt::Debug for WalletAddress {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl PersonalData for WalletAddress {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -77,8 +70,14 @@ impl Validated for WalletAddress {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 20 chars
 //    (actually addresses have 26+ chars).
-unsafe impl Masked for WalletAddress {
+unsafe impl Exposed for WalletAddress {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "WalletAddress";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

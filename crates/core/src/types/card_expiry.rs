@@ -3,10 +3,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, validated::*};
-
-const FIRST_CREDIT_CARD_YEAR: u16 = 1950;
-const MAX_SUPPORTED_YEAR: u16 = 2050;
+use crate::internal::{Exposed, validated::*};
 
 /// Card expiration date (month and year)
 ///
@@ -81,7 +78,42 @@ impl fmt::Debug for CardExpiry {
 impl Validated for CardExpiry {
     #[inline]
     fn validate(&self) -> Result<(), String> {
+        const FIRST_CREDIT_CARD_YEAR: u16 = 1950;
+        const MAX_SUPPORTED_YEAR: u16 = 2050;
+
         validate_year(&self.year, FIRST_CREDIT_CARD_YEAR, MAX_SUPPORTED_YEAR)?;
         validate_month(&self.month)
+    }
+}
+
+unsafe impl Exposed for CardExpiry {
+    type Output<'a> = ExposedCardExpiry<'a>;
+    const TYPE_WRAPPER: &'static str = "CardExpiry";
+
+    fn expose(&self) -> Self::Output<'_> {
+        Self::Output {
+            month: &self.month,
+            year: &self.year,
+        }
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
+pub(crate) struct ExposedCardExpiry<'a> {
+    pub month: &'a u8,
+    pub year: &'a u16,
+}
+
+impl Ord for ExposedCardExpiry<'_> {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        (self.year, self.month).cmp(&(other.year, other.month))
+    }
+}
+
+impl PartialOrd for ExposedCardExpiry<'_> {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }

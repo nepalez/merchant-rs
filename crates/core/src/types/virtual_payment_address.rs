@@ -3,10 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
-
-const MIN_UPI_LENGTH: usize = 7;
-const MAX_EMAIL_LENGTH: usize = 255;
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Virtual Payment Address (UPI, PIX)
 ///
@@ -26,8 +23,8 @@ const MAX_EMAIL_LENGTH: usize = 255;
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first character and either the domain part (for UPI),
 ///   or the last 3 characters (for PIX),
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct VirtualPaymentAddress(String);
 
@@ -44,13 +41,6 @@ impl fmt::Debug for VirtualPaymentAddress {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for VirtualPaymentAddress {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -72,6 +62,9 @@ impl Sanitized for VirtualPaymentAddress {
 impl Validated for VirtualPaymentAddress {
     #[inline]
     fn validate(&self) -> Result<(), String> {
+        const MIN_UPI_LENGTH: usize = 7;
+        const MAX_EMAIL_LENGTH: usize = 255;
+
         validate_length(&self.0, MIN_UPI_LENGTH, MAX_EMAIL_LENGTH)
     }
 }
@@ -91,8 +84,14 @@ impl Validated for VirtualPaymentAddress {
 // allow re-identification. Perform a Data Protection Impact Assessment (DPIA)
 // to verify that re-identification risk remains acceptably low in your context.
 // Consider full redaction if a risk assessment indicates a high re-identification risk.
-unsafe impl Masked for VirtualPaymentAddress {
+unsafe impl Exposed for VirtualPaymentAddress {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "VirtualPaymentAddress";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

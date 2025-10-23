@@ -1,4 +1,3 @@
-use crate::AccountType;
 use std::fmt::Display;
 use zeroize_derive::ZeroizeOnDrop;
 

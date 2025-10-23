@@ -1,22 +1,21 @@
-use std::fmt::Display;
-use zeroize_derive::ZeroizeOnDrop;
-
 /// Type of the bank account
 ///
 /// # Data Protection
 /// This is a public value, neither secret nor even PII.
 /// Bank account types are standardized classifiers requiring no security protection.
 ///
-/// Consequently, both `Debug` and `Display` are implemented without masking.
-#[derive(Clone, Debug, ZeroizeOnDrop)]
+/// Consequently, both `Debug` and `AsRef` are implemented without masking.
+#[derive(Clone, Copy, Debug)]
 pub enum AccountType {
     Checking,
     Savings,
 }
 
-impl Display for AccountType {
-    #[inline]
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+impl AsRef<str> for AccountType {
+    fn as_ref(&self) -> &str {
+        match self {
+            Self::Checking => "checking",
+            Self::Savings => "savings",
+        }
     }
 }

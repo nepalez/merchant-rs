@@ -1,5 +1,4 @@
 use codes_iso_3166::part_1;
-use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
@@ -20,7 +19,7 @@ use crate::internal::{sanitized::*, validated::*};
 /// Country codes are NOT considered PII in any reasonable context,
 /// as they represent broad geographic areas that cannot identify individuals.
 ///
-/// Consequently, both `Debug` and `Display` are implemented without masking.
+/// Consequently, both `Debug` and `AsRef` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
 pub struct CountryCode(String);
 
@@ -33,10 +32,10 @@ impl FromStr for CountryCode {
     }
 }
 
-impl fmt::Display for CountryCode {
+impl AsRef<str> for CountryCode {
     #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
     }
 }
 

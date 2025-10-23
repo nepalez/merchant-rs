@@ -1,6 +1,5 @@
 use crate::Error;
 use std::fmt::Debug;
-use std::str::FromStr;
 
 /// Sealed trait for types that require domain validation of their input.
 ///

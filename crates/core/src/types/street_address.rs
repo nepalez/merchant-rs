@@ -1,10 +1,9 @@
-use codes_iso_3166::part_1;
 use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Street address of a user
 ///
@@ -23,8 +22,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 ///
 /// As such, they are:
 /// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct StreetAddress(String);
 
@@ -41,13 +40,6 @@ impl fmt::Debug for StreetAddress {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for StreetAddress {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -72,6 +64,12 @@ impl Validated for StreetAddress {
 }
 
 // SAFETY: The trait is safely implemented because it does not expose any data (full masking).
-unsafe impl Masked for StreetAddress {
+unsafe impl Exposed for StreetAddress {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "StreetAddress";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 }

@@ -1,9 +1,9 @@
 use std::fmt;
 use std::str::FromStr;
-use zeroize_derive::{Zeroize, ZeroizeOnDrop};
+use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, validated::*};
+use crate::internal::{Exposed, validated::*};
 
 /// Tokenized credential from a payment processor or vault
 ///
@@ -17,8 +17,8 @@ use crate::internal::{HighlySecret, Masked, validated::*};
 ///
 /// As such, they are:
 /// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct Token(String);
 
@@ -35,17 +35,6 @@ impl fmt::Debug for Token {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl<'a> HighlySecret<'a> for Token {
-    type Exposed = &'a str;
-
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
     }
 }
 
@@ -66,6 +55,12 @@ impl Validated for Token {
 
 // SAFETY: The trait is safely implemented as it does NOT expose any part of the token,
 // fully protecting this sensitive authentication data from exposure in debug output.
-unsafe impl Masked for Token {
+unsafe impl Exposed for Token {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "Token";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 }

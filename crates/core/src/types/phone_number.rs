@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Personal phone number
 ///
@@ -22,8 +22,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the `+` sign and the last 2 digits only.
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct PhoneNumber(String);
 
@@ -39,14 +39,7 @@ impl FromStr for PhoneNumber {
 impl fmt::Debug for PhoneNumber {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl PersonalData for PhoneNumber {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -80,8 +73,14 @@ impl Validated for PhoneNumber {
 // 2. Nor leaks the sensitive VALID data (which has at least 5 digits) in total
 //    and does not expose its actual length (this could be done by the first digits
 //    which aren't exposed anyway).
-unsafe impl Masked for PhoneNumber {
+unsafe impl Exposed for PhoneNumber {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "PhoneNumber";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

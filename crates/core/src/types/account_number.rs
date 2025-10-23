@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Bank account number (for non-SEPA transfers)
 ///
@@ -24,8 +24,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 ///
 /// As such, they are:
 /// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct AccountNumber(String);
 
@@ -41,19 +41,7 @@ impl FromStr for AccountNumber {
 impl fmt::Debug for AccountNumber {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl<'a> HighlySecret<'a> for AccountNumber {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -76,7 +64,17 @@ impl Validated for AccountNumber {
     }
 }
 
-// SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
-unsafe impl Masked for AccountNumber {
+// SAFETY: The trait is safely implemented as:
+// 1. it exposes a reference to the internal String which will be zeroized on a drop;
+//    No copies are created, neither new memory is allocated;
+// 2. it masks the total value in logs.
+unsafe impl Exposed for AccountNumber {
+    type Output<'a> = &'a str;
+
     const TYPE_WRAPPER: &'static str = "AccountNumber";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 }

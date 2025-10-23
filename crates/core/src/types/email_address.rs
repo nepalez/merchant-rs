@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Email address
 ///
@@ -22,8 +22,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first character along with the domain name,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct EmailAddress(String);
 
@@ -48,14 +48,7 @@ impl FromStr for EmailAddress {
 impl fmt::Debug for EmailAddress {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl PersonalData for EmailAddress {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -102,8 +95,14 @@ impl Drop for Secret {
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the real data due to hiding the real length of the email address.
-unsafe impl Masked for EmailAddress {
+unsafe impl Exposed for EmailAddress {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "EmailAddress";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     fn masked_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let (local, domain) = self.0.split_once('@').unwrap_or_default();

@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Authorization code from a card issuer
 ///
@@ -29,8 +29,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   1 first and 1 last characters (both uppercased) only,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct AuthorizationCode(String);
 
@@ -47,12 +47,6 @@ impl fmt::Debug for AuthorizationCode {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for AuthorizationCode {
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -79,8 +73,15 @@ impl Validated for AuthorizationCode {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data
 //    due to hiding the real length of the name.
-unsafe impl Masked for AuthorizationCode {
+unsafe impl Exposed for AuthorizationCode {
+    type Output<'a> = &'a str;
+
     const TYPE_WRAPPER: &'static str = "AuthorizationCode";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

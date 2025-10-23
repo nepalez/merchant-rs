@@ -13,9 +13,11 @@
 mod authorizable;
 mod capturable;
 mod gateway;
+mod protected;
 mod refundable;
 
 pub use authorizable::*;
 pub use capturable::*;
 pub use gateway::*;
+pub use protected::*;
 pub use refundable::*;

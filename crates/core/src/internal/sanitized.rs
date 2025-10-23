@@ -1,5 +1,3 @@
-use zeroize::Zeroize;
-
 /// Sealed trait for newtypes with input sanitization and validation.
 pub(crate) trait Sanitized {
     fn sanitize(input: &str) -> Self;

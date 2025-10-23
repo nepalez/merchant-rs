@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// External transaction identifier from a payment gateway
 ///
@@ -23,8 +23,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters (both in the upper case) only,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct TransactionId(String);
 
@@ -41,18 +41,6 @@ impl fmt::Debug for TransactionId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl<'a> HighlySecret<'a> for TransactionId {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
     }
 }
 
@@ -80,7 +68,14 @@ impl Validated for TransactionId {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 8 chars,
 //    while also hiding the real length and case of the authorization ID.
-unsafe impl Masked for TransactionId {
+unsafe impl Exposed for TransactionId {
+    type Output<'a> = &'a str;
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
+
     const TYPE_WRAPPER: &'static str = "TransactionId";
 
     #[inline]

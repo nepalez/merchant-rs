@@ -1,11 +1,10 @@
 use iban::{Iban, IbanLike};
 use std::fmt;
-use std::ptr::write_volatile;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// International Bank Account Number (IBAN)
 ///
@@ -24,8 +23,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 /// As such, it is:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first 2 characters (country code) and last 4 characters only,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct IBAN(String);
@@ -45,18 +44,6 @@ impl fmt::Debug for IBAN {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl<'a> HighlySecret<'a> for IBAN {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
     }
 }
 
@@ -106,8 +93,14 @@ impl Drop for Secret {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID IBAN (which has at least 15 chars)
 //    even though the first chars can decide its actual length.
-unsafe impl Masked for IBAN {
+unsafe impl Exposed for IBAN {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "IBAN";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

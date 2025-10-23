@@ -1,10 +1,9 @@
-use std::convert::TryFrom;
 use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Primary account number (PAN) from a payment card
 ///
@@ -24,8 +23,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 ///
 /// As such, it is:
 /// * fully masked in logs (via `Debug` implementation) to prevent any leaks,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct PrimaryAccountNumber(String);
 
@@ -38,22 +37,10 @@ impl FromStr for PrimaryAccountNumber {
     }
 }
 
-impl<'a> HighlySecret<'a> for PrimaryAccountNumber {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
-    }
-}
-
 impl fmt::Debug for PrimaryAccountNumber {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -89,8 +76,14 @@ impl Validated for PrimaryAccountNumber {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 13 chars
 //    (and this is explicitly enabled by the PCI DSS requirements).
-unsafe impl Masked for PrimaryAccountNumber {
+unsafe impl Exposed for PrimaryAccountNumber {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "PrimaryAccountNumber";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn last_chars(&self) -> String {

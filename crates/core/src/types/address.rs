@@ -1,6 +1,6 @@
-use zeroize_derive::ZeroizeOnDrop;
-
+use crate::internal::Exposed;
 use crate::types::{City, CountryCode, PostalCode, RegionCode, StreetAddress};
+use zeroize_derive::ZeroizeOnDrop;
 
 /// Address of a user for authorization and post-processing
 ///
@@ -25,4 +25,30 @@ pub struct Address {
     pub postal_code: Option<PostalCode>,
     /// The country-specific code of the region (ISO 3166-2 alpha-2).
     pub region: Option<RegionCode>,
+}
+
+// --- Sealed traits (not parts of the public API) ---
+
+unsafe impl Exposed for Address {
+    type Output<'a> = ExposedAddress<'a>;
+    const TYPE_WRAPPER: &'static str = "Address";
+
+    fn expose(&self) -> Self::Output<'_> {
+        Self::Output {
+            country: self.country.as_ref(),
+            city: self.city.as_ref(),
+            line: self.line.expose(),
+            postal_code: self.postal_code.as_ref().map(Exposed::expose),
+            region: self.region.as_ref().map(AsRef::as_ref),
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) struct ExposedAddress<'a> {
+    pub country: &'a str,
+    pub city: &'a str,
+    pub line: &'a str,
+    pub postal_code: Option<&'a str>,
+    pub region: Option<&'a str>,
 }

@@ -20,7 +20,7 @@ use crate::internal::{sanitized::*, validated::*};
 /// # Data Protection
 /// This is a public value, neither secret nor even PII.
 ///
-/// Consequently, both `Debug` and `Display` are implemented without masking.
+/// Consequently, both `Debug` and `AsRef` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
 pub struct BankCode(String);
 
@@ -33,10 +33,10 @@ impl FromStr for BankCode {
     }
 }
 
-impl fmt::Display for BankCode {
+impl AsRef<str> for BankCode {
     #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+    fn as_ref(&self) -> &str {
+        self.0.as_ref()
     }
 }
 

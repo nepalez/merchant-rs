@@ -26,6 +26,7 @@ mod email_address;
 mod full_name;
 mod iban;
 mod merchant_reference_id;
+mod metadata;
 mod money;
 mod national_id;
 mod payment_source;
@@ -41,6 +42,11 @@ mod transaction_id;
 mod transaction_status;
 mod virtual_payment_address;
 mod wallet_address;
+
+pub(crate) use address::ExposedAddress;
+pub(crate) use birth_date::ExposedBirthDate;
+pub(crate) use card_expiry::ExposedCardExpiry;
+pub(crate) use payment_source::ExposedPaymentSource;
 
 pub use account_number::AccountNumber;
 pub use account_type::AccountType;
@@ -60,6 +66,7 @@ pub use full_name::FullName;
 pub use iban::IBAN;
 pub use iso_currency::Currency;
 pub use merchant_reference_id::MerchantReferenceId;
+pub use metadata::Metadata;
 pub use money::Money;
 pub use national_id::NationalId;
 pub use payment_source::PaymentSource;
@@ -76,5 +83,3 @@ pub use transaction_id::TransactionId;
 pub use transaction_status::TransactionStatus;
 pub use virtual_payment_address::VirtualPaymentAddress;
 pub use wallet_address::WalletAddress;
-
-pub type Metadata = std::collections::HashMap<String, String>;

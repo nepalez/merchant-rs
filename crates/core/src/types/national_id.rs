@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// National identification number of the user
 ///
@@ -22,8 +22,8 @@ use crate::internal::{HighlySecret, Masked, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters only,
-/// * exposed via the **unsafe** `with_exposed_secret` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct NationalId(String);
 
@@ -36,22 +36,10 @@ impl FromStr for NationalId {
     }
 }
 
-impl<'a> HighlySecret<'a> for NationalId {
-    type Exposed = &'a str;
-
-    #[inline]
-    unsafe fn with_exposed_secret<T, F>(&'a self, f: F) -> T
-    where
-        F: FnOnce(Self::Exposed) -> T,
-    {
-        f(self.0.as_str())
-    }
-}
-
 impl fmt::Debug for NationalId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -78,8 +66,14 @@ impl Validated for NationalId {
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 7 chars.
-unsafe impl Masked for NationalId {
+unsafe impl Exposed for NationalId {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "NationalId";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

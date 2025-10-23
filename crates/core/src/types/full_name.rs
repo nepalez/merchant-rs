@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Full name of a payer
 ///
@@ -24,8 +24,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters (both in the upper case) only,
 ///   which prevents leaking short names,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct FullName(String);
 
@@ -42,14 +42,7 @@ impl FromStr for FullName {
 impl fmt::Debug for FullName {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        <Self as Masked>::masked_debug(self, f)
-    }
-}
-
-impl PersonalData for FullName {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
@@ -76,8 +69,15 @@ impl Validated for FullName {
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the VALID data due to hiding the real length of the full name.
-unsafe impl Masked for FullName {
+
+unsafe impl Exposed for FullName {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "FullName";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {

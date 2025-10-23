@@ -1,5 +1,6 @@
+use crate::internal::Exposed;
 use crate::types::*;
-use std::fs::Metadata;
+use std::collections::HashMap;
 
 /// Payment source used for transaction authorization
 ///
@@ -201,5 +202,189 @@ pub enum PaymentSource {
     TokenizedPayment {
         /// Payment method token encapsulating payment details and user information
         token: Token,
+    },
+}
+
+// SAFETY: The trait is safely implemented as:
+// 1. it uses exposed versions of all inner types,
+// 2. it uses `Debug` implementations of its values, that mask sensitive data by themselves.
+unsafe impl Exposed for PaymentSource {
+    type Output<'a> = ExposedPaymentSource<'a>;
+    const TYPE_WRAPPER: &'static str = "PaymentSource";
+
+    fn expose<'a>(&'a self) -> Self::Output<'a> {
+        match self {
+            Self::BankAccount {
+                full_name,
+                account_number,
+                routing_number,
+                account_type,
+                account_holder_type,
+                metadata,
+            } => Self::Output::BankAccount {
+                full_name: full_name.expose(),
+                account_number: account_number.expose(),
+                routing_number: routing_number.expose(),
+                account_type: *account_type,
+                account_holder_type: account_holder_type.clone(),
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::BNPL {
+                billing_address,
+                email,
+                full_name,
+                customer_category,
+                date_of_birth,
+                national_id,
+                phone,
+                metadata,
+            } => Self::Output::BNPL {
+                billing_address: billing_address.expose(),
+                email: email.expose(),
+                full_name: full_name.expose(),
+                customer_category: customer_category.clone(),
+                date_of_birth: date_of_birth.as_ref().map(Exposed::expose),
+                national_id: national_id.as_ref().map(Exposed::expose),
+                phone: phone.as_ref().map(Exposed::expose),
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::CashVoucher {
+                full_name,
+                billing_address,
+                national_id,
+                metadata,
+            } => Self::Output::CashVoucher {
+                full_name: full_name.expose(),
+                billing_address: billing_address.as_ref().map(Exposed::expose),
+                national_id: national_id.as_ref().map(Exposed::expose),
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::CryptoPayment { metadata } => Self::Output::CryptoPayment {
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::DirectCarrierBilling { phone, metadata } => Self::Output::DirectCarrierBilling {
+                phone: phone.expose(),
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::InstantBankTransfer {
+                email,
+                full_name,
+                account_number,
+                bank_code,
+                billing_address,
+                customer_category,
+                national_id,
+                phone,
+                virtual_payment_address,
+                metadata,
+            } => Self::Output::InstantBankTransfer {
+                email: email.expose(),
+                full_name: full_name.expose(),
+                account_number: account_number.as_ref().map(Exposed::expose),
+                bank_code: bank_code.as_ref().map(AsRef::as_ref),
+                billing_address: billing_address.as_ref().map(Exposed::expose),
+                customer_category: customer_category.clone(),
+                national_id: national_id.as_ref().map(Exposed::expose),
+                phone: phone.as_ref().map(Exposed::expose),
+                virtual_payment_address: virtual_payment_address.as_ref().map(Exposed::expose),
+                metadata: metadata.as_ref().map(Exposed::expose),
+            },
+
+            Self::PaymentCard {
+                cvv,
+                number,
+                card_expiry,
+                holder_name,
+            } => Self::Output::PaymentCard {
+                cvv: cvv.expose(),
+                number: number.expose(),
+                card_expiry: card_expiry.as_ref().map(Exposed::expose),
+                holder_name: holder_name.as_ref().map(Exposed::expose),
+            },
+
+            Self::SEPATransfer {
+                billing_address,
+                email,
+                full_name,
+                iban,
+            } => Self::Output::SEPATransfer {
+                billing_address: billing_address.expose(),
+                email: email.expose(),
+                full_name: full_name.expose(),
+                iban: iban.expose(),
+            },
+
+            Self::TokenizedPayment { token } => Self::Output::TokenizedPayment {
+                token: token.expose(),
+            },
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) enum ExposedPaymentSource<'a> {
+    BankAccount {
+        account_number: &'a str,
+        full_name: &'a str,
+        routing_number: &'a str,
+        account_type: Option<AccountType>,
+        account_holder_type: Option<CustomerCategory>,
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    #[allow(clippy::upper_case_acronyms)]
+    BNPL {
+        billing_address: ExposedAddress<'a>,
+        email: &'a str,
+        full_name: &'a str,
+        customer_category: Option<CustomerCategory>,
+        date_of_birth: Option<ExposedBirthDate<'a>>,
+        national_id: Option<&'a str>,
+        phone: Option<&'a str>,
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    CashVoucher {
+        full_name: &'a str,
+        billing_address: Option<ExposedAddress<'a>>,
+        national_id: Option<&'a str>,
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    CryptoPayment {
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    DirectCarrierBilling {
+        phone: &'a str,
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    InstantBankTransfer {
+        email: &'a str,
+        full_name: &'a str,
+        account_number: Option<&'a str>,
+        bank_code: Option<&'a str>,
+        billing_address: Option<ExposedAddress<'a>>,
+        customer_category: Option<CustomerCategory>,
+        national_id: Option<&'a str>,
+        phone: Option<&'a str>,
+        virtual_payment_address: Option<&'a str>,
+        metadata: Option<HashMap<&'static str, &'a str>>,
+    },
+    PaymentCard {
+        cvv: &'a str,
+        number: &'a str,
+        card_expiry: Option<ExposedCardExpiry<'a>>,
+        holder_name: Option<&'a str>,
+    },
+    SEPATransfer {
+        billing_address: ExposedAddress<'a>,
+        email: &'a str,
+        full_name: &'a str,
+        iban: &'a str,
+    },
+    TokenizedPayment {
+        token: &'a str,
     },
 }

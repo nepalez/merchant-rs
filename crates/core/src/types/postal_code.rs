@@ -1,10 +1,9 @@
-use codes_iso_3166::part_1;
 use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
+use crate::internal::{Exposed, sanitized::*, validated::*};
 
 /// Postal code used in addresses
 ///
@@ -24,8 +23,8 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   up to the first 2 characters but no more than 1/3 of the code length,
-/// * exposed via the **unsafe** `as_str` method only,
-///   forcing gateway developers to acknowledge the handling of sensitive data.
+/// * not exposed publicly except for a part of a request or response
+///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct PostalCode(String);
 
@@ -42,13 +41,6 @@ impl fmt::Debug for PostalCode {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
-    }
-}
-
-impl PersonalData for PostalCode {
-    #[inline]
-    unsafe fn as_str(&self) -> &str {
-        self.0.as_str()
     }
 }
 
@@ -78,8 +70,14 @@ impl Validated for PostalCode {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the sensitive VALID data because the first part of the code
 //    points out to a broad geographical area.
-unsafe impl Masked for PostalCode {
+unsafe impl Exposed for PostalCode {
+    type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "PostalCode";
+
+    #[inline]
+    fn expose(&self) -> Self::Output<'_> {
+        self.0.as_str()
+    }
 
     #[inline]
     fn first_chars(&self) -> String {
