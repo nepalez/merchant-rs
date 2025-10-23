@@ -57,11 +57,9 @@ impl fmt::Debug for NationalId {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for NationalId {
-    type Input = &'a str;
-
+impl Sanitized for NationalId {
     #[inline]
-    fn sanitize(input: Self::Input) -> Self {
+    fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
         filter_characters(&mut output.0, input, "'.-_");
         output

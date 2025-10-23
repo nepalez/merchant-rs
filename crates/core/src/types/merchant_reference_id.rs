@@ -32,11 +32,9 @@ impl FromStr for MerchantReferenceId {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for MerchantReferenceId {
-    type Input = &'a str;
-
+impl Sanitized for MerchantReferenceId {
     #[inline]
-    fn sanitize(input: Self::Input) -> Self {
+    fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
         trim_whitespaces(&mut output.0, input);
         output

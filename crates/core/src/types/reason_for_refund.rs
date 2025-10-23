@@ -49,10 +49,8 @@ impl PersonalData for ReasonForRefund {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for ReasonForRefund {
-    type Input = &'a str;
-
-    fn sanitize(input: Self::Input) -> Self {
+impl Sanitized for ReasonForRefund {
+    fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
         trim_whitespaces(&mut output.0, input);
         output

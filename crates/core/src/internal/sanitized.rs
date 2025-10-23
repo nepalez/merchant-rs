@@ -1,10 +1,8 @@
 use zeroize::Zeroize;
 
 /// Sealed trait for newtypes with input sanitization and validation.
-pub(crate) trait Sanitized<'a> {
-    type Input: Sized;
-
-    fn sanitize(input: Self::Input) -> Self;
+pub(crate) trait Sanitized {
+    fn sanitize(input: &str) -> Self;
 }
 
 pub(crate) fn filter_characters(output: &mut String, input: &str, filter: &'static str) {

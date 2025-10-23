@@ -40,11 +40,9 @@ impl fmt::Display for City {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<'a> Sanitized<'a> for City {
-    type Input = &'a str;
-
+impl Sanitized for City {
     #[inline]
-    fn sanitize(input: Self::Input) -> Self {
+    fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
         trim_whitespaces(&mut output.0, input);
         output
