@@ -197,7 +197,7 @@ pub enum PaymentSource {
     /// **Examples:** Stored cards, Apple Pay, Google Pay, Alipay, WeChat Pay, network tokens,
     /// Paysafecard (direct entry), Neosurf, Flexepin, CASHlib, AstroPay
     ///
-    /// See [vault.md](payment_source/vault.md) for detailed documentation.
+    /// See [tokenized_payment.md](payment_source/tokenized_payment.md) for detailed documentation.
     TokenizedPayment {
         /// Payment method token encapsulating payment details and user information
         token: Token,
