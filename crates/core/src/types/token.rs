@@ -64,7 +64,8 @@ impl Validated for Token {
     }
 }
 
-// SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
+// SAFETY: The trait is safely implemented as it does NOT expose any part of the token,
+// fully protecting this sensitive authentication data from exposure in debug output.
 unsafe impl Masked for Token {
     const TYPE_WRAPPER: &'static str = "Token";
 }

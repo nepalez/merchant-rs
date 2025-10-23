@@ -13,7 +13,7 @@ use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 3-10 characters,
+/// * length: 3-200 characters,
 /// * only alphanumeric characters, spaces and dashes are allowed
 ///
 /// # Data Protection
@@ -68,7 +68,7 @@ impl Validated for StreetAddress {
     // We don't care about zeroization of the temporary data, that is not PII.
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 3, 10)?;
+        validate_length(&self.0, 3, 200)?;
         validate_alphanumeric(&self.0, "- ")
     }
 }

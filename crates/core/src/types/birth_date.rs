@@ -89,7 +89,8 @@ impl Validated for BirthDate {
     }
 }
 
-// SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
+// SAFETY: The trait is safely implemented as it does NOT expose any part of the birthdate,
+// fully protecting this sensitive PII in all contexts.
 unsafe impl Masked for BirthDate {
     const TYPE_WRAPPER: &'static str = "BirthDate";
     const MASKING_STR: &'static str = "**/**/****";

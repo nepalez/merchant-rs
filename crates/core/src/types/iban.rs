@@ -77,7 +77,6 @@ impl Validated for IBAN {
     // TODO: strictly speaking, a zeroization of the resulting Iban is not enough
     //       because the `iban_validate` crate leaks some intermediate strings
     //       under the hood of its data validations.
-    #[inline]
     fn validate(&self) -> Result<(), String> {
         let secret = Iban::from_str(&self.0)
             .map(Secret)

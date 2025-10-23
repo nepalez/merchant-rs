@@ -81,7 +81,7 @@ impl Validated for NationalId {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 7 chars.
 unsafe impl Masked for NationalId {
-    const TYPE_WRAPPER: &'static str = "CardHolderName";
+    const TYPE_WRAPPER: &'static str = "NationalId";
 
     #[inline]
     fn first_chars(&self) -> String {

@@ -5,8 +5,6 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{Masked, PersonalData, sanitized::*, validated::*};
 
-const DEBUG_MASK: &str = "***";
-
 /// User identifier from an external vault or payment system
 ///
 /// # Sanitization

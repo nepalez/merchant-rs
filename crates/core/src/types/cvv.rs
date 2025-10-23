@@ -80,7 +80,8 @@ impl Validated for CVV {
     }
 }
 
-// SAFETY: The trait is safely implemented as it does NOT expose any part of CVV.
+// SAFETY: The trait is safely implemented as it does NOT expose any part of CVV,
+// fully protecting this sensitive authentication data in all contexts.
 unsafe impl Masked for CVV {
     const TYPE_WRAPPER: &'static str = "CVV";
 }

@@ -83,7 +83,7 @@ impl Validated for TransactionId {
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 8 chars,
 //    while also hiding the real length and case of the authorization ID.
 unsafe impl Masked for TransactionId {
-    const TYPE_WRAPPER: &'static str = "AuthorizationId";
+    const TYPE_WRAPPER: &'static str = "TransactionId";
 
     #[inline]
     fn first_chars(&self) -> String {

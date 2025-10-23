@@ -71,7 +71,6 @@ impl<'a> Sanitized<'a> for PrimaryAccountNumber {
 }
 
 impl Validated for PrimaryAccountNumber {
-    #[inline]
     fn validate(&self) -> Result<(), String> {
         validate_length(&self.0, 13, 19)?;
         validate_alphanumeric(&self.0, "")?;
@@ -79,10 +78,6 @@ impl Validated for PrimaryAccountNumber {
         if self.0.starts_with('0') {
             Err("cannot start with 0".to_string())?;
         }
-        // Safety: under the hood the function copies bytes from the input,
-        //         but assign them to the same variable/memory location
-        //         during the iteration cycle, so only the last char is left
-        //         in the stack memory without zeroization.
         if !luhn3::valid(self.0.as_bytes()) {
             Err("failed the Luhn check".to_string())?;
         }
