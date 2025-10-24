@@ -11,7 +11,7 @@ where
     Self: Authorizable,
     Self: Gateway<RefundsCapability = RefundsSupported>,
 {
-    async fn refund(&self, request: RefundRequest) -> Result<RefundResponse>;
+    async fn refund(&self, request: Request) -> Result<Response>;
 }
 
 /// Indicates that the adapter does not support refunding transactions.
@@ -19,10 +19,9 @@ where
 pub struct RefundsSupported;
 impl RefundsCapability for RefundsSupported {}
 
-/// TODO: Should be guarded by a feature flag (e.g., "standard-transactions").
 /// Request body for initiating a refund.
 #[derive(Debug, Clone)]
-pub struct RefundRequest {
+pub struct Request {
     /// ID of the transaction to be refunded (usually a Capture ID).
     pub transaction_id: TransactionId,
     /// The exact amount to refund.
@@ -33,10 +32,9 @@ pub struct RefundRequest {
     pub merchant_reference_id: MerchantReferenceId,
 }
 
-/// TODO: Should be guarded by a feature flag (e.g., "standard-transactions").
 /// Response body after a successful or failed refund.
 #[derive(Debug, Clone)]
-pub struct RefundResponse {
+pub struct Response {
     /// The unique ID returned by the gateway for the refund record.
     pub transaction_id: TransactionId,
     /// The canonical status (Should be Refunded or Failed).

@@ -1,6 +1,6 @@
 use crate::internal::Exposed;
 
-pub trait Sensitive
+pub trait Protected
 where
     Self: Exposed,
 {

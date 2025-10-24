@@ -6,7 +6,7 @@ use crate::types::*;
 
 /// Optional trait for payment gateways that support completing a two-step flow.
 ///
-/// An adapter must implement this ONLY if it supports the two-step Auth -> Capture model.
+/// An adapter should implement this ONLY if it supports the two-step Auth -> Capture model.
 /// Gateways that only support Sale/Purchase should NOT implement this trait.
 #[async_trait]
 pub trait Capturable
@@ -15,7 +15,7 @@ where
     Self: Gateway<TransactionFlow = TwoStepFlow>,
 {
     /// Confirms and debits the previously authorized funds.
-    async fn capture(&self, request: CaptureRequest) -> Result<CaptureResponse>;
+    async fn capture(&self, request: Request) -> Result<Response>;
 }
 
 /// Transaction Style: Two-step flow (Authorize + subsequent Capture).
@@ -25,7 +25,7 @@ impl TransactionFlow for TwoStepFlow {}
 
 /// Request body for capturing a previously authorized payment.
 #[derive(Debug, Clone)]
-pub struct CaptureRequest {
+pub struct Request {
     /// ID of the original authorization transaction returned by the gateway.
     pub transaction_id: TransactionId,
     /// The exact amount to capture. Must be less than or equal to the authorized amount.
@@ -36,7 +36,7 @@ pub struct CaptureRequest {
 
 /// Response body after a successful or failed capture.
 #[derive(Debug, Clone)]
-pub struct CaptureResponse {
+pub struct Response {
     /// The new transaction ID for the capture operation.
     pub transaction_id: TransactionId,
     /// The canonical status (Should be Captured or Failed).

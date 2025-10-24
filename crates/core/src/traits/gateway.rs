@@ -5,6 +5,9 @@ pub trait Gateway {
     /// Associated type defining the fundamental transaction flow style of the adapter.
     type TransactionFlow: TransactionFlow;
 
+    /// Associated type defining the adapter's support for transaction cancellation.
+    type CancellationCapability: CancellationCapability;
+
     /// Associated type defining the adapter's support for transaction refunds.
     type RefundsCapability: RefundsCapability;
 
@@ -23,6 +26,15 @@ pub(super) trait TransactionFlow {}
 /// that only support immediate sale flows (e.g., Adyen).
 pub struct OneStepFlow;
 impl TransactionFlow for OneStepFlow {}
+
+/// The private seal trait for the associated type `Gateway::CancellationCapability`.
+pub(super) trait CancellationCapability {}
+
+/// Indicates that the adapter does not support cancelling transactions.
+/// This style is applicable to gateways
+/// that do not allow programmatic cancellation (e.g., some crypto payment processors).
+pub struct CancellationDisabled;
+impl CancellationCapability for CancellationDisabled {}
 
 /// The private seal trait for the associated type `Gateway::RefundsCapability`.
 pub(super) trait RefundsCapability {}

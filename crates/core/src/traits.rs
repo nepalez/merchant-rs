@@ -10,14 +10,16 @@
 //! being forced to implement methods they do not support (e.g., a one-step payment
 //! adapter does not need to implement the optional `Capturable` trait).
 
-mod authorizable;
-mod capturable;
 mod gateway;
 mod protected;
-mod refundable;
 
-pub use authorizable::*;
-pub use capturable::*;
+pub mod authorizable;
+pub mod cancellable;
+pub mod capturable;
+pub mod refundable;
+
+pub use authorizable::Authorizable;
+pub use capturable::Capturable;
 pub use gateway::*;
-pub use protected::*;
-pub use refundable::*;
+pub use protected::Protected;
+pub use refundable::Refundable;
