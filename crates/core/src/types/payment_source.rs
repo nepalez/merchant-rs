@@ -1,3 +1,5 @@
+mod bank_account;
+
 use crate::internal::Exposed;
 use crate::types::*;
 use std::collections::HashMap;
@@ -203,6 +205,26 @@ pub enum PaymentSource {
         /// Payment method token encapsulating payment details and user information
         token: Token,
     },
+}
+
+#[allow(private_interfaces)]
+impl PaymentSource {
+    /// Securely build the Bank Account payment source
+    /// using the chainable builder pattern:
+    ///
+    /// ```skip
+    /// let source = PaymentSource::bank_account()
+    ///     .account_number("1234567890")?
+    ///     .full_name("JOE DOE")?
+    ///     .routing_number("884 298 873")?
+    ///     .account_type(AccountType::Savings)?
+    ///     .account_holder_type(CustomerCategory::Individual)?
+    ///     .metadata("phone", "+893797323")?
+    ///     .build()?
+    /// ```
+    pub fn bank_account() -> bank_account::Builder {
+        bank_account::Builder::default()
+    }
 }
 
 // SAFETY: The trait is safely implemented as:

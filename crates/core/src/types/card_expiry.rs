@@ -5,7 +5,15 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::error::Error;
 use crate::internal::{Exposed, validated::*};
 
-/// Card expiration date (month and year)
+/// Card expiration (month and year).
+///
+/// Use a builder pattern to safely create the CardExpiry structure.
+/// ```skip
+/// let card_expiry = CardExpiry::builder()
+///     .month(10)?
+///     .year(2028)?
+///     .build()?;
+/// ```
 ///
 /// # Validation
 /// * month: 1-12,
@@ -25,18 +33,10 @@ pub struct CardExpiry {
 }
 
 impl CardExpiry {
-    /// Constructs a new CardExpiry instance, performing strict domain validation.
-    ///
-    /// The input must provide the month (1-12) and the full 4-digit year.
-    /// This method enforces structural validity (range checks) but does not check
-    /// for expiration against the current time.
+    /// Start the builder chain to safely create the CardExpiry structure.
     #[inline]
-    pub fn new(month: &u8, year: &u16) -> Result<Self, Error> {
-        Self {
-            month: *month,
-            year: *year,
-        }
-        .validated()
+    pub fn builder() -> Builder {
+        Builder::default()
     }
 
     /// Returns the expiration month (1-12).
@@ -115,5 +115,38 @@ impl PartialOrd for ExposedCardExpiry<'_> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+// --- Additional types ---
+
+#[derive(Default, ZeroizeOnDrop)]
+pub struct Builder {
+    month: Option<u8>,
+    year: Option<u16>,
+}
+
+impl Builder {
+    #[inline]
+    pub fn month(mut self, input: u8) -> Result<Self, Error> {
+        self.month = Some(input);
+        Ok(self)
+    }
+
+    #[inline]
+    pub fn year(mut self, input: u16) -> Result<Self, Error> {
+        self.year = Some(input);
+        Ok(self)
+    }
+
+    #[inline]
+    pub fn build(self) -> Result<CardExpiry, Error> {
+        let Some(month) = self.month else {
+            Err(Error::validation_failed("month is missed".to_string()))?
+        };
+        let Some(year) = self.year else {
+            Err(Error::validation_failed("year is missed".to_string()))?
+        };
+        CardExpiry { month, year }.validated()
     }
 }

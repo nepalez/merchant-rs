@@ -7,6 +7,18 @@ use crate::internal::{Exposed, validated::*};
 
 /// Birthdate of a payer
 ///
+/// Use a builder pattern to safely create the BirthDate structure.
+/// Notice that all fields take references to values to prevent
+/// unsafe
+///
+/// ```skip
+/// let birth_date = BirthDate::builder()
+///     .year(1980)?
+///     .month(1)?
+///     .day(13)?
+///     .build()?;
+/// ```
+///
 /// # Validation
 /// * year: 1909-2050,
 /// * month: valid 1-12,
@@ -30,13 +42,8 @@ pub struct BirthDate {
 
 impl BirthDate {
     #[inline]
-    pub fn new(year: &u16, month: &u8, day: &u8) -> Result<Self, Error> {
-        Self {
-            year: *year,
-            month: *month,
-            day: *day,
-        }
-        .validated()
+    pub fn builder() -> Builder {
+        Builder::default()
     }
 }
 
@@ -74,14 +81,14 @@ impl Validated for BirthDate {
     }
 }
 
-// SAFETY: The trait is safely implemented as it does NOT expose any part of the birthdate,
-// fully protecting this sensitive PII in all contexts.
+// SAFETY: The trait is safely implemented because it totally masks sensitive data.
 unsafe impl Exposed for BirthDate {
     type Output<'a> = ExposedBirthDate<'a>;
 
     const TYPE_WRAPPER: &'static str = "BirthDate";
     const MASKING_STR: &'static str = "**/**/****";
 
+    #[inline]
     fn expose(&self) -> Self::Output<'_> {
         Self::Output {
             day: &self.day,
@@ -91,8 +98,10 @@ unsafe impl Exposed for BirthDate {
     }
 }
 
+// --- Additional types ---
+
 #[derive(Clone, Eq, PartialEq)]
-pub(crate) struct ExposedBirthDate<'a> {
+pub struct ExposedBirthDate<'a> {
     pub day: &'a u8,
     pub month: &'a u8,
     pub year: &'a u16,
@@ -109,5 +118,45 @@ impl PartialOrd for ExposedBirthDate<'_> {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+#[derive(Default, ZeroizeOnDrop)]
+pub struct Builder {
+    day: Option<u8>,
+    month: Option<u8>,
+    year: Option<u16>,
+}
+
+impl Builder {
+    #[inline]
+    pub fn day(mut self, input: u8) -> Result<Self, Error> {
+        self.day = Some(input);
+        Ok(self)
+    }
+
+    #[inline]
+    pub fn month(mut self, input: u8) -> Result<Self, Error> {
+        self.month = Some(input);
+        Ok(self)
+    }
+
+    #[inline]
+    pub fn year(mut self, input: u16) -> Result<Self, Error> {
+        self.year = Some(input);
+        Ok(self)
+    }
+
+    pub fn build(self) -> Result<BirthDate, Error> {
+        let Some(day) = self.day else {
+            Err(Error::validation_failed("day is missed".to_string()))?
+        };
+        let Some(month) = self.month else {
+            Err(Error::validation_failed("month is missed".to_string()))?
+        };
+        let Some(year) = self.year else {
+            Err(Error::validation_failed("year is missed".to_string()))?
+        };
+        BirthDate { day, month, year }.validated()
     }
 }

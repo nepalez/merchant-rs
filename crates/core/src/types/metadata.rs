@@ -25,11 +25,7 @@ use crate::internal::Exposed;
 pub struct Metadata(HashMap<&'static str, Value>);
 
 impl Metadata {
-    fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    fn insert(&mut self, key: &'static str, value: &str) -> Result<(), Error> {
+    pub fn insert(&mut self, key: &'static str, value: &str) -> Result<(), Error> {
         self.0.insert(key, Value::from_str(value)?);
         Ok(())
     }
@@ -60,12 +56,14 @@ pub struct Value(String);
 impl FromStr for Value {
     type Err = Error;
 
+    #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.to_string()))
     }
 }
 
 impl fmt::Debug for Value {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
     }
@@ -74,15 +72,17 @@ impl fmt::Debug for Value {
 // SAFETY: The trait is safely implemented as:
 // 1. it exposes a reference to the internal String which will be zeroized on a drop;
 //    No copies are created, neither new memory is allocated;
-// 2. it masks a value in logs without exposing any its part.
+// 2. it masks a value in logs without exposing any part.
 unsafe impl Exposed for Value {
     type Output<'a> = &'a str;
     const TYPE_WRAPPER: &'static str = "Value";
 
+    #[inline]
     fn expose(&self) -> Self::Output<'_> {
         self.0.as_str()
     }
 
+    #[inline]
     fn masked_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "***")
     }
