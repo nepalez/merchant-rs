@@ -1,5 +1,4 @@
 use std::fmt;
-use zeroize::ZeroizeOnDrop;
 
 /// The sealed trait is used to protect sensitive data (PII or SAD)
 /// by masking them in debug output and exposing them as references.
@@ -17,6 +16,7 @@ use zeroize::ZeroizeOnDrop;
 /// 3. Neither `first_chars` nor `last_chars` leak the essential part
 ///    of the sensitive VALID data and violate the applicable standards
 ///    (e.g., PCI DSS) or policies.
+#[deny(private_bounds)]
 pub(crate) unsafe trait Exposed: Sized {
     /// The inner type to be exposed
     type Output<'a>
@@ -30,6 +30,7 @@ pub(crate) unsafe trait Exposed: Sized {
     const MASKING_STR: &'static str = "***";
 
     /// Unsafely expose the stored value
+    #[allow(dead_code)]
     fn expose(&self) -> Self::Output<'_>;
 
     /// Safely exposes the first chars of the stored value

@@ -30,8 +30,6 @@ use crate::types::insecure;
 #[allow(clippy::upper_case_acronyms)]
 pub struct IBAN(String);
 
-const IBAN_CAPACITY: usize = 34;
-
 impl FromStr for IBAN {
     type Err = Error;
 

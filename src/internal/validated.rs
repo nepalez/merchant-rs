@@ -67,16 +67,6 @@ pub(crate) fn validate_digits(input: &str, extra: &str) -> Result<(), String> {
 }
 
 #[inline]
-pub(crate) fn validate_whitelist(input: &str, allowed: &str) -> Result<(), String> {
-    for c in input.chars() {
-        if !allowed.contains(c) {
-            return Err(format!("contains invalid character `{c}`"));
-        }
-    }
-    Ok(())
-}
-
-#[inline]
 pub(crate) fn validate_month(input: &u8) -> Result<(), String> {
     if !(1..=12).contains(input) {
         Err("month is out of range (1-12)".to_string())

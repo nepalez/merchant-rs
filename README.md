@@ -1,9 +1,9 @@
-# merchant-rs-core
+# merchant-rs
 
-The Async, Type-Safe Payment Abstraction Core for Rust.
+The Async, Type-Safe Payment Abstraction for Rust.
 
-This is the minimal, foundational crate for the `merchant-rs` ecosystem.
-Its sole purpose is to define the contracts (traits), data structures, and error handling necessary for building a reliable, unified payment API in Rust.
+This is a foundational library for building reliable, unified payment APIs in Rust.
+Its purpose is to define the contracts (traits), data structures, and error handling necessary for payment processing across diverse gateways and payment methods.
 
 This crate contains zero network logic, ensuring it is lightweight and highly focused on type safety and architectural consistency. All gateway-specific implementations (e.g., `Stripe`, `NomuPay`) are handled by separate, optional adapter crates.
 
@@ -16,6 +16,8 @@ This crate contains zero network logic, ensuring it is lightweight and highly fo
 **Financial Precision**: Strictly enforces type safety (uses the `currencies` crate under the hood) for all currency amounts, eliminating floating-point errors.
 
 **Structured Errors**: Provides a unified `Error` type, allowing downstream applications to handle errors from any provider consistently.
+
+**Data Security**: Implements graduated protection for sensitive data (PCI DSS compliant). All sensitive types (PAN, CVV, account numbers) are wrapped in secure newtypes with memory zeroization on drop and masked debug output. Sealed traits prevent accidental exposure while maintaining compile-time safety guarantees.
 
 ## Core Contracts (Traits)
 These #[async_trait] definitions form the mandatory contract for all payment adapters:
@@ -41,9 +43,9 @@ This crate defines the essential structures used for communication across the en
 This demonstrates how a downstream application uses the core contracts to remain gateway-agnostic:
 
 ```rust
-use merchant_rs_core::traits::PaymentGateway;
-use merchant_rs_core::types::{PurchaseRequest, TransactionResponse};
-use merchant_rs_core::errors::Error;
+use merchant_rs::traits::PaymentGateway;
+use merchant_rs::types::{PurchaseRequest, TransactionResponse};
+use merchant_rs::errors::Error;
 use std::sync::Arc;
 
 // In a typical web service, you would inject the specific implementation
@@ -60,8 +62,7 @@ async fn execute_transaction(
 ```
 
 ### Related Crates
-To gain full "Batteries Included" functionality, you must combine this core with an adapter crate:
+To gain full "Batteries Included" functionality, you must combine this crate with an adapter crate:
 
-`merchant-rs-{adapter}`: (Optional feature) Contains concrete implementations for Stripe, NomuPay, etc.
-`merchant-rs-security`: (Optional feature) Contains 3DS and webhook validation logic.
+`merchant-rs-{adapter}`: (Optional) Contains concrete implementations for Stripe, NomuPay, etc.
 `merchant-rs-testing`: Provides the essential MockGateway for unit testing your business logic.

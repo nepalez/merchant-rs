@@ -1,9 +1,6 @@
-use crate::internal::Exposed;
+pub trait Protected {
+    type Exposed<'a>: 'a + Sized;
 
-pub trait Protected
-where
-    Self: Exposed,
-{
     /// Exposes the sensitive data as references to zeroized values.
     ///
     /// It enforces the use of a closure to control the lifetime
@@ -24,8 +21,5 @@ where
     ///    the allocated memory is dropped after use.
     unsafe fn expose_secrets<'a, T, F>(&'a self, f: F) -> T
     where
-        F: FnOnce(<Self as Exposed>::Output<'a>) -> T,
-    {
-        f(self.expose())
-    }
+        F: FnOnce(Self::Exposed<'a>) -> T;
 }

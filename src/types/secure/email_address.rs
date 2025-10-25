@@ -28,15 +28,6 @@ use crate::types::insecure;
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct EmailAddress(String);
 
-impl EmailAddress {
-    /// Creates a new instance without validation or sanitization.
-    /// SAFETY: ensure the validation is made before calling this method.
-    #[inline]
-    unsafe fn new(input: String) -> Self {
-        Self(input)
-    }
-}
-
 impl FromStr for EmailAddress {
     type Err = Error;
 
