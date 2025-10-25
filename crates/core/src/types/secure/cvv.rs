@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Card Verification Value (CVV/CVC/CID)
 ///
@@ -69,7 +70,7 @@ impl Validated for CVV {
 // SAFETY: The trait is safely implemented as it does NOT expose any part of CVV,
 // fully protecting this sensitive authentication data in all contexts.
 unsafe impl Exposed for CVV {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::CVV<'a>;
     const TYPE_WRAPPER: &'static str = "CVV";
 
     #[inline]

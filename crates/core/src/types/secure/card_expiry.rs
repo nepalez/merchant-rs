@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, validated::*};
+use crate::types::insecure;
 
 /// Card expiration (month and year).
 ///
@@ -32,23 +33,15 @@ pub struct CardExpiry {
     year: u16,
 }
 
-impl CardExpiry {
-    /// Start the builder chain to safely create the CardExpiry structure.
-    #[inline]
-    pub fn builder() -> Builder {
-        Builder::default()
-    }
+impl TryFrom<insecure::CardExpiry> for CardExpiry {
+    type Error = Error;
 
-    /// Returns the expiration month (1-12).
-    #[inline]
-    pub fn month(&self) -> u8 {
-        self.month
-    }
-
-    /// Returns the expiration year (1970-2050).
-    #[inline]
-    pub fn year(&self) -> u16 {
-        self.year
+    fn try_from(value: insecure::CardExpiry) -> Result<Self, Self::Error> {
+        Self {
+            month: value.month,
+            year: value.year,
+        }
+        .validated()
     }
 }
 
@@ -86,67 +79,17 @@ impl Validated for CardExpiry {
     }
 }
 
+// SAFETY: The trait is safe to implement because:
+// 1. Its output is a zeroized structure;
+// 2. It does not expose any part of its data via `first_chars` or `last_chars`.
 unsafe impl Exposed for CardExpiry {
-    type Output<'a> = ExposedCardExpiry<'a>;
+    type Output<'a> = insecure::CardExpiry;
     const TYPE_WRAPPER: &'static str = "CardExpiry";
 
     fn expose(&self) -> Self::Output<'_> {
         Self::Output {
-            month: &self.month,
-            year: &self.year,
+            month: self.month,
+            year: self.year,
         }
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
-pub(crate) struct ExposedCardExpiry<'a> {
-    pub month: &'a u8,
-    pub year: &'a u16,
-}
-
-impl Ord for ExposedCardExpiry<'_> {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        (self.year, self.month).cmp(&(other.year, other.month))
-    }
-}
-
-impl PartialOrd for ExposedCardExpiry<'_> {
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-// --- Additional types ---
-
-#[derive(Default, ZeroizeOnDrop)]
-pub struct Builder {
-    month: Option<u8>,
-    year: Option<u16>,
-}
-
-impl Builder {
-    #[inline]
-    pub fn month(mut self, input: u8) -> Result<Self, Error> {
-        self.month = Some(input);
-        Ok(self)
-    }
-
-    #[inline]
-    pub fn year(mut self, input: u16) -> Result<Self, Error> {
-        self.year = Some(input);
-        Ok(self)
-    }
-
-    #[inline]
-    pub fn build(self) -> Result<CardExpiry, Error> {
-        let Some(month) = self.month else {
-            Err(Error::validation_failed("month is missed".to_string()))?
-        };
-        let Some(year) = self.year else {
-            Err(Error::validation_failed("year is missed".to_string()))?
-        };
-        CardExpiry { month, year }.validated()
     }
 }

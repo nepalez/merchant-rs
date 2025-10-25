@@ -3,45 +3,36 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{sanitized::*, validated::*};
+use crate::types::insecure;
 
-/// Region code (state, province, etc.) in addresses
+/// Merchant's internal reference identifier for a transaction
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 1-3 characters,
-/// * case-insensitive (converted to uppercase)
+/// * length: 1-255 characters
 ///
 /// # Data Protection
-/// Region codes are NOT considered PII in any reasonable context,
-/// as they represent broad geographic areas that cannot identify individuals.
+/// This identifier is specifically designed for public usage and does not contain sensitive information.
 ///
-/// Consequently, both `Debug` and `AsRef` are implemented without masking.
+/// Consequently, both `Debug` and `Display` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
-pub struct RegionCode(String);
+pub struct MerchantReferenceId(String);
 
-impl FromStr for RegionCode {
+impl FromStr for MerchantReferenceId {
     type Err = Error;
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let original = Self::sanitize(input).validated()?;
-        Ok(Self(original.0.to_uppercase()))
-    }
-}
-
-impl AsRef<str> for RegionCode {
-    #[inline]
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
+        Self::sanitize(input).validated()
     }
 }
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for RegionCode {
+impl Sanitized for MerchantReferenceId {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
@@ -50,9 +41,9 @@ impl Sanitized for RegionCode {
     }
 }
 
-impl Validated for RegionCode {
+impl Validated for MerchantReferenceId {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 3)
+        validate_length(&self.0, 1, 255)
     }
 }

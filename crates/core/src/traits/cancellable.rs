@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
 use crate::traits::{Authorizable, CancellationCapability, Gateway};
-use crate::{Error, MerchantReferenceId, TransactionId, TransactionStatus};
+use crate::types::secure::{MerchantReferenceId, TransactionId};
+use crate::{Error, TransactionStatus};
 
 /// The trait to support voiding (cancelling) a pending authorization.
 ///

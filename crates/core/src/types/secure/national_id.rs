@@ -4,30 +4,31 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
-/// Cryptocurrency wallet address
+/// National identification number of the user
 ///
 /// # Sanitization
-/// * trims whitespaces,
+/// * removes common separators: spaces, dashes, dots, underscores, and apostrophes,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 20-90 characters
+/// * length: 7-18 characters,
+/// * only alphanumeric characters are allowed
 ///
 /// # Data Protection
-/// While wallet addresses are publicly accessible on blockchains,
-/// they can be used to identify persons and track transaction history,
-/// making them PII (Personal Identifiable Information).
+/// National IDs can precisely identify individuals and enable identity theft or fraud,
+/// making them highly sensitive PII (Personal Identifiable Information).
 ///
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
-///   the first 6 and last 6 characters only,
+///   the first and last characters only,
 /// * not exposed publicly except for a part of a request or response
 ///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
-pub struct WalletAddress(String);
+pub struct NationalId(String);
 
-impl FromStr for WalletAddress {
+impl FromStr for NationalId {
     type Err = Error;
 
     #[inline]
@@ -36,7 +37,7 @@ impl FromStr for WalletAddress {
     }
 }
 
-impl fmt::Debug for WalletAddress {
+impl fmt::Debug for NationalId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         <Self as Exposed>::masked_debug(self, f)
@@ -45,34 +46,30 @@ impl fmt::Debug for WalletAddress {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for WalletAddress {
+impl Sanitized for NationalId {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
-        for c in input.trim().chars() {
-            if !c.is_ascii_control() {
-                output.0.push(c);
-            }
-        }
+        filter_characters(&mut output.0, input, "'.-_");
         output
     }
 }
 
-impl Validated for WalletAddress {
+impl Validated for NationalId {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 20, 90)
+        validate_length(&self.0, 7, 18)?;
+        validate_alphanumeric(&self.0, "")
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 6 and last 6 characters:
+// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data which has at least 20 chars
-//    (actually addresses have 26+ chars).
-unsafe impl Exposed for WalletAddress {
-    type Output<'a> = &'a str;
-    const TYPE_WRAPPER: &'static str = "WalletAddress";
+// 2. Nor leaks the essential part of the sensitive VALID data which has at least 7 chars.
+unsafe impl Exposed for NationalId {
+    type Output<'a> = insecure::NationalId<'a>;
+    const TYPE_WRAPPER: &'static str = "NationalId";
 
     #[inline]
     fn expose(&self) -> Self::Output<'_> {
@@ -81,14 +78,12 @@ unsafe impl Exposed for WalletAddress {
 
     #[inline]
     fn first_chars(&self) -> String {
-        self.0.get(0..6).unwrap_or_default().to_string()
+        self.0.get(0..1).unwrap_or_default().to_string()
     }
 
     #[inline]
     fn last_chars(&self) -> String {
-        self.0
-            .get(self.0.len() - 6..)
-            .unwrap_or_default()
-            .to_string()
+        let len = self.0.len();
+        self.0.get(len - 1..len).unwrap_or_default().to_string()
     }
 }

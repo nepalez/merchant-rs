@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Virtual Payment Address (UPI, PIX)
 ///
@@ -85,7 +86,7 @@ impl Validated for VirtualPaymentAddress {
 // to verify that re-identification risk remains acceptably low in your context.
 // Consider full redaction if a risk assessment indicates a high re-identification risk.
 unsafe impl Exposed for VirtualPaymentAddress {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::VirtualPaymentAddress<'a>;
     const TYPE_WRAPPER: &'static str = "VirtualPaymentAddress";
 
     #[inline]

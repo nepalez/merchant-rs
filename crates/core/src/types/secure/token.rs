@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, validated::*};
+use crate::types::insecure;
 
 /// Tokenized credential from a payment processor or vault
 ///
@@ -56,7 +57,7 @@ impl Validated for Token {
 // SAFETY: The trait is safely implemented as it does NOT expose any part of the token,
 // fully protecting this sensitive authentication data from exposure in debug output.
 unsafe impl Exposed for Token {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::Token<'a>;
     const TYPE_WRAPPER: &'static str = "Token";
 
     #[inline]

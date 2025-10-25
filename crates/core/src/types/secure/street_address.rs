@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Street address of a user
 ///
@@ -65,7 +66,7 @@ impl Validated for StreetAddress {
 
 // SAFETY: The trait is safely implemented because it does not expose any data (full masking).
 unsafe impl Exposed for StreetAddress {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::StreetAddress<'a>;
     const TYPE_WRAPPER: &'static str = "StreetAddress";
 
     #[inline]

@@ -11,9 +11,7 @@ use zeroize::ZeroizeOnDrop;
 /// and also takes into account that the underlying data can be invalid.
 ///
 /// Implementors MUST ensure that:
-/// 1. The `Output` value does not contain owned copies of sensitive data.
-///    All references in `Output` must point to data within
-///    `self` that will be properly zeroized on a drop.
+/// 1. The `Output` zeroizes on Drop all the data it owns.
 /// 2. Neither `first_chars` nor `last_chars` cause out-of-bounds access
 ///    to data that can be INVALID (to use them for error messages).
 /// 3. Neither `first_chars` nor `last_chars` leak the essential part

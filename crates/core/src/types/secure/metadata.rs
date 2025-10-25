@@ -5,6 +5,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
 use crate::internal::Exposed;
+use crate::types::insecure;
 
 /// Secure container for additional adapter-specific parameters
 ///
@@ -22,12 +23,18 @@ use crate::internal::Exposed;
 ///   via **unsafe** method `with_exposed_secret`,
 /// * zeroize values on a drop.
 #[derive(Clone, Debug, Default)]
-pub struct Metadata(HashMap<&'static str, Value>);
+pub struct Metadata(HashMap<&'static str, MetadataValue>);
 
-impl Metadata {
-    pub fn insert(&mut self, key: &'static str, value: &str) -> Result<(), Error> {
-        self.0.insert(key, Value::from_str(value)?);
-        Ok(())
+impl TryFrom<insecure::Metadata<'_>> for Metadata {
+    type Error = Error;
+
+    #[inline]
+    fn try_from(input: insecure::Metadata<'_>) -> Result<Self, Self::Error> {
+        let mut output = Self::default();
+        for (key, value) in input.into_iter() {
+            output.0.insert(key, MetadataValue::from_str(value)?);
+        }
+        Ok(output)
     }
 }
 
@@ -38,7 +45,7 @@ impl Metadata {
 // 2. its `Debug` implementation reuses the `masked_debug` implementation
 //    for every value in the hash.
 unsafe impl Exposed for Metadata {
-    type Output<'a> = HashMap<&'static str, &'a str>;
+    type Output<'a> = insecure::Metadata<'a>;
     const TYPE_WRAPPER: &'static str = "Metadata";
 
     fn expose(&self) -> Self::Output<'_> {
@@ -51,9 +58,9 @@ unsafe impl Exposed for Metadata {
 }
 
 #[derive(Clone, ZeroizeOnDrop)]
-pub struct Value(String);
+pub struct MetadataValue(String);
 
-impl FromStr for Value {
+impl FromStr for MetadataValue {
     type Err = Error;
 
     #[inline]
@@ -62,7 +69,7 @@ impl FromStr for Value {
     }
 }
 
-impl fmt::Debug for Value {
+impl fmt::Debug for MetadataValue {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
@@ -73,8 +80,8 @@ impl fmt::Debug for Value {
 // 1. it exposes a reference to the internal String which will be zeroized on a drop;
 //    No copies are created, neither new memory is allocated;
 // 2. it masks a value in logs without exposing any part.
-unsafe impl Exposed for Value {
-    type Output<'a> = &'a str;
+unsafe impl Exposed for MetadataValue {
+    type Output<'a> = insecure::MetadataValue<'a>;
     const TYPE_WRAPPER: &'static str = "Value";
 
     #[inline]

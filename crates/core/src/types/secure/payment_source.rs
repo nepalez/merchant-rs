@@ -1,8 +1,10 @@
-mod bank_account;
-
-use crate::internal::Exposed;
-use crate::types::*;
 use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::str::FromStr;
+
+use crate::error::Error;
+use crate::internal::Exposed;
+use crate::types::{AccountType, CustomerCategory, insecure, secure::*};
 
 /// Payment source used for transaction authorization
 ///
@@ -207,23 +209,124 @@ pub enum PaymentSource {
     },
 }
 
-#[allow(private_interfaces)]
-impl PaymentSource {
-    /// Securely build the Bank Account payment source
-    /// using the chainable builder pattern:
-    ///
-    /// ```skip
-    /// let source = PaymentSource::bank_account()
-    ///     .account_number("1234567890")?
-    ///     .full_name("JOE DOE")?
-    ///     .routing_number("884 298 873")?
-    ///     .account_type(AccountType::Savings)?
-    ///     .account_holder_type(CustomerCategory::Individual)?
-    ///     .metadata("phone", "+893797323")?
-    ///     .build()?
-    /// ```
-    pub fn bank_account() -> bank_account::Builder {
-        bank_account::Builder::default()
+impl<'a> TryFrom<insecure::PaymentSource<'a>> for PaymentSource {
+    type Error = Error;
+
+    fn try_from(input: insecure::PaymentSource<'a>) -> Result<Self, Self::Error> {
+        Ok(match input {
+            insecure::PaymentSource::BankAccount {
+                account_number,
+                full_name,
+                routing_number,
+                account_type,
+                account_holder_type,
+                metadata,
+            } => Self::BankAccount {
+                account_number: FromStr::from_str(account_number)?,
+                full_name: FromStr::from_str(full_name)?,
+                routing_number: FromStr::from_str(routing_number)?,
+                account_type,
+                account_holder_type,
+                metadata: metadata.map(TryFrom::try_from).transpose()?,
+            },
+
+            insecure::PaymentSource::BNPL {
+                billing_address,
+                email,
+                full_name,
+                customer_category,
+                date_of_birth,
+                national_id,
+                phone,
+                metadata,
+            } => Self::BNPL {
+                billing_address: TryFrom::try_from(billing_address)?,
+                email: FromStr::from_str(email)?,
+                full_name: FromStr::from_str(full_name)?,
+                customer_category,
+                date_of_birth: date_of_birth.map(TryFrom::try_from).transpose()?,
+                national_id: national_id.map(FromStr::from_str).transpose()?,
+                phone: phone.map(FromStr::from_str).transpose()?,
+                metadata: metadata.map(TryFrom::try_from).transpose()?,
+            },
+
+            insecure::PaymentSource::CashVoucher {
+                full_name,
+                billing_address,
+                national_id,
+                metadata,
+            } => Self::CashVoucher {
+                full_name: FromStr::from_str(full_name)?,
+                billing_address: billing_address.map(TryFrom::try_from).transpose()?,
+                national_id: national_id.map(FromStr::from_str).transpose()?,
+                metadata: metadata.map(TryFrom::try_from).transpose()?,
+            },
+
+            insecure::PaymentSource::CryptoPayment { metadata } => Self::CryptoPayment {
+                metadata: metadata.map(TryFrom::try_from).transpose()?,
+            },
+
+            insecure::PaymentSource::DirectCarrierBilling { phone, metadata } => {
+                Self::DirectCarrierBilling {
+                    phone: FromStr::from_str(phone)?,
+                    metadata: metadata.map(TryFrom::try_from).transpose()?,
+                }
+            }
+
+            insecure::PaymentSource::InstantBankTransfer {
+                email,
+                full_name,
+                account_number,
+                bank_code,
+                billing_address,
+                customer_category,
+                national_id,
+                phone,
+                virtual_payment_address,
+                metadata,
+            } => Self::InstantBankTransfer {
+                email: FromStr::from_str(email)?,
+                full_name: FromStr::from_str(full_name)?,
+                account_number: account_number.map(FromStr::from_str).transpose()?,
+                bank_code: bank_code.map(FromStr::from_str).transpose()?,
+                billing_address: billing_address.map(TryFrom::try_from).transpose()?,
+                customer_category,
+                national_id: national_id.map(FromStr::from_str).transpose()?,
+                phone: phone.map(FromStr::from_str).transpose()?,
+                virtual_payment_address: virtual_payment_address
+                    .map(FromStr::from_str)
+                    .transpose()?,
+                metadata: metadata.map(TryFrom::try_from).transpose()?,
+            },
+
+            insecure::PaymentSource::PaymentCard {
+                cvv,
+                number,
+                card_expiry,
+                holder_name,
+            } => Self::PaymentCard {
+                cvv: FromStr::from_str(cvv)?,
+                number: FromStr::from_str(number)?,
+                card_expiry: card_expiry.map(TryFrom::try_from).transpose()?,
+                holder_name: holder_name.map(FromStr::from_str).transpose()?,
+            },
+
+            insecure::PaymentSource::SEPATransfer {
+                billing_address,
+                email,
+                full_name,
+                iban,
+            } => Self::SEPATransfer {
+                billing_address: TryFrom::try_from(billing_address)?,
+                email: FromStr::from_str(email)?,
+                full_name: FromStr::from_str(full_name)?,
+                iban: FromStr::from_str(iban)?,
+            },
+
+            insecure::PaymentSource::TokenizedPayment { token } => Self::TokenizedPayment {
+                token: FromStr::from_str(token)?,
+            },
+        })
     }
 }
 
@@ -231,7 +334,7 @@ impl PaymentSource {
 // 1. it uses exposed versions of all inner types,
 // 2. it uses `Debug` implementations of its values, that mask sensitive data by themselves.
 unsafe impl Exposed for PaymentSource {
-    type Output<'a> = ExposedPaymentSource<'a>;
+    type Output<'a> = insecure::PaymentSource<'a>;
     const TYPE_WRAPPER: &'static str = "PaymentSource";
 
     fn expose<'a>(&'a self) -> Self::Output<'a> {
@@ -346,67 +449,4 @@ unsafe impl Exposed for PaymentSource {
             },
         }
     }
-}
-
-#[derive(Clone)]
-pub(crate) enum ExposedPaymentSource<'a> {
-    BankAccount {
-        account_number: &'a str,
-        full_name: &'a str,
-        routing_number: &'a str,
-        account_type: Option<AccountType>,
-        account_holder_type: Option<CustomerCategory>,
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    #[allow(clippy::upper_case_acronyms)]
-    BNPL {
-        billing_address: ExposedAddress<'a>,
-        email: &'a str,
-        full_name: &'a str,
-        customer_category: Option<CustomerCategory>,
-        date_of_birth: Option<ExposedBirthDate<'a>>,
-        national_id: Option<&'a str>,
-        phone: Option<&'a str>,
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    CashVoucher {
-        full_name: &'a str,
-        billing_address: Option<ExposedAddress<'a>>,
-        national_id: Option<&'a str>,
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    CryptoPayment {
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    DirectCarrierBilling {
-        phone: &'a str,
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    InstantBankTransfer {
-        email: &'a str,
-        full_name: &'a str,
-        account_number: Option<&'a str>,
-        bank_code: Option<&'a str>,
-        billing_address: Option<ExposedAddress<'a>>,
-        customer_category: Option<CustomerCategory>,
-        national_id: Option<&'a str>,
-        phone: Option<&'a str>,
-        virtual_payment_address: Option<&'a str>,
-        metadata: Option<HashMap<&'static str, &'a str>>,
-    },
-    PaymentCard {
-        cvv: &'a str,
-        number: &'a str,
-        card_expiry: Option<ExposedCardExpiry<'a>>,
-        holder_name: Option<&'a str>,
-    },
-    SEPATransfer {
-        billing_address: ExposedAddress<'a>,
-        email: &'a str,
-        full_name: &'a str,
-        iban: &'a str,
-    },
-    TokenizedPayment {
-        token: &'a str,
-    },
 }

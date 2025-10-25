@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Email address
 ///
@@ -96,7 +97,7 @@ impl Drop for Secret {
 //    due to fallbacks to the empty strings,
 // 2. Nor leaks the real data due to hiding the real length of the email address.
 unsafe impl Exposed for EmailAddress {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::EmailAddress<'a>;
     const TYPE_WRAPPER: &'static str = "EmailAddress";
 
     #[inline]

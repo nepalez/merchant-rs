@@ -2,7 +2,10 @@ use async_trait::async_trait;
 
 use crate::error::{Error, Result};
 use crate::traits::{Authorizable, Gateway, RefundsCapability};
-use crate::types::*;
+use crate::types::{
+    Money, TransactionStatus,
+    secure::{MerchantReferenceId, ReasonForRefund, TransactionId},
+};
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]

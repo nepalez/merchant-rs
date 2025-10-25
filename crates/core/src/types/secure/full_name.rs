@@ -4,55 +4,52 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
-/// Authorization code from a card issuer
-///
-/// Supports both ISO 8583 standard (6 numeric digits)
-/// and extended formats used by legacy/regional processors (e.g., older European
-/// acquirers, some APAC processors use up to 8-10 characters).
+/// Full name of a payer
 ///
 /// # Sanitization
-/// * removes common separators: spaces and dashes,
+/// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 6-10 characters,
-/// * only alphanumeric characters are allowed
-///
-/// Gateway-specific validators should enforce stricter rules if necessary.
+/// * length: 3-60 characters,
+/// * only ASCII alphanumerics, spaces, dashes, apostrophes and dots are allowed,
+/// * any non-Latin character (e.g., Cyrillic, Chinese) fails validation
 ///
 /// # Data Protection
-/// While authorization codes are not Sensitive Authentication Data per PCI DSS,
-/// they represent operational sensitive data. Defense-in-depth approach prevents
-/// potential replay attacks in legacy systems and accidental exposure in logs.
+/// While PCI DSS does NOT classify names as sensitive authentication data (SAD),
+/// they are critical PII and financial access data that can be associated with their owners.
 ///
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
-///   1 first and 1 last characters (both uppercased) only,
+///   the first and last characters (both in the upper case) only,
+///   which prevents leaking short names,
 /// * not exposed publicly except for a part of a request or response
 ///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
-pub struct AuthorizationCode(String);
+pub struct FullName(String);
 
-impl FromStr for AuthorizationCode {
+impl FromStr for FullName {
     type Err = Error;
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        let original = Self::sanitize(input).validated()?;
+        Ok(Self(original.0.to_uppercase()))
     }
 }
 
-impl fmt::Debug for AuthorizationCode {
+impl fmt::Debug for FullName {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.masked_debug(f)
+        <Self as Exposed>::masked_debug(self, f)
     }
 }
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for AuthorizationCode {
+impl Sanitized for FullName {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
@@ -61,22 +58,22 @@ impl Sanitized for AuthorizationCode {
     }
 }
 
-impl Validated for AuthorizationCode {
+impl Validated for FullName {
+    #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 6, 10)?;
-        validate_alphanumeric(&self.0, "")
+        validate_length(&self.0, 3, 60)?;
+        validate_alphanumeric(&self.0, " -'.")
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
+// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data
-//    due to hiding the real length of the name.
-unsafe impl Exposed for AuthorizationCode {
-    type Output<'a> = &'a str;
+// 2. Nor leaks the VALID data due to hiding the real length of the full name.
 
-    const TYPE_WRAPPER: &'static str = "AuthorizationCode";
+unsafe impl Exposed for FullName {
+    type Output<'a> = insecure::FullName<'a>;
+    const TYPE_WRAPPER: &'static str = "FullName";
 
     #[inline]
     fn expose(&self) -> Self::Output<'_> {

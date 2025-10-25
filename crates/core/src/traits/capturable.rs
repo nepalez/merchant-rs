@@ -2,7 +2,10 @@ use async_trait::async_trait;
 
 use crate::error::{Error, Result};
 use crate::traits::{Authorizable, Gateway, TransactionFlow};
-use crate::types::*;
+use crate::types::{
+    Money, TransactionStatus,
+    secure::{MerchantReferenceId, TransactionId},
+};
 
 /// Optional trait for payment gateways that support completing a two-step flow.
 ///

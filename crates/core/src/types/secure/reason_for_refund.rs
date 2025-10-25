@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Optional administrative text explaining the reason for a refund
 ///
@@ -60,7 +61,7 @@ impl Validated for ReasonForRefund {
 
 // SAFETY: The trait is safely implemented as it does NOT expose any part of the internal value.
 unsafe impl Exposed for ReasonForRefund {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::ReasonForRefund<'a>;
     const TYPE_WRAPPER: &'static str = "ReasonForRefund";
 
     #[inline]

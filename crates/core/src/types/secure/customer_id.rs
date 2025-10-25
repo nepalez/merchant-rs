@@ -4,31 +4,30 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
-/// Postal code used in addresses
+/// User identifier from an external vault or payment system
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 3-10 characters,
-/// * only alphanumeric characters, spaces and dashes are allowed
+/// * length: 1-255 characters
 ///
 /// # Data Protection
-/// Postal codes can identify specific geographic areas
-/// and when combined with other data, enable person identification,
-/// making them PII (Personal Identifiable Information).
+/// User IDs enable transaction correlation and user profiling,
+/// and are considered PII (Personal Identifiable Information).
 ///
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
-///   up to the first 2 characters but no more than 1/3 of the code length,
+///   the first 4 and the last 4 characters but not leaving less than 8 characters masked.
 /// * not exposed publicly except for a part of a request or response
 ///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
-pub struct PostalCode(String);
+pub struct CustomerId(String);
 
-impl FromStr for PostalCode {
+impl FromStr for CustomerId {
     type Err = Error;
 
     #[inline]
@@ -37,7 +36,7 @@ impl FromStr for PostalCode {
     }
 }
 
-impl fmt::Debug for PostalCode {
+impl fmt::Debug for CustomerId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
@@ -46,7 +45,7 @@ impl fmt::Debug for PostalCode {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for PostalCode {
+impl Sanitized for CustomerId {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
@@ -55,24 +54,20 @@ impl Sanitized for PostalCode {
     }
 }
 
-impl Validated for PostalCode {
-    // We don't care about zeroization of the temporary data, that is not PII.
+impl Validated for CustomerId {
     #[inline]
     fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 3, 10)?;
-        validate_alphanumeric(&self.0, "- ")
+        validate_length(&self.0, 1, 255)
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing
-// up to the first 2 characters, but no more than 1/3 of the code length:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the sensitive VALID data because the first part of the code
-//    points out to a broad geographical area.
-unsafe impl Exposed for PostalCode {
-    type Output<'a> = &'a str;
-    const TYPE_WRAPPER: &'static str = "PostalCode";
+// SAFETY: The trait is safely implemented because exposing the first 4 and last 4 characters
+// (but not leaving less than 8 characters masked):
+// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data by itself,
+// 2. Nor leaks the essential part of the sensitive VALID data.
+unsafe impl Exposed for CustomerId {
+    type Output<'a> = insecure::CustomerId<'a>;
+    const TYPE_WRAPPER: &'static str = "CustomerId";
 
     #[inline]
     fn expose(&self) -> Self::Output<'_> {
@@ -81,7 +76,13 @@ unsafe impl Exposed for PostalCode {
 
     #[inline]
     fn first_chars(&self) -> String {
-        let len = (self.0.len() / 3).min(2);
+        let len = self.0.len().saturating_sub(8).saturating_div(2).min(4);
+        self.0.get(0..len).unwrap_or_default().to_string()
+    }
+
+    #[inline]
+    fn last_chars(&self) -> String {
+        let len = self.0.len().saturating_sub(8).saturating_div(2).min(4);
         self.0.get(0..len).unwrap_or_default().to_string()
     }
 }

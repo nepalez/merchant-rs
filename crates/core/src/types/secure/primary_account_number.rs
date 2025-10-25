@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Primary account number (PAN) from a payment card
 ///
@@ -77,7 +78,7 @@ impl Validated for PrimaryAccountNumber {
 // 2. Nor leaks the essential part of the sensitive VALID data which has at least 13 chars
 //    (and this is explicitly enabled by the PCI DSS requirements).
 unsafe impl Exposed for PrimaryAccountNumber {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::PrimaryAccountNumber<'a>;
     const TYPE_WRAPPER: &'static str = "PrimaryAccountNumber";
 
     #[inline]

@@ -10,12 +10,3 @@ pub enum AccountType {
     Checking,
     Savings,
 }
-
-impl AsRef<str> for AccountType {
-    fn as_ref(&self) -> &str {
-        match self {
-            Self::Checking => "checking",
-            Self::Savings => "savings",
-        }
-    }
-}

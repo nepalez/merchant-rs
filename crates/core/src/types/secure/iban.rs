@@ -5,6 +5,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// International Bank Account Number (IBAN)
 ///
@@ -94,7 +95,7 @@ impl Drop for Secret {
 // 2. Nor leaks the essential part of the sensitive VALID IBAN (which has at least 15 chars)
 //    even though the first chars can decide its actual length.
 unsafe impl Exposed for IBAN {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::IBAN<'a>;
     const TYPE_WRAPPER: &'static str = "IBAN";
 
     #[inline]

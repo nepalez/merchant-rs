@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Personal phone number
 ///
@@ -74,7 +75,7 @@ impl Validated for PhoneNumber {
 //    and does not expose its actual length (this could be done by the first digits
 //    which aren't exposed anyway).
 unsafe impl Exposed for PhoneNumber {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::PhoneNumber<'a>;
     const TYPE_WRAPPER: &'static str = "PhoneNumber";
 
     #[inline]

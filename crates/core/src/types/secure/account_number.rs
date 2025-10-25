@@ -4,6 +4,7 @@ use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
 use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::types::insecure;
 
 /// Bank account number (for non-SEPA transfers)
 ///
@@ -69,7 +70,7 @@ impl Validated for AccountNumber {
 //    No copies are created, neither new memory is allocated;
 // 2. it masks the total value in logs.
 unsafe impl Exposed for AccountNumber {
-    type Output<'a> = &'a str;
+    type Output<'a> = insecure::AccountNumber<'a>;
 
     const TYPE_WRAPPER: &'static str = "AccountNumber";
 

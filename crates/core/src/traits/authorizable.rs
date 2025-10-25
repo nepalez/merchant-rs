@@ -3,8 +3,8 @@ use async_trait::async_trait;
 use crate::error::{Error, Result};
 use crate::traits::Gateway;
 use crate::types::{
-    AuthorizationCode, CustomerId, MerchantReferenceId, Money, PaymentSource, TransactionId,
-    TransactionStatus,
+    Money, TransactionStatus,
+    secure::{AuthorizationCode, CustomerId, MerchantReferenceId, PaymentSource, TransactionId},
 };
 
 /// The trait for initiating a payment transaction (Authorize or Sale).
