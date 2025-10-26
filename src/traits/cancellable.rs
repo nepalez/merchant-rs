@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::traits::{Authorizable, CancellationCapability, Gateway};
+use crate::traits::Authorizable;
 use crate::types::secure::{MerchantReferenceId, TransactionId};
 use crate::{Error, TransactionStatus};
 
@@ -9,11 +9,7 @@ use crate::{Error, TransactionStatus};
 /// Adapters should implement this trait only when they support cancellation
 /// of previously authorized payments.
 #[async_trait]
-pub trait Cancellable
-where
-    Self: Authorizable,
-    Self: Gateway<CancellationCapability = CancellationSupported>,
-{
+pub trait Cancellable: Authorizable {
     /// Cancels a pending authorization, releasing the reserved funds, or reverses a
     /// recently processed one-step transaction (Sale/Purchase) before settlement.
     ///
@@ -23,11 +19,6 @@ where
     /// for 1-step flows as well).
     async fn void(&self, request: Request) -> crate::Result<Response>;
 }
-
-/// Indicates that the adapter DOES support cancelling transactions.
-/// This is defaulted as the majority of gateways support voiding.
-pub struct CancellationSupported;
-impl CancellationCapability for CancellationSupported {}
 
 /// Request body for voiding (canceling) a pending authorization.
 #[derive(Debug, Clone)]

@@ -23,4 +23,5 @@ pub use authorizable::Authorizable;
 pub use capturable::Capturable;
 pub use gateway::*;
 pub use protected::Protected;
+pub use recoverable::Recoverable;
 pub use refundable::Refundable;

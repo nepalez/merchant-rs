@@ -13,15 +13,12 @@ use crate::types::{
 #[async_trait]
 pub trait Authorizable: Gateway {
     /// Reserve funds (Auth) or immediately debits funds (Sale/Purchase).
-    async fn authorize(&self, request: AuthorizeRequest) -> Result<Response>;
-
-    /// Get the status of a transaction.
-    async fn status(&self, request: StatusRequest) -> Result<Response>;
+    async fn authorize(&self, request: Request) -> Result<Response>;
 }
 
 /// Request body for authorizing a payment.
 #[derive(Debug, Clone)]
-pub struct AuthorizeRequest {
+pub struct Request {
     /// The source of the payment (must be a token or bank account details).
     pub source: PaymentSource,
     /// The monetary amount to be authorized.
@@ -43,7 +40,7 @@ pub struct Response {
     /// The unique transaction ID returned by the payment gateway.
     pub transaction_id: TransactionId,
     /// The content of the transaction
-    pub content: AuthorizeRequest,
+    pub content: Request,
     /// The canonical status of the transaction.
     pub status: TransactionStatus,
     /// Optional authorization code returned by the bank.

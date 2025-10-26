@@ -1,32 +1,20 @@
 use async_trait::async_trait;
 
-use crate::error::{Error, Result};
-use crate::refundable::RefundsSupported;
-use crate::traits::gateway::RecoveryCapability;
-use crate::traits::{Authorizable, Gateway, TransactionFlow};
+use crate::error::Result;
 use crate::types::{
     Money, TransactionStatus,
     secure::{MerchantReferenceId, TransactionId},
 };
 
-/// Optional trait for payment gateways that support completing a two-step flow.
-///
-/// An adapter should implement this ONLY if it supports the two-step Auth -> Capture model.
-/// Gateways that only support Sale/Purchase should NOT implement this trait.
+/// Optional trait for getting a paginated list of transactions by an idempotency key
+/// with some additional filters.
+/// The results should be deduplicated on the client's side
+/// (they cannot be deduplicated within the particular page only).
 #[async_trait]
-pub trait Recoverable
-where
-    Self: Authorizable,
-    Self: Gateway<RecoveryCapability = RecoverySupported>,
-{
+pub trait Recoverable {
     /// Confirms and debits the previously authorized funds.
     async fn recover(&self, request: Request) -> Result<Page<Transaction>>;
 }
-
-/// Transaction Style: Two-step flow (Authorize + subsequent Capture).
-/// Applies to gateways that support delayed capture and full lifecycle management (e.g., Stripe).
-pub struct RecoverySupported;
-impl RecoveryCapability for RecoverySupported {}
 
 /// Request body for capturing a previously authorized payment.
 #[derive(Debug, Clone)]

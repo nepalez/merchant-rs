@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::error::{Error, Result};
-use crate::traits::{Authorizable, Gateway, RefundsCapability};
+use crate::traits::Authorizable;
 use crate::types::{
     Money, TransactionStatus,
     secure::{MerchantReferenceId, ReasonForRefund, TransactionId},
@@ -9,18 +9,9 @@ use crate::types::{
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]
-pub trait Refundable
-where
-    Self: Authorizable,
-    Self: Gateway<RefundsCapability = RefundsSupported>,
-{
+pub trait Refundable: Authorizable {
     async fn refund(&self, request: Request) -> Result<Response>;
 }
-
-/// Indicates that the adapter does not support refunding transactions.
-/// Applies to gateways that do not allow refunds (e.g., some crypto payment processors).
-pub struct RefundsSupported;
-impl RefundsCapability for RefundsSupported {}
 
 /// Request body for initiating a refund.
 #[derive(Debug, Clone)]

@@ -1,30 +1,23 @@
 use async_trait::async_trait;
 
 use crate::error::{Error, Result};
-use crate::traits::{Authorizable, Gateway, TransactionFlow};
+use crate::traits::Authorizable;
 use crate::types::{
     Money, TransactionStatus,
     secure::{MerchantReferenceId, TransactionId},
 };
 
-/// Optional trait for payment gateways that support completing a two-step flow.
+/// Optional trait for payment gateways that support completing a two-step flow,
+/// where the first step is an authorization
+/// and the second is a capture.
 ///
 /// An adapter should implement this ONLY if it supports the two-step Auth -> Capture model.
 /// Gateways that only support Sale/Purchase should NOT implement this trait.
 #[async_trait]
-pub trait Capturable
-where
-    Self: Authorizable,
-    Self: Gateway<TransactionFlow = TwoStepFlow>,
-{
+pub trait Capturable: Authorizable {
     /// Confirms and debits the previously authorized funds.
     async fn capture(&self, request: Request) -> Result<Response>;
 }
-
-/// Transaction Style: Two-step flow (Authorize + subsequent Capture).
-/// Applies to gateways that support delayed capture and full lifecycle management (e.g., Stripe).
-pub struct TwoStepFlow;
-impl TransactionFlow for TwoStepFlow {}
 
 /// Request body for capturing a previously authorized payment.
 #[derive(Debug, Clone)]
