@@ -16,6 +16,7 @@ mod protected;
 pub mod authorizable;
 pub mod cancellable;
 pub mod capturable;
+mod recoverable;
 pub mod refundable;
 
 pub use authorizable::Authorizable;
