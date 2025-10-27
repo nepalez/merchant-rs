@@ -24,6 +24,7 @@
 mod address;
 mod birth_date;
 mod card_expiry;
+mod new_payment;
 mod payment_source;
 
 use std::collections::HashMap;
@@ -60,4 +61,5 @@ pub type WalletAddress<'a> = &'a str;
 pub use address::Address;
 pub use birth_date::BirthDate;
 pub use card_expiry::CardExpiry;
+pub use new_payment::NewPayment;
 pub use payment_source::PaymentSource;

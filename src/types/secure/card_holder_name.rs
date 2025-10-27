@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Cardholder name as it appears on a payment card
@@ -35,7 +35,7 @@ impl FromStr for CardHolderName {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let original = Self::sanitize(input).validated()?;
+        let original = Self::sanitize(input).validate()?;
         Ok(Self(original.0.to_uppercase()))
     }
 }
@@ -60,9 +60,10 @@ impl Sanitized for CardHolderName {
 
 impl Validated for CardHolderName {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 3, 26)?;
-        validate_alphabetic(&self.0, " -'.")
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 3, 26)?;
+        self._validate_alphabetic(&self.0, " -'.")?;
+        Ok(self)
     }
 }
 

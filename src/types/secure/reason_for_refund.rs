@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Optional administrative text explaining the reason for a refund
@@ -32,7 +32,7 @@ impl FromStr for ReasonForRefund {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self(input.to_string()).validated()
+        Self(input.to_string()).validate()
     }
 }
 
@@ -54,8 +54,9 @@ impl Sanitized for ReasonForRefund {
 }
 
 impl Validated for ReasonForRefund {
-    fn validate(&self) -> std::result::Result<(), String> {
-        validate_length(&self.0, 1, 255)
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 1, 255)?;
+        Ok(self)
     }
 }
 

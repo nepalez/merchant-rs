@@ -4,7 +4,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// International Bank Account Number (IBAN)
@@ -35,7 +35,7 @@ impl FromStr for IBAN {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -61,14 +61,14 @@ impl Validated for IBAN {
     // TODO: strictly speaking, a zeroization of the resulting Iban is not enough
     //       because the `iban_validate` crate leaks some intermediate strings
     //       under the hood of its data validations.
-    fn validate(&self) -> Result<(), String> {
+    fn validate(self) -> Result<Self, Error> {
         let secret = Iban::from_str(&self.0)
             .map(Secret)
-            .map_err(|_| "is invalid".to_string())?;
+            .map_err(|_| Error::InvalidInput(format!("{self:?} is invalid")))?;
         // ensure the validator is not optimized out
         // and the drop is called on the secret wrapper.
         std::hint::black_box(secret);
-        Ok(())
+        Ok(self)
     }
 }
 

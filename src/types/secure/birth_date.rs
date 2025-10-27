@@ -3,7 +3,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, validated::*};
+use crate::internal::{Exposed, Validated};
 use crate::types::insecure;
 
 /// Birthdate of a payer
@@ -38,7 +38,7 @@ impl TryFrom<insecure::BirthDate> for BirthDate {
             month: value.month,
             year: value.year,
         }
-        .validated()
+        .validate()
     }
 }
 
@@ -67,12 +67,13 @@ impl PartialOrd for BirthDate {
 
 impl Validated for BirthDate {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
+    fn validate(self) -> Result<Self, Error> {
         const OLDEST_HUMAN_BIRTHDAY: u16 = 1909;
         const MAX_SUPPORTED_YEAR: u16 = 2050;
 
-        validate_year(&self.year, OLDEST_HUMAN_BIRTHDAY, MAX_SUPPORTED_YEAR)?;
-        validate_day(&self.day, &self.month, &self.year)
+        self._validate_year(&self.year, OLDEST_HUMAN_BIRTHDAY, MAX_SUPPORTED_YEAR)?;
+        self._validate_day(&self.day, &self.month, &self.year)?;
+        Ok(self)
     }
 }
 

@@ -2,7 +2,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{sanitized::*, validated::*};
+use crate::internal::{Validated, sanitized::*};
 
 /// Region code (state, province, etc.) in addresses
 ///
@@ -27,7 +27,7 @@ impl FromStr for RegionCode {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let original = Self::sanitize(input).validated()?;
+        let original = Self::sanitize(input).validate()?;
         Ok(Self(original.0.to_uppercase()))
     }
 }
@@ -52,7 +52,8 @@ impl Sanitized for RegionCode {
 
 impl Validated for RegionCode {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 3)
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 1, 3)?;
+        Ok(self)
     }
 }

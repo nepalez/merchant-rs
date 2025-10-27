@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, validated::*};
+use crate::internal::{Exposed, Validated};
 use crate::types::insecure;
 
 /// Tokenized credential from a payment processor or vault
@@ -28,7 +28,7 @@ impl FromStr for Token {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self(input.to_string()).validated()
+        Self(input.to_string()).validate()
     }
 }
 
@@ -43,13 +43,15 @@ impl fmt::Debug for Token {
 
 impl Validated for Token {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 16, 4096)?;
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 16, 4096)?;
 
-        if self.0.trim() == self.0 {
-            Ok(())
+        if self.0.trim() == &self.0 {
+            Ok(self)
         } else {
-            Err("contains trailing whitespaces".to_string())
+            Err(Error::InvalidInput(format!(
+                "{self:?} contains trailing whitespaces"
+            )))
         }
     }
 }

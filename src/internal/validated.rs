@@ -16,84 +16,94 @@ use std::fmt::Debug;
 ///
 /// Override `validate()` for domain-specific rules.
 pub(crate) trait Validated: Sized + Debug {
-    fn validate(&self) -> Result<(), String>;
+    fn validate(self) -> Result<Self, Error>;
 
-    fn validated(self) -> Result<Self, Error> {
-        self.validate()
-            .map_err(|msg| Error::InvalidInput(format!("{self:?} {msg}")))?;
-        Ok(self)
-    }
-}
-
-#[inline]
-pub(crate) fn validate_length(input: &str, min: usize, max: usize) -> Result<(), String> {
-    // validate chars, not bytes!
-    let len = input.chars().count();
-    if len < min || len > max {
-        Err(format!("length is out of range ({}-{})", min, max))
-    } else {
-        Ok(())
-    }
-}
-
-#[inline]
-pub(crate) fn validate_alphanumeric(input: &str, extra: &str) -> Result<(), String> {
-    for c in input.chars() {
-        if !c.is_ascii_alphanumeric() && !extra.contains(c) {
-            return Err(format!("contains invalid character `{c}`"));
+    #[inline]
+    fn _validate_length(&self, input: &str, min: usize, max: usize) -> Result<(), Error> {
+        // validate chars, not bytes!
+        let len = input.chars().count();
+        if len < min || len > max {
+            Err(Error::InvalidInput(format!(
+                "{self:?} length is out of range ({}-{})",
+                min, max
+            )))
+        } else {
+            Ok(())
         }
     }
-    Ok(())
-}
 
-#[inline]
-pub(crate) fn validate_alphabetic(input: &str, extra: &str) -> Result<(), String> {
-    for c in input.chars() {
-        if !c.is_ascii_alphabetic() && !extra.contains(c) {
-            return Err(format!("contains invalid character `{c}`"));
+    #[inline]
+    fn _validate_alphanumeric(&self, input: &str, extra: &str) -> Result<(), Error> {
+        for c in input.chars() {
+            if !c.is_ascii_alphanumeric() && !extra.contains(c) {
+                return Err(Error::InvalidInput(format!(
+                    "{self:?} contains invalid character `{c}`"
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn _validate_alphabetic(&self, input: &str, extra: &str) -> Result<(), Error> {
+        for c in input.chars() {
+            if !c.is_ascii_alphabetic() && !extra.contains(c) {
+                return Err(Error::InvalidInput(format!(
+                    "{self:?} contains invalid character `{c}`"
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn _validate_digits(&self, input: &str, extra: &str) -> Result<(), Error> {
+        for c in input.chars() {
+            if !c.is_ascii_digit() && !extra.contains(c) {
+                return Err(Error::InvalidInput(format!(
+                    "{self:?} contains invalid character `{c}`"
+                )));
+            }
+        }
+        Ok(())
+    }
+
+    #[inline]
+    fn _validate_month(&self, input: &u8) -> Result<(), Error> {
+        if !(1..=12).contains(input) {
+            Err(Error::InvalidInput(
+                "{self:?} month is out of range (1-12)".to_string(),
+            ))
+        } else {
+            Ok(())
         }
     }
-    Ok(())
-}
 
-#[inline]
-pub(crate) fn validate_digits(input: &str, extra: &str) -> Result<(), String> {
-    for c in input.chars() {
-        if !c.is_ascii_digit() && !extra.contains(c) {
-            return Err(format!("contains invalid character `{c}`"));
+    #[inline]
+    fn _validate_year(&self, input: &u16, min: u16, max: u16) -> Result<(), Error> {
+        if *input < min || *input > max {
+            Err(Error::InvalidInput(format!(
+                "{self:?} year is out of range ({}-{})",
+                min, max
+            )))
+        } else {
+            Ok(())
         }
     }
-    Ok(())
-}
 
-#[inline]
-pub(crate) fn validate_month(input: &u8) -> Result<(), String> {
-    if !(1..=12).contains(input) {
-        Err("month is out of range (1-12)".to_string())
-    } else {
-        Ok(())
-    }
-}
+    #[inline]
+    fn _validate_day(&self, day: &u8, month: &u8, year: &u16) -> Result<(), Error> {
+        self._validate_month(month)?;
 
-#[inline]
-pub(crate) fn validate_year(input: &u16, min: u16, max: u16) -> Result<(), String> {
-    if *input < min || *input > max {
-        Err(format!("year is out of range ({}-{})", min, max))
-    } else {
-        Ok(())
-    }
-}
-
-#[inline]
-pub(crate) fn validate_day(day: &u8, month: &u8, year: &u16) -> Result<(), String> {
-    validate_month(month)?;
-
-    if *day == 0 {
-        Err("day cannot be zero".to_string())
-    } else if *day > days_in_month(year, month) {
-        Err("day is out of range for given month and year".to_string())
-    } else {
-        Ok(())
+        if *day == 0 {
+            Err(Error::InvalidInput(format!("{self:?} cannot have day 0")))
+        } else if *day > days_in_month(year, month) {
+            Err(Error::InvalidInput(format!(
+                "{self:?} is out of range for given month and year"
+            )))
+        } else {
+            Ok(())
+        }
     }
 }
 

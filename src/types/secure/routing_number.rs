@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Universal bank routing identifier
@@ -37,7 +37,7 @@ impl FromStr for RoutingNumber {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        let original = Self::sanitize(input).validated()?;
+        let original = Self::sanitize(input).validate()?;
         Ok(Self(original.0.to_uppercase()))
     }
 }
@@ -62,9 +62,10 @@ impl Sanitized for RoutingNumber {
 
 impl Validated for RoutingNumber {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 6, 11)?;
-        validate_alphanumeric(&self.0, "")
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 6, 11)?;
+        self._validate_alphanumeric(&self.0, "")?;
+        Ok(self)
     }
 }
 

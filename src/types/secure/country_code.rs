@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{sanitized::*, validated::*};
+use crate::internal::{Validated, sanitized::*};
 
 /// Country code in addresses
 ///
@@ -28,7 +28,7 @@ impl FromStr for CountryCode {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -52,9 +52,9 @@ impl Sanitized for CountryCode {
 
 impl Validated for CountryCode {
     // We don't care about zeroization of the temporary data, that is not PII.
-    fn validate(&self) -> Result<(), String> {
+    fn validate(self) -> Result<Self, Error> {
         part_1::CountryCode::from_str(&self.0)
-            .map_err(|_| "is not valid".to_string())
-            .map(|_| ())
+            .map_err(|_| Error::InvalidInput(format!("{self:?} is invalid")))
+            .map(|_| self)
     }
 }

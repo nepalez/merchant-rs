@@ -2,7 +2,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{sanitized::*, validated::*};
+use crate::internal::{Validated, sanitized::*};
 
 /// Code identifying the bank
 ///
@@ -28,7 +28,7 @@ impl FromStr for BankCode {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Error> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -52,8 +52,9 @@ impl Sanitized for BankCode {
 
 impl Validated for BankCode {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 2, 34)?;
-        validate_alphanumeric(&self.0, "")
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 2, 34)?;
+        self._validate_alphanumeric(&self.0, "")?;
+        Ok(self)
     }
 }

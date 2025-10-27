@@ -10,7 +10,7 @@
 //! upholding the core's role as a stable abstraction layer.
 mod money;
 
-mod enums;
+pub mod enums;
 pub mod insecure;
 pub mod secure;
 

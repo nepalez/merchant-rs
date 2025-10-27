@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Virtual Payment Address (UPI, PIX)
@@ -34,7 +34,7 @@ impl FromStr for VirtualPaymentAddress {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -62,11 +62,12 @@ impl Sanitized for VirtualPaymentAddress {
 
 impl Validated for VirtualPaymentAddress {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
+    fn validate(self) -> Result<Self, Error> {
         const MIN_UPI_LENGTH: usize = 7;
         const MAX_EMAIL_LENGTH: usize = 255;
 
-        validate_length(&self.0, MIN_UPI_LENGTH, MAX_EMAIL_LENGTH)
+        self._validate_length(&self.0, MIN_UPI_LENGTH, MAX_EMAIL_LENGTH);
+        Ok(self)
     }
 }
 

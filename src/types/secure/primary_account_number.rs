@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Primary account number (PAN) from a payment card
@@ -34,7 +34,7 @@ impl FromStr for PrimaryAccountNumber {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -57,18 +57,19 @@ impl Sanitized for PrimaryAccountNumber {
 }
 
 impl Validated for PrimaryAccountNumber {
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 13, 19)?;
-        validate_alphanumeric(&self.0, "")?;
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 13, 19)?;
+        self._validate_alphanumeric(&self.0, "")?;
 
         if self.0.starts_with('0') {
-            Err("cannot start with 0".to_string())?;
+            Err(Error::InvalidInput(format!("{self:?} cannot start with 0")))
+        } else if !luhn3::valid(self.0.as_bytes()) {
+            Err(Error::InvalidInput(format!(
+                "{self:?} failed the Luhn check"
+            )))
+        } else {
+            Ok(self)
         }
-        if !luhn3::valid(self.0.as_bytes()) {
-            Err("failed the Luhn check".to_string())?;
-        }
-
-        Ok(())
     }
 }
 

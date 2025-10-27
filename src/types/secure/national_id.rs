@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// National identification number of the user
@@ -33,7 +33,7 @@ impl FromStr for NationalId {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -57,9 +57,10 @@ impl Sanitized for NationalId {
 
 impl Validated for NationalId {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 7, 18)?;
-        validate_alphanumeric(&self.0, "")
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 7, 18)?;
+        self._validate_alphanumeric(&self.0, "")?;
+        Ok(self)
     }
 }
 

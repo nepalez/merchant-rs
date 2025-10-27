@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Personal phone number
@@ -33,7 +33,7 @@ impl FromStr for PhoneNumber {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -62,8 +62,9 @@ impl Sanitized for PhoneNumber {
 
 impl Validated for PhoneNumber {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 6, 16)
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 6, 16)?;
+        Ok(self)
     }
 }
 

@@ -2,7 +2,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{sanitized::*, validated::*};
+use crate::internal::{Validated, sanitized::*};
 
 /// City name in addresses
 ///
@@ -26,7 +26,7 @@ impl FromStr for City {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -50,7 +50,8 @@ impl Sanitized for City {
 
 impl Validated for City {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 1, 100)
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 1, 100)?;
+        Ok(self)
     }
 }

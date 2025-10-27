@@ -11,7 +11,7 @@ use crate::types::{
 /// The results should be deduplicated on the client's side
 /// (they cannot be deduplicated within the particular page only).
 #[async_trait]
-pub trait Recoverable {
+pub trait RecoverTransactions {
     /// Confirms and debits the previously authorized funds.
     async fn recover(&self, request: Request) -> Result<Page<Transaction>>;
 }

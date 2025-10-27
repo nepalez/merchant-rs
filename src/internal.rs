@@ -2,8 +2,9 @@
 //! by types in this crate to DRY the code and prevent errors.
 
 mod exposed;
-pub(crate) mod sanitized;
-pub(crate) mod validated;
+mod validated;
 
-// Internal traits
+pub(crate) mod sanitized;
+
 pub(crate) use exposed::Exposed;
+pub(crate) use validated::Validated;

@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 
-use crate::error::{Error, Result};
-use crate::traits::Authorizable;
+use crate::error::Error;
 use crate::types::{
     Money, TransactionStatus,
     secure::{MerchantReferenceId, ReasonForRefund, TransactionId},
@@ -9,8 +8,8 @@ use crate::types::{
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]
-pub trait Refundable: Authorizable {
-    async fn refund(&self, request: Request) -> Result<Response>;
+pub trait RefundPayment {
+    async fn refund(&self, request: Request) -> Result<Response, Error>;
 }
 
 /// Request body for initiating a refund.

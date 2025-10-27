@@ -3,7 +3,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, validated::*};
+use crate::internal::{Exposed, Validated};
 use crate::types::insecure;
 
 /// Card expiration (month and year).
@@ -41,7 +41,7 @@ impl TryFrom<insecure::CardExpiry> for CardExpiry {
             month: value.month,
             year: value.year,
         }
-        .validated()
+        .validate()
     }
 }
 
@@ -70,12 +70,13 @@ impl fmt::Debug for CardExpiry {
 
 impl Validated for CardExpiry {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
+    fn validate(self) -> Result<Self, Error> {
         const FIRST_CREDIT_CARD_YEAR: u16 = 1950;
         const MAX_SUPPORTED_YEAR: u16 = 2050;
 
-        validate_year(&self.year, FIRST_CREDIT_CARD_YEAR, MAX_SUPPORTED_YEAR)?;
-        validate_month(&self.month)
+        self._validate_year(&self.year, FIRST_CREDIT_CARD_YEAR, MAX_SUPPORTED_YEAR)?;
+        self._validate_month(&self.month)?;
+        Ok(self)
     }
 }
 

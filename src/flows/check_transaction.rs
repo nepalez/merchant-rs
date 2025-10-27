@@ -1,9 +1,10 @@
+use async_trait::async_trait;
+
 use crate::error::Error;
 use crate::types::{
     TransactionStatus,
     secure::{AuthorizationCode, TransactionId},
 };
-use async_trait::async_trait;
 
 /// The base trait defining a payment gateway adapter's core identity and capabilities.
 /// This trait is the minimal requirement for any adapter.
@@ -13,11 +14,7 @@ use async_trait::async_trait;
 /// All the other capabilities are optional and can vary from one adapter to another.
 #[allow(private_bounds)]
 #[async_trait]
-pub trait Gateway {
-    /// Returns a unique identifier for the gateway adapter
-    /// (e.g., "stripe", "adyen").
-    fn id(&self) -> &str;
-
+pub trait CheckTransaction {
     /// Get the status of a transaction.
     async fn status(&self, request: Request) -> Result<Response, Error>;
 }

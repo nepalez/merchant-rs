@@ -1,27 +1,25 @@
 use async_trait::async_trait;
 
-use crate::error::{Error, Result};
-use crate::traits::Authorizable;
+use crate::error::Error;
 use crate::types::{
-    Money, TransactionStatus,
-    secure::{MerchantReferenceId, TransactionId},
+    Money,
+    enums::TransactionStatus,
+    secure::{MerchantReferenceId, NewPayment, TransactionId},
 };
 
 /// Optional trait for payment gateways that support completing a two-step flow,
-/// where the first step is an authorization
-/// and the second is a capture.
-///
-/// An adapter should implement this ONLY if it supports the two-step Auth -> Capture model.
-/// Gateways that only support Sale/Purchase should NOT implement this trait.
+/// where the first step is an authorization and the second is a capture.
 #[async_trait]
-pub trait Capturable: Authorizable {
+pub trait TwoStepPayIn {
+    async fn authorize(&self, payment: NewPayment) -> Result<Response, Error>;
+
     /// Confirms and debits the previously authorized funds.
-    async fn capture(&self, request: Request) -> Result<Response>;
+    async fn capture(&self, request: CaptureRequest) -> Result<Response, Error>;
 }
 
 /// Request body for capturing a previously authorized payment.
 #[derive(Debug, Clone)]
-pub struct Request {
+pub struct CaptureRequest {
     /// ID of the original authorization transaction returned by the gateway.
     pub transaction_id: TransactionId,
     /// The exact amount to capture. Must be less than or equal to the authorized amount.

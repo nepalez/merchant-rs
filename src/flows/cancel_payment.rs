@@ -1,15 +1,17 @@
 use async_trait::async_trait;
 
-use crate::traits::Authorizable;
-use crate::types::secure::{MerchantReferenceId, TransactionId};
-use crate::{Error, TransactionStatus};
+use crate::error::Error;
+use crate::types::{
+    TransactionStatus,
+    secure::{MerchantReferenceId, TransactionId},
+};
 
 /// The trait to support voiding (cancelling) a pending authorization.
 ///
 /// Adapters should implement this trait only when they support cancellation
 /// of previously authorized payments.
 #[async_trait]
-pub trait Cancellable: Authorizable {
+pub trait CancelPayment {
     /// Cancels a pending authorization, releasing the reserved funds, or reverses a
     /// recently processed one-step transaction (Sale/Purchase) before settlement.
     ///

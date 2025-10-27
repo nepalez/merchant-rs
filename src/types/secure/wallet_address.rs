@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Cryptocurrency wallet address
@@ -33,7 +33,7 @@ impl FromStr for WalletAddress {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -61,8 +61,9 @@ impl Sanitized for WalletAddress {
 
 impl Validated for WalletAddress {
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 20, 90)
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 20, 90)?;
+        Ok(self)
     }
 }
 

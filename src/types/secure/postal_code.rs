@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::error::Error;
-use crate::internal::{Exposed, sanitized::*, validated::*};
+use crate::internal::{Exposed, Validated, sanitized::*};
 use crate::types::insecure;
 
 /// Postal code used in addresses
@@ -34,7 +34,7 @@ impl FromStr for PostalCode {
 
     #[inline]
     fn from_str(input: &str) -> Result<Self, Self::Err> {
-        Self::sanitize(input).validated()
+        Self::sanitize(input).validate()
     }
 }
 
@@ -59,9 +59,10 @@ impl Sanitized for PostalCode {
 impl Validated for PostalCode {
     // We don't care about zeroization of the temporary data, that is not PII.
     #[inline]
-    fn validate(&self) -> Result<(), String> {
-        validate_length(&self.0, 3, 10)?;
-        validate_alphanumeric(&self.0, "- ")
+    fn validate(self) -> Result<Self, Error> {
+        self._validate_length(&self.0, 3, 10)?;
+        self._validate_alphanumeric(&self.0, "- ")?;
+        Ok(self)
     }
 }
 
