@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
-use crate::error::{Error, Result};
+use crate::PaymentSourceType;
+use crate::error::Error;
 use crate::traits::Gateway;
 use crate::types::{
     Money, TransactionStatus,
@@ -12,8 +13,29 @@ use crate::types::{
 /// Any gateway is expected to implement this trait.
 #[async_trait]
 pub trait Authorizable: Gateway {
+    /// The list of payment source types supported by this gateway.
+    const PAYMENT_SOURCE_TYPES: &'static [PaymentSourceType];
+
     /// Reserve funds (Auth) or immediately debits funds (Sale/Purchase).
-    async fn authorize(&self, request: Request) -> Result<Response>;
+    async fn authorize(&self, request: Request) -> Result<Response, Error> {
+        self._validate_request(&request)?;
+        self._authorize(request).await
+    }
+
+    // Helpers
+
+    async fn _authorize(&self, request: Request) -> Result<Response, Error>;
+
+    fn _validate_request(&self, request: &Request) -> Result<(), Error> {
+        let source_type = request.source.source_type();
+        if Self::PAYMENT_SOURCE_TYPES.contains(&source_type) {
+            Ok(())
+        } else {
+            Err(Error::InvalidInput(format!(
+                "{source_type} not supported by this gateway"
+            )))
+        }
+    }
 }
 
 /// Request body for authorizing a payment.

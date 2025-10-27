@@ -8,16 +8,11 @@
 //! By making these structures canonical, the core decouples the business logic
 //! from the specific data formats required by external Payment Gateways (PAGs),
 //! upholding the core's role as a stable abstraction layer.
-mod account_type;
-
-mod customer_category;
 mod money;
-mod transaction_status;
 
+mod enums;
 pub mod insecure;
 pub mod secure;
 
-pub use account_type::AccountType;
-pub use customer_category::CustomerCategory;
+pub use enums::*;
 pub use money::Money;
-pub use transaction_status::TransactionStatus;

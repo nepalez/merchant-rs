@@ -20,7 +20,7 @@ pub(crate) trait Validated: Sized + Debug {
 
     fn validated(self) -> Result<Self, Error> {
         self.validate()
-            .map_err(|msg| Error::validation_failed(format!("{self:?} {msg}")))?;
+            .map_err(|msg| Error::InvalidInput(format!("{self:?} {msg}")))?;
         Ok(self)
     }
 }

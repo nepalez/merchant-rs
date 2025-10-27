@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 
+use crate::PaymentSourceType;
 use crate::error::Error;
 use crate::internal::Exposed;
 use crate::types::{AccountType, CustomerCategory, insecure, secure::*};
@@ -206,6 +207,22 @@ pub enum PaymentSource {
         /// Payment method token encapsulating payment details and user information
         token: Token,
     },
+}
+
+impl PaymentSource {
+    pub fn source_type(&self) -> PaymentSourceType {
+        match *self {
+            Self::BankAccount { .. } => PaymentSourceType::BankAccount,
+            Self::BNPL { .. } => PaymentSourceType::BNPL,
+            Self::CashVoucher { .. } => PaymentSourceType::CashVoucher,
+            Self::CryptoPayment { .. } => PaymentSourceType::CryptoPayment,
+            Self::DirectCarrierBilling { .. } => PaymentSourceType::DirectCarrierBilling,
+            Self::InstantBankTransfer { .. } => PaymentSourceType::InstantBankTransfer,
+            Self::PaymentCard { .. } => PaymentSourceType::PaymentCard,
+            Self::SEPATransfer { .. } => PaymentSourceType::SEPATransfer,
+            Self::TokenizedPayment { .. } => PaymentSourceType::TokenizedPayment,
+        }
+    }
 }
 
 impl<'a> TryFrom<insecure::PaymentSource<'a>> for PaymentSource {
