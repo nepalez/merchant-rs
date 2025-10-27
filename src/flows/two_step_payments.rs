@@ -4,14 +4,14 @@ use crate::error::Error;
 use crate::types::{
     Money,
     enums::TransactionStatus,
-    secure::{MerchantReferenceId, NewPayment, TransactionId},
+    secure::{MerchantReferenceId, Payment, TransactionId},
 };
 
 /// Optional trait for payment gateways that support completing a two-step flow,
 /// where the first step is an authorization and the second is a capture.
 #[async_trait]
-pub trait TwoStepPayIn {
-    async fn authorize(&self, payment: NewPayment) -> Result<Response, Error>;
+pub trait TwoStepPayments {
+    async fn authorize(&self, payment: Payment) -> Result<Response, Error>;
 
     /// Confirms and debits the previously authorized funds.
     async fn capture(&self, request: CaptureRequest) -> Result<Response, Error>;

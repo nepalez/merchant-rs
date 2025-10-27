@@ -11,7 +11,7 @@ use crate::types::{
 /// Adapters should implement this trait only when they support cancellation
 /// of previously authorized payments.
 #[async_trait]
-pub trait CancelPayment {
+pub trait CancelPayments {
     /// Cancels a pending authorization, releasing the reserved funds, or reverses a
     /// recently processed one-step transaction (Sale/Purchase) before settlement.
     ///

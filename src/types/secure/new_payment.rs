@@ -11,7 +11,7 @@ use crate::{Error, PaymentSourceType, PaymentSourceType::*};
 
 /// Information to create (either charge or authorize) a payment.
 #[derive(Debug, Clone)]
-pub struct NewPayment {
+pub struct Payment {
     /// The source of the payment to charge funds from
     source: PaymentSource,
     /// The amount to charge
@@ -23,13 +23,13 @@ pub struct NewPayment {
     merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
-impl NewPayment {
+impl Payment {
     pub fn source_type(&self) -> PaymentSourceType {
         self.source.source_type()
     }
 }
 
-impl<'a> TryFrom<insecure::NewPayment<'a>> for NewPayment {
+impl<'a> TryFrom<insecure::NewPayment<'a>> for Payment {
     type Error = Error;
 
     fn try_from(value: insecure::NewPayment<'a>) -> Result<Self, Self::Error> {
@@ -45,7 +45,7 @@ impl<'a> TryFrom<insecure::NewPayment<'a>> for NewPayment {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Validated for NewPayment {
+impl Validated for Payment {
     fn validate(self) -> Result<Self, Error> {
         if self.merchant_initiated_type.is_some() {
             let source_type = self.source.source_type();
@@ -65,7 +65,7 @@ impl Validated for NewPayment {
 // SAFETY: The trait is safely implemented as:
 // 1. it uses exposed versions of all inner types.
 // 2. it uses `Debug` implementations of its values that mask sensitive data by themselves.
-unsafe impl Exposed for NewPayment {
+unsafe impl Exposed for Payment {
     type Output<'a> = insecure::NewPayment<'a>;
     const TYPE_WRAPPER: &'static str = "NewPayment";
 

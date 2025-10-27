@@ -4,17 +4,16 @@ use crate::error::Error;
 use crate::types::{
     Money, TransactionStatus,
     secure::{
-        AuthorizationCode, CustomerId, MerchantReferenceId, NewPayment, PaymentSource,
-        TransactionId,
+        AuthorizationCode, CustomerId, MerchantReferenceId, Payment, PaymentSource, TransactionId,
     },
 };
 
 /// Optional trait for payment gateways that support completing a one-step flow,
 /// without the necessity to capture them later.
 #[async_trait]
-pub trait OneStepPayIn {
+pub trait OneStepPayments {
     /// Immediately charge the payment.
-    async fn charge(&self, payment: NewPayment) -> Result<Response, Error>;
+    async fn charge(&self, payment: Payment) -> Result<Response, Error>;
 }
 
 /// Request body for authorizing a payment.

@@ -66,7 +66,7 @@ impl Validated for VirtualPaymentAddress {
         const MIN_UPI_LENGTH: usize = 7;
         const MAX_EMAIL_LENGTH: usize = 255;
 
-        self._validate_length(&self.0, MIN_UPI_LENGTH, MAX_EMAIL_LENGTH);
+        self._validate_length(&self.0, MIN_UPI_LENGTH, MAX_EMAIL_LENGTH)?;
         Ok(self)
     }
 }

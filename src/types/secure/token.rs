@@ -46,7 +46,7 @@ impl Validated for Token {
     fn validate(self) -> Result<Self, Error> {
         self._validate_length(&self.0, 16, 4096)?;
 
-        if self.0.trim() == &self.0 {
+        if self.0.trim() == self.0 {
             Ok(self)
         } else {
             Err(Error::InvalidInput(format!(

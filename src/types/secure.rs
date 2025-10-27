@@ -65,7 +65,7 @@ pub use iban::IBAN;
 pub use merchant_reference_id::MerchantReferenceId;
 pub use metadata::Metadata;
 pub use national_id::NationalId;
-pub use new_payment::NewPayment;
+pub use new_payment::Payment;
 pub use payment_source::PaymentSource;
 pub use phone_number::PhoneNumber;
 pub use postal_code::PostalCode;

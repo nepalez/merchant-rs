@@ -8,7 +8,7 @@ use crate::types::{
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]
-pub trait RefundPayment {
+pub trait RefundPayments {
     async fn refund(&self, request: Request) -> Result<Response, Error>;
 }
 
