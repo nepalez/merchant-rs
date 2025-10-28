@@ -1,6 +1,8 @@
-pub use crate::Error;
-pub use crate::inputs::SEPAAccount as Input;
-pub use crate::types::{Address, EmailAddress, FullName, IBAN};
+use std::convert::TryFrom;
+
+use crate::Error;
+use crate::inputs::SEPAAccount as Input;
+use crate::types::{Address, EmailAddress, FullName, IBAN};
 
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]

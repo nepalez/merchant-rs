@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Cryptocurrency wallet address
 ///
@@ -42,9 +43,9 @@ impl fmt::Debug for WalletAddress {
     }
 }
 
-impl AsRef<str> for WalletAddress {
+impl AsUnsafeRef<str> for WalletAddress {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

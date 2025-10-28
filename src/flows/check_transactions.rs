@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
-use crate::types::{Transaction, TransactionId};
 use crate::Error;
+use crate::types::{Transaction, TransactionId};
 
 /// The base trait defining a payment gateway adapter's core identity and capabilities.
 /// This trait is the minimal requirement for any adapter.

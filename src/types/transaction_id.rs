@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// External transaction identifier from a payment gateway
 ///
@@ -43,9 +44,9 @@ impl fmt::Debug for TransactionId {
     }
 }
 
-impl AsRef<str> for TransactionId {
+impl AsUnsafeRef<str> for TransactionId {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

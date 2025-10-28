@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Optional administrative text explaining the reason for a refund
 ///
@@ -41,9 +42,9 @@ impl fmt::Debug for ReasonForRefund {
     }
 }
 
-impl AsRef<str> for ReasonForRefund {
+impl AsUnsafeRef<str> for ReasonForRefund {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

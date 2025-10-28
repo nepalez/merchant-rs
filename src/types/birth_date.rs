@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
@@ -28,18 +29,42 @@ pub struct BirthDate {
 }
 
 impl BirthDate {
-    /// Safely exposes the reference to the zeroized year of birth
-    pub fn year(&self) -> &u16 {
+    /// Exposes the reference to the zeroized year of birth
+    ///
+    /// # SAFETY
+    /// This method is unsafe because it exposes sensitive PII data.
+    ///
+    /// Ensure that:
+    /// (1) the data is not leaking into logs, error messages, etc.;
+    /// (2) every clone or another object containing these data
+    ///     is not leaked in logs and is zeroized upon a drop.
+    pub unsafe fn year(&self) -> &u16 {
         &self.year
     }
 
-    /// Safely exposes the reference to the zeroized month of birth
-    pub fn month(&self) -> &u8 {
+    /// Exposes the reference to the zeroized month of birth
+    ///
+    /// # SAFETY
+    /// This method is unsafe because it exposes sensitive PII data.
+    ///
+    /// Ensure that:
+    /// (1) the data is not leaking into logs, error messages, etc.;
+    /// (2) every clone or another object containing these data
+    ///     is not leaked in logs and is zeroized upon a drop.
+    pub unsafe fn month(&self) -> &u8 {
         &self.month
     }
 
-    /// Safely exposes the reference to the zeroized day of birth
-    pub fn day(&self) -> &u8 {
+    /// Exposes the reference to the zeroized day of birth
+    ///
+    /// # SAFETY
+    /// This method is unsafe because it exposes sensitive PII data.
+    ///
+    /// Ensure that:
+    /// (1) the data is not leaking into logs, error messages, etc.;
+    /// (2) every clone or another object containing these data
+    ///     is not leaked in logs and is zeroized upon a drop.
+    pub unsafe fn day(&self) -> &u8 {
         &self.day
     }
 }

@@ -3,7 +3,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Email address
 ///
@@ -43,9 +43,9 @@ impl fmt::Debug for EmailAddress {
     }
 }
 
-impl AsRef<str> for EmailAddress {
+impl AsUnsafeRef<str> for EmailAddress {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

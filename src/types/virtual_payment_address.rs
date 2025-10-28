@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Virtual Payment Address (UPI, PIX)
 ///
@@ -43,9 +44,9 @@ impl fmt::Debug for VirtualPaymentAddress {
     }
 }
 
-impl AsRef<str> for VirtualPaymentAddress {
+impl AsUnsafeRef<str> for VirtualPaymentAddress {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

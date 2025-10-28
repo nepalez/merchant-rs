@@ -4,7 +4,7 @@ use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// International Bank Account Number (IBAN)
 ///
@@ -45,9 +45,9 @@ impl fmt::Debug for IBAN {
     }
 }
 
-impl AsRef<str> for IBAN {
+impl AsUnsafeRef<str> for IBAN {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

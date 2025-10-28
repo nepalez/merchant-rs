@@ -2,7 +2,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// User identifier from an external vault or payment system
 ///
@@ -41,9 +41,9 @@ impl fmt::Debug for CustomerId {
     }
 }
 
-impl AsRef<str> for CustomerId {
+impl AsUnsafeRef<str> for CustomerId {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

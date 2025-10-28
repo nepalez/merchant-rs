@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated};
+use crate::internal::{AsUnsafeRef, Masked, Validated};
 
 /// Tokenized credential from a payment processor or vault
 ///
@@ -30,9 +31,9 @@ impl<'a> TryFrom<&'a str> for Token {
     }
 }
 
-impl AsRef<str> for Token {
+impl AsUnsafeRef<str> for Token {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

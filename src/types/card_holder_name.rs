@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Cardholder name as it appears on a payment card
 ///
@@ -44,9 +45,10 @@ impl fmt::Debug for CardHolderName {
         <Self as Masked>::masked_debug(self, f)
     }
 }
-impl AsRef<str> for CardHolderName {
+
+impl AsUnsafeRef<str> for CardHolderName {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

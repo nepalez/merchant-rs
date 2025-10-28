@@ -2,7 +2,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Card Verification Value (CVV/CVC/CID)
 ///
@@ -42,9 +42,9 @@ impl fmt::Debug for CVV {
     }
 }
 
-impl AsRef<str> for CVV {
+impl AsUnsafeRef<str> for CVV {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

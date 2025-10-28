@@ -2,7 +2,7 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Full name of a payer
 ///
@@ -45,9 +45,9 @@ impl fmt::Debug for FullName {
     }
 }
 
-impl AsRef<str> for FullName {
+impl AsUnsafeRef<str> for FullName {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

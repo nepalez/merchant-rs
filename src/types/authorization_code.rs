@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Authorization code from a card issuer
 ///
@@ -49,9 +50,9 @@ impl fmt::Debug for AuthorizationCode {
     }
 }
 
-impl AsRef<str> for AuthorizationCode {
+impl AsUnsafeRef<str> for AuthorizationCode {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

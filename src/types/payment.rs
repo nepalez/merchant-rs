@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use crate::Error;
 use crate::inputs::Payment as Input;
 use crate::types::{MerchantInitiatedType, MerchantReferenceId, Money, PaymentSource};

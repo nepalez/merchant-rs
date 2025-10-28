@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Primary account number (PAN) from a payment card
 ///
@@ -43,9 +44,9 @@ impl fmt::Debug for PrimaryAccountNumber {
     }
 }
 
-impl AsRef<str> for PrimaryAccountNumber {
+impl AsUnsafeRef<str> for PrimaryAccountNumber {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

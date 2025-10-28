@@ -1,4 +1,5 @@
 use codes_iso_3166::part_1;
+use std::convert::{AsRef, TryFrom};
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 

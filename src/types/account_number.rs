@@ -1,8 +1,9 @@
+use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{Masked, Validated, sanitized::*};
+use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
 
 /// Bank account number (for non-SEPA transfers)
 ///
@@ -44,9 +45,9 @@ impl fmt::Debug for AccountNumber {
     }
 }
 
-impl AsRef<str> for AccountNumber {
+impl AsUnsafeRef<str> for AccountNumber {
     #[inline]
-    fn as_ref(&self) -> &str {
+    unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
     }
 }

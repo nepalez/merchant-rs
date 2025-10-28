@@ -1,3 +1,4 @@
+use std::convert::TryFrom;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
