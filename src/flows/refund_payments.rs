@@ -1,39 +1,14 @@
 use async_trait::async_trait;
 
-use crate::error::Error;
-use crate::types::{
-    Money, TransactionStatus,
-    secure::{MerchantReferenceId, ReasonForRefund, TransactionId},
-};
+use crate::Error;
+use crate::types::{MerchantReferenceId, Transaction, TransactionId};
 
 /// Trait for payment gateways that support the return of funds to a customer.
 #[async_trait]
 pub trait RefundPayments {
-    async fn refund(&self, request: Request) -> Result<Response, Error>;
-}
-
-/// Request body for initiating a refund.
-#[derive(Debug, Clone)]
-pub struct Request {
-    /// ID of the transaction to be refunded (usually a Capture ID).
-    pub transaction_id: TransactionId,
-    /// The exact amount to refund.
-    pub amount_to_refund: Money,
-    /// Optional reason for the refund, often required by the gateway.
-    pub reason: Option<ReasonForRefund>,
-    /// Unique ID provided by the merchant for tracing the refund operation.
-    pub merchant_reference_id: MerchantReferenceId,
-}
-
-/// Response body after a successful or failed refund.
-#[derive(Debug, Clone)]
-pub struct Response {
-    /// The unique ID returned by the gateway for the refund record.
-    pub transaction_id: TransactionId,
-    /// The canonical status (Should be Refunded or Failed).
-    pub status: TransactionStatus,
-    /// The final amount successfully refunded.
-    pub refunded_amount: Money,
-    /// Details of any error that occurred.
-    pub error: Option<Error>,
+    async fn refund(
+        &self,
+        transaction_id: TransactionId,
+        merchant_reference_id: MerchantReferenceId,
+    ) -> Result<Transaction, Error>;
 }

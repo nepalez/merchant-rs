@@ -1,8 +1,8 @@
 mod error;
-mod flows;
+mod inputs;
 mod internal;
-mod types;
 
-pub use error::*;
-pub use flows::*;
-pub use types::*;
+pub mod flows;
+pub mod types;
+
+pub use error::Error;

@@ -1,10 +1,7 @@
 use async_trait::async_trait;
 
-use crate::error::Error;
-use crate::types::{
-    TransactionStatus,
-    secure::{MerchantReferenceId, TransactionId},
-};
+use crate::Error;
+use crate::types::{MerchantReferenceId, Transaction, TransactionId};
 
 /// The trait to support voiding (cancelling) a pending authorization.
 ///
@@ -19,25 +16,9 @@ pub trait CancelPayments {
     /// ability to retract the action initiated by 'authorize' before the funds
     /// are permanently settled by the payment network (which is actual
     /// for 1-step flows as well).
-    async fn void(&self, request: Request) -> crate::Result<Response>;
-}
-
-/// Request body for voiding (canceling) a pending authorization.
-#[derive(Debug, Clone)]
-pub struct Request {
-    /// ID of the original transaction to void.
-    pub transaction_id: TransactionId,
-    /// Unique ID provided by the merchant for tracing the void operation.
-    pub merchant_reference_id: MerchantReferenceId,
-}
-
-/// Response body after a successful or failed void operation.
-#[derive(Debug, Clone)]
-pub struct Response {
-    /// The transaction ID associated with the void operation.
-    pub transaction_id: TransactionId,
-    /// The canonical status (Should be Voided or Failed).
-    pub status: TransactionStatus,
-    /// Details of any error that occurred.
-    pub error: Option<Error>,
+    async fn void(
+        &self,
+        transaction_id: TransactionId,
+        merchant_reference_id: MerchantReferenceId,
+    ) -> Result<Transaction, Error>;
 }

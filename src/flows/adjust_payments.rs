@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::error::Error;
+use crate::Error;
 use crate::flows::TwoStepPayments;
 
 /// Optional trait for payment gateways that support adjusting a payment

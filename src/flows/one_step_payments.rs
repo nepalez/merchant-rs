@@ -1,11 +1,9 @@
 use async_trait::async_trait;
 
-use crate::error::Error;
+use crate::Error;
 use crate::types::{
-    Money, TransactionStatus,
-    secure::{
-        AuthorizationCode, CustomerId, MerchantReferenceId, Payment, PaymentSource, TransactionId,
-    },
+    AuthorizationCode, CustomerId, MerchantReferenceId, Money, Payment, PaymentSource,
+    TransactionId, TransactionStatus,
 };
 
 /// Optional trait for payment gateways that support completing a one-step flow,

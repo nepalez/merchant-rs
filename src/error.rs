@@ -9,9 +9,6 @@
 //! It includes metadata like a canonical error code, the gateway's original
 //! error code, and a flag indicating if the operation is safely retriable.
 
-/// Canonical result type used across the crate.
-pub type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
     /// General data validation error (invalid CVV, expired card, missing field).
