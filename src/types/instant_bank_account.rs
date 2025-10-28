@@ -26,7 +26,7 @@ use crate::types::{
 /// ## Authentication Model
 ///
 /// > Authentication occurs **in redirect flow** through the bank's interface,
-/// not in authorization request!
+/// > not in authorization request!
 ///
 /// ### Redirect Flow Steps
 ///

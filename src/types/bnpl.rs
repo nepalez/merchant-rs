@@ -19,7 +19,7 @@ use crate::types::{
 /// ## Authentication Model
 ///
 /// > Authentication occurs **in redirect flow** through the BNPL provider,
-/// not in authorization request!
+/// > not in authorization request!
 ///
 /// ### Redirect Flow Steps
 ///

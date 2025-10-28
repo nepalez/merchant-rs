@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use crate::Error;
 use crate::inputs::Transaction as Input;
 use crate::types::{
-    MerchantInitiatedType, MerchantReferenceId, Money, TransactionId, TransactionStatus,
+    MerchantInitiatedType, Money, TransactionId, TransactionIdempotenceKey, TransactionStatus,
 };
 
 #[derive(Debug, Clone)]
@@ -11,7 +11,7 @@ pub struct Transaction {
     /// The unique transaction ID returned by the payment gateway.
     pub transaction_id: TransactionId,
     /// The idempotency key.
-    pub merchant_reference_id: MerchantReferenceId,
+    pub idempotence_key: TransactionIdempotenceKey,
     /// The canonical status of the transaction.
     pub status: TransactionStatus,
     /// The amount of the transaction.
@@ -27,8 +27,8 @@ impl Transaction {
     }
 
     /// The idempotency key.
-    pub fn merchant_reference_id(&self) -> &MerchantReferenceId {
-        &self.merchant_reference_id
+    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
+        &self.idempotence_key
     }
 
     /// The canonical status of the transaction.
@@ -53,7 +53,7 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
     fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             transaction_id: input.transaction_id.try_into()?,
-            merchant_reference_id: input.merchant_reference_id.try_into()?,
+            idempotence_key: input.idempotence_key.try_into()?,
             status: input.status,
             amount: input.amount,
             merchant_initiated_type: input.merchant_initiated_type,

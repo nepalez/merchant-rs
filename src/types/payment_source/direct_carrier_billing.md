@@ -2,13 +2,13 @@
 
 ## Overview
 
-Payment is charged directly to the customer's mobile phone bill or deducted from prepaid balance. Customer authorizes the charge via SMS PIN or mobile app confirmation. Charge appears on the next phone bill (postpaid) or is immediately deducted from balance (prepaid). No bank account or credit card required — the mobile carrier acts as the payment intermediary and assumes fraud risk.
+Payment is charged directly to the customer's mobile phone bill or deducted from the prepaid balance. Customer authorizes the charge via SMS PIN or mobile app confirmation. Charge appears on the next phone bill (postpaid) or is immediately deducted from balance (prepaid). No bank account or credit card is required — the mobile carrier acts as the payment intermediary and assumes fraud risk.
 
 ## When to Use
 
 - **Mobile-first markets**: Regions where mobile phone penetration exceeds banking access
 - **Digital content purchases**: Games, apps, music, videos, subscriptions
-- **Micropayments**: Small transactions where card fees would be prohibitive ($0.50 - $50 typical range)
+- **Micropayments**: Small transactions where card fees would be prohibitive ($0.50-$50 typical range)
 - **Unbanked/underbanked users**: Customers without access to traditional payment methods
 - **Youth market**: Users too young for credit cards
 - **Convenience**: One-click checkout without entering payment details
@@ -22,12 +22,12 @@ Authentication occurs **via carrier SMS challenge-response**, not in authorizati
 
 1. **Merchant initiates**: Calls `authorize()` with customer's phone number
 2. **Gateway routes to carrier**: Identifies carrier from phone number, initiates DCB request
-3. **Carrier sends PIN**: Customer receives SMS with one-time PIN code
+3. **Carrier sends PIN**: Customer receives SMS with a one-time PIN code
 4. **Customer enters PIN**: Types PIN into merchant's checkout or responds to SMS
 5. **Carrier validates PIN**: Confirms PIN matches and customer has sufficient balance/credit limit
 6. **Carrier authorizes charge**: Approves transaction, adds to bill or deducts from balance
 7. **Gateway confirms**: Returns authorization response to merchant
-8. **Settlement**: Carrier collects payment from customer, remits to merchant (typically 30-60 days)
+8. **Settlement**: Carrier collects payment from the customer, remits to merchant (typically 30–60 days)
 
 ### Authorization Request Content
 
@@ -148,7 +148,7 @@ The authorization request contains **only the phone number as the primary paymen
 
 ### Spending Limits
 - Carriers impose daily/monthly spending limits per account
-- Typical limits: $10-50 per day, $50-200 per month
+- Typical limits: $10–50 per day, $50–200 per month
 - Limits vary by carrier, account type, and payment history
 - Prepaid accounts may have lower limits than postpaid
 
@@ -161,9 +161,9 @@ The authorization request contains **only the phone number as the primary paymen
 - **TCPA** (US): Regulations on SMS messaging and consent
 
 ### Business Model Considerations
-- **High merchant fees**: Typically 40-60% of transaction value
-- **Delayed settlement**: 30-60 days from transaction to payout
-- **Chargebacks**: Customers can dispute charges with carrier
+- **High merchant fees**: Typically 40–60% of transaction value
+- **Delayed settlement**: 30–60 days from transaction to payout
+- **Chargebacks**: Customers can dispute charges with the carrier
 - **Refunds**: Process varies by carrier, often manual
 - **Subscription management**: Carriers may handle recurring billing
 - **Geographic limitations**: Coverage varies significantly by region
@@ -171,9 +171,9 @@ The authorization request contains **only the phone number as the primary paymen
 ### User Experience
 - **Friction**: SMS delivery delays can slow checkout
 - **Failed PIN**: Customers may not receive SMS (network issues, spam filters)
-- **Spending limits**: Transactions may fail if customer hits daily/monthly limit
+- **Spending limits**: Transactions may fail if the customer hits the daily / monthly limit
 - **Prepaid balance**: Prepaid users may have insufficient balance
-- **Roaming**: Authentication may fail when customer is roaming internationally
+- **Roaming**: Authentication may fail when a customer is roaming internationally
 
 ### Regional Considerations
 - **Strong in Asia-Pacific**: Indonesia, Philippines, Thailand, India

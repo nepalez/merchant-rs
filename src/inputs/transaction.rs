@@ -5,7 +5,7 @@ pub struct Transaction<'a> {
     /// The unique transaction ID returned by the payment gateway.
     pub transaction_id: &'a str,
     /// The idempotency key.
-    pub merchant_reference_id: &'a str,
+    pub idempotence_key: &'a str,
     /// The canonical status of the transaction.
     pub status: TransactionStatus,
     /// The amount of the transaction.

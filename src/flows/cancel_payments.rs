@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
-use crate::types::{MerchantReferenceId, Transaction, TransactionId};
+use crate::types::{Transaction, TransactionId};
 
 /// The trait to support voiding (cancelling) a pending authorization.
 ///
@@ -9,16 +9,12 @@ use crate::types::{MerchantReferenceId, Transaction, TransactionId};
 /// of previously authorized payments.
 #[async_trait]
 pub trait CancelPayments {
-    /// Cancels a pending authorization, releasing the reserved funds, or reverses a
-    /// recently processed one-step transaction (Sale/Purchase) before settlement.
+    /// Cancel a pending authorization, releasing the reserved funds,
+    /// or reverse a recently processed one-step transaction (Sale/Purchase) before the settlement.
     ///
     /// The 'void' operation is mandatory here because it represents the immediate
     /// ability to retract the action initiated by 'authorize' before the funds
-    /// are permanently settled by the payment network (which is actual
-    /// for 1-step flows as well).
-    async fn void(
-        &self,
-        transaction_id: TransactionId,
-        merchant_reference_id: MerchantReferenceId,
-    ) -> Result<Transaction, Error>;
+    /// are permanently settled by the payment network
+    /// (which is actual for 1-step flows as well).
+    async fn void(&self, transaction_id: TransactionId) -> Result<Transaction, Error>;
 }

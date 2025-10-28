@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::Payment as Input;
-use crate::types::{MerchantInitiatedType, MerchantReferenceId, Money, PaymentSource};
+use crate::types::{MerchantInitiatedType, Money, PaymentSource, TransactionIdempotenceKey};
 
 /// Information to create (either charge or authorize) a payment.
 #[derive(Debug, Clone)]
@@ -12,7 +12,7 @@ pub struct Payment {
     /// The amount to charge
     amount: Money,
     /// The idempotency key
-    merchant_reference_id: MerchantReferenceId,
+    idempotence_key: TransactionIdempotenceKey,
     /// The scope of the payment initiated by the merchant
     /// (use `None` if the payment was initiated by a customer).
     merchant_initiated_type: Option<MerchantInitiatedType>,
@@ -30,8 +30,8 @@ impl Payment {
     }
 
     /// The idempotency key
-    pub fn merchant_reference_id(&self) -> &MerchantReferenceId {
-        &self.merchant_reference_id
+    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
+        &self.idempotence_key
     }
 
     /// The scope of the payment initiated by the merchant
@@ -48,7 +48,7 @@ impl<'a> TryFrom<Input<'a>> for Payment {
         Ok(Self {
             source: input.source.try_into()?,
             amount: input.amount,
-            merchant_reference_id: input.merchant_reference_id.try_into()?,
+            idempotence_key: input.idempotence_key.try_into()?,
             merchant_initiated_type: input.merchant_initiated_type,
         })
     }

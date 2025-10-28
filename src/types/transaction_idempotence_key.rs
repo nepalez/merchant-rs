@@ -18,9 +18,9 @@ use crate::internal::{Validated, sanitized::*};
 ///
 /// Consequently, both `Debug` and `Display` are implemented without masking.
 #[derive(Clone, Debug, ZeroizeOnDrop)]
-pub struct MerchantReferenceId(String);
+pub struct TransactionIdempotenceKey(String);
 
-impl<'a> TryFrom<&'a str> for MerchantReferenceId {
+impl<'a> TryFrom<&'a str> for TransactionIdempotenceKey {
     type Error = Error;
 
     #[inline]
@@ -29,7 +29,7 @@ impl<'a> TryFrom<&'a str> for MerchantReferenceId {
     }
 }
 
-impl AsRef<str> for MerchantReferenceId {
+impl AsRef<str> for TransactionIdempotenceKey {
     #[inline]
     fn as_ref(&self) -> &str {
         &self.0
@@ -38,7 +38,7 @@ impl AsRef<str> for MerchantReferenceId {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for MerchantReferenceId {
+impl Sanitized for TransactionIdempotenceKey {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
@@ -47,7 +47,7 @@ impl Sanitized for MerchantReferenceId {
     }
 }
 
-impl Validated for MerchantReferenceId {
+impl Validated for TransactionIdempotenceKey {
     #[inline]
     fn validate(self) -> Result<Self, Error> {
         self._validate_length(&self.0, 1, 255)?;

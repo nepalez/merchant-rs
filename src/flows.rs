@@ -13,7 +13,7 @@ pub use adjust_payments::AdjustPayments;
 pub use cancel_payments::CancelPayments;
 pub use check_transactions::CheckTransaction;
 pub use one_step_payments::OneStepPayments;
-pub use recover_transactions::RecoverTransactions;
+pub use recover_transactions::{RecoverTransactions, TransactionIterator};
 pub use refund_payments::RefundPayments;
 pub use tokenize_payments::TokenizePayments;
 pub use two_step_payments::TwoStepPayments;
