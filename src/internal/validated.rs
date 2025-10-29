@@ -18,7 +18,6 @@ use std::fmt::Debug;
 pub(crate) trait Validated: Sized + Debug {
     fn validate(self) -> Result<Self, Error>;
 
-    #[inline]
     fn _validate_length(&self, input: &str, min: usize, max: usize) -> Result<(), Error> {
         // validate chars, not bytes!
         let len = input.chars().count();
@@ -32,7 +31,6 @@ pub(crate) trait Validated: Sized + Debug {
         }
     }
 
-    #[inline]
     fn _validate_alphanumeric(&self, input: &str, extra: &str) -> Result<(), Error> {
         for c in input.chars() {
             if !c.is_ascii_alphanumeric() && !extra.contains(c) {
@@ -44,7 +42,6 @@ pub(crate) trait Validated: Sized + Debug {
         Ok(())
     }
 
-    #[inline]
     fn _validate_alphabetic(&self, input: &str, extra: &str) -> Result<(), Error> {
         for c in input.chars() {
             if !c.is_ascii_alphabetic() && !extra.contains(c) {
@@ -56,7 +53,6 @@ pub(crate) trait Validated: Sized + Debug {
         Ok(())
     }
 
-    #[inline]
     fn _validate_digits(&self, input: &str, extra: &str) -> Result<(), Error> {
         for c in input.chars() {
             if !c.is_ascii_digit() && !extra.contains(c) {
@@ -68,7 +64,6 @@ pub(crate) trait Validated: Sized + Debug {
         Ok(())
     }
 
-    #[inline]
     fn _validate_month(&self, input: &u8) -> Result<(), Error> {
         if !(1..=12).contains(input) {
             Err(Error::InvalidInput(
@@ -79,27 +74,23 @@ pub(crate) trait Validated: Sized + Debug {
         }
     }
 
-    #[inline]
     fn _validate_year(&self, input: &u16, min: u16, max: u16) -> Result<(), Error> {
-        if *input < min || *input > max {
+        if !(min..=max).contains(input) {
             Err(Error::InvalidInput(format!(
-                "{self:?} year is out of range ({}-{})",
-                min, max
+                "{self:?} year is out of range ({min}-{max})",
             )))
         } else {
             Ok(())
         }
     }
 
-    #[inline]
     fn _validate_day(&self, day: &u8, month: &u8, year: &u16) -> Result<(), Error> {
         self._validate_month(month)?;
+        let max = days_in_month(year, month);
 
-        if *day == 0 {
-            Err(Error::InvalidInput(format!("{self:?} cannot have day 0")))
-        } else if *day > days_in_month(year, month) {
+        if !(1..=max).contains(day) {
             Err(Error::InvalidInput(format!(
-                "{self:?} is out of range for given month and year"
+                "{self:?} is out of range (1-{max})"
             )))
         } else {
             Ok(())

@@ -28,7 +28,6 @@ pub struct Metadata(HashMap<&'static str, MetadataValue>);
 impl TryFrom<Input<'_>> for Metadata {
     type Error = Error;
 
-    #[inline]
     fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {
         let mut output = Self::default();
         for (key, value) in input.into_iter() {

@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 
-use crate::Error;
 use crate::internal::PaymentSource;
 use crate::types::{
-    MerchantInitiatedType, Money, Payment, Transaction, TransactionId, TransactionIdempotenceKey,
+    Payment, Transaction, TransactionId,
 };
+use crate::Error;
 
 /// Optional trait for payment gateways that support completing a two-step flow,
 /// where the first step is an authorization and the second is a capture.

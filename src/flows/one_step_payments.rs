@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
-use crate::Error;
 use crate::internal::PaymentSource;
-use crate::types::{MerchantInitiatedType, Money, Payment, Transaction, TransactionIdempotenceKey};
+use crate::types::{Payment, Transaction};
+use crate::Error;
 
 /// Optional trait for payment gateways that support completing a one-step flow,
 /// without the necessity to capture them later.
