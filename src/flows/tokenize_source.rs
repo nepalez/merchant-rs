@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
 use crate::Error;
-use crate::types::{CreditCard, Token};
+use crate::internal::PaymentSource;
+use crate::types::Token;
 
 /// Optional trait for payment gateways that support tokenizing a payment
 /// by exchanging the payment details for a secure token.
@@ -9,6 +10,9 @@ use crate::types::{CreditCard, Token};
 /// Later the token can be used to charge the payment via `PaymentSource::TokenizedPayment`.
 /// This method can be used to support 3D Secure payments.
 #[async_trait]
-pub trait TokenizePayments {
-    fn tokenize(&self, card: CreditCard) -> Result<Token, Error>;
+pub trait TokenizeSource {
+    #[allow(private_bounds)]
+    type Source: PaymentSource;
+
+    fn tokenize(&self, source: Self::Source) -> Result<Token, Error>;
 }

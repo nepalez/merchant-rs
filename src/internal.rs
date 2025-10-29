@@ -5,8 +5,10 @@ mod masked;
 mod validated;
 
 mod as_unsafe_ref;
+mod payment_source;
 pub(crate) mod sanitized;
 
 pub use as_unsafe_ref::AsUnsafeRef;
 pub(crate) use masked::Masked;
+pub(crate) use payment_source::PaymentSource;
 pub(crate) use validated::Validated;

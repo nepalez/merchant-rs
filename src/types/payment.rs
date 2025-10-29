@@ -2,13 +2,15 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::Payment as Input;
-use crate::types::{MerchantInitiatedType, Money, PaymentSource, TransactionIdempotenceKey};
+use crate::internal::PaymentSource;
+use crate::types::{MerchantInitiatedType, Money, TransactionIdempotenceKey};
 
 /// Information to create (either charge or authorize) a payment.
 #[derive(Debug, Clone)]
-pub struct Payment {
+#[allow(private_bounds)]
+pub struct Payment<Source: PaymentSource> {
     /// The source of the payment to charge funds from
-    source: PaymentSource,
+    source: Source,
     /// The amount to charge
     amount: Money,
     /// The idempotency key
@@ -18,9 +20,10 @@ pub struct Payment {
     merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
-impl Payment {
+#[allow(private_bounds)]
+impl<Source: PaymentSource> Payment<Source> {
     /// The source of the payment to charge funds from
-    pub fn source(&self) -> &PaymentSource {
+    pub fn source(&self) -> &Source {
         &self.source
     }
 
@@ -41,10 +44,14 @@ impl Payment {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for Payment {
+impl<'a, InputSource, Source> TryFrom<Input<'a, InputSource>> for Payment<Source>
+where
+    InputSource: 'a,
+    Source: PaymentSource + TryFrom<InputSource, Error = Error>,
+{
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: Input<'a, InputSource>) -> Result<Self, Self::Error> {
         Ok(Self {
             source: input.source.try_into()?,
             amount: input.amount,

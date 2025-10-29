@@ -1,10 +1,9 @@
-use crate::inputs::PaymentSource;
 use crate::types::{MerchantInitiatedType, Money};
 
 /// Insecure structure representing a payment.
-pub struct Payment<'a> {
+pub struct Payment<'a, Source: 'a> {
     /// The source of the payment to charge funds from
-    pub source: PaymentSource<'a>,
+    pub source: Source,
     /// The amount to charge
     pub amount: Money,
     /// The idempotency key

@@ -10,7 +10,6 @@ mod cash_voucher;
 mod credit_card;
 mod instant_bank_account;
 mod payment;
-mod payment_source;
 mod sepa_account;
 mod transaction;
 
@@ -23,7 +22,6 @@ pub use cash_voucher::CashVoucher;
 pub use credit_card::CreditCard;
 pub use instant_bank_account::InstantBankAccount;
 pub use payment::Payment;
-pub use payment_source::PaymentSource;
 pub use sepa_account::SEPAAccount;
 pub use transaction::Transaction;
 
