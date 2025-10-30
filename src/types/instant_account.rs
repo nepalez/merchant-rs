@@ -92,7 +92,7 @@ use crate::types::{
 ///
 /// ### Data Protection
 /// - Customer identification data (name, email, tax ID) is PII
-/// - Use appropriate types (`NationalId`, `Email`) with SecretString where applicable
+/// - Use appropriate types (`NationalId`, `Email`) with automatic memory zeroization where applicable
 /// - Comply with GDPR, LGPD, or local data protection regulations
 /// - Tax IDs and national IDs should be masked in logs
 ///

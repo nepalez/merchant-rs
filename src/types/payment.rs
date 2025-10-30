@@ -5,11 +5,26 @@ use crate::inputs::Payment as Input;
 use crate::internal::PaymentSource;
 use crate::types::{PaymentData, PaymentToken};
 
-/// Information to create (either charge or authorize) a payment.
+/// Payment information for initiating a transaction.
+///
+/// Represents payment data in one of two forms:
+/// * `Plain` - Direct payment with raw payment source data
+/// * `Secure` - Tokenized payment using a previously stored token
+///
+/// # Usage
+///
+/// Use `Plain` for first-time payments where the customer provides payment details directly.
+/// Use `Secure` for recurring payments or when using tokens from vault/tokenization services.
+///
+/// # Type Parameter
+///
+/// * `Source` - The payment source type (CreditCard, BankAccount, etc.) constrained by marker trait
 #[derive(Debug, Clone)]
 #[allow(private_bounds)]
 pub enum Payment<Source: PaymentSource> {
+    /// Direct payment with raw payment source data
     Plain(PaymentData<Source>),
+    /// Tokenized payment using stored token
     Secure(PaymentToken<Source>),
 }
 

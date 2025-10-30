@@ -4,7 +4,7 @@
 pub trait AsUnsafeRef<T: ?Sized> {
     /// Exposes the sensitive value as a reference to a content of the safe container.
     ///
-    /// # SAFETY
+    /// # Safety
     /// When using the method, a developer must ensure that:
     /// 1. The value is not leaking into logs, error messages, etc.;
     /// 2. It is not cloned nor copied outside safe containers that zeroize memory upon a drop.

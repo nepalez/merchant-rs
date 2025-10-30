@@ -79,11 +79,12 @@ impl Validated for PrimaryAccountNumber {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the last 4 characters:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data which has at least 13 chars
-//    (and this is explicitly enabled by the PCI DSS requirements).
+/// # Safety
+/// The trait is safely implemented because exposing the last 4 characters:
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the essential part of the sensitive VALID data which has at least 13 chars
+///    (and this is explicitly enabled by the PCI DSS requirements).
 unsafe impl Masked for PrimaryAccountNumber {
     const TYPE_WRAPPER: &'static str = "PrimaryAccountNumber";
 

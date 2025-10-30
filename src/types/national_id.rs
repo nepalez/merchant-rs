@@ -70,10 +70,11 @@ impl Validated for NationalId {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data which has at least 7 chars.
+/// # Safety
+/// The trait is safely implemented because exposing the first 1 and last 1 character:
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the essential part of the sensitive VALID data which has at least 7 chars.
 unsafe impl Masked for NationalId {
     const TYPE_WRAPPER: &'static str = "NationalId";
 

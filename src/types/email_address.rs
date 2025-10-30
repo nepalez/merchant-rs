@@ -80,6 +80,9 @@ struct Secret(email_address::EmailAddress);
 impl Drop for Secret {
     fn drop(&mut self) {
         let s = self.0.as_str();
+        // SAFETY: We have exclusive access to the data during a drop.
+        // The pointer is valid as it comes from a live string slice.
+        // Writing zeros to this memory is safe as the data is being dropped.
         unsafe {
             let ptr = s.as_ptr() as *mut u8;
             let len = s.len();
@@ -88,11 +91,12 @@ impl Drop for Secret {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 1 character
-// along with the domain name:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the real data due to hiding the real length of the email address.
+/// # Safety
+/// The trait is safely implemented because exposing the first 1 character
+/// along with the domain name:
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the real data due to hiding the real length of the email address.
 unsafe impl Masked for EmailAddress {
     const TYPE_WRAPPER: &'static str = "EmailAddress";
 

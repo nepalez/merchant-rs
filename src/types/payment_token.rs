@@ -1,6 +1,5 @@
 use std::any::type_name;
 use std::fmt;
-use std::fmt::Formatter;
 use std::marker::PhantomData;
 use zeroize_derive::ZeroizeOnDrop;
 
@@ -60,7 +59,7 @@ unsafe impl<Content: PaymentSource> Masked for PaymentToken<Content> {
     const TYPE_WRAPPER: &'static str = "PaymentToken";
 
     #[inline]
-    fn masked_debug(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn masked_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let wrapper = format!("{}<{}>", Self::TYPE_WRAPPER, type_name::<Content>());
 
         f.debug_tuple(&wrapper).field(&Self::MASKING_STR).finish()

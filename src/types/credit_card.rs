@@ -101,7 +101,7 @@ use crate::types::{CVV, CardExpiry, CardHolderName, PrimaryAccountNumber};
 /// - ❌ Do not write to files
 /// - ❌ Do not include in error messages
 /// - ✅ Pass directly to the gateway
-/// - ✅ Use SecretString wrapper
+/// - ✅ Protected by ZeroizeOnDrop (automatic memory zeroization)
 /// - ✅ Memory zeroed immediately after use
 ///
 /// ### Fraud Prevention

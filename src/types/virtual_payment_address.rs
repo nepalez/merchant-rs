@@ -77,21 +77,23 @@ impl Validated for VirtualPaymentAddress {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 1 character
-// along with the domain name (for UPI and emails in PIX) or the last 3 characters
-// for the other PIX identifiers (CPF, CNPJ, Phone, UUID)
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the real data due to hiding the real length of the email address.
-//    neither exposes the essential part of CPF (11 chars), CNPJ (14 chars), Phone (10 chars),
-//    random UUID (36 chars).
-//
-// WARNING: This masking is designed for logging/debugging purposes only.
-// LGPD compliance requires risk assessment: if your system has few users
-// or VPAs have unique structural patterns, even this partial masking may
-// allow re-identification. Perform a Data Protection Impact Assessment (DPIA)
-// to verify that re-identification risk remains acceptably low in your context.
-// Consider full redaction if a risk assessment indicates a high re-identification risk.
+/// # Safety
+/// The trait is safely implemented because exposing the first 1 character
+/// along with the domain name (for UPI and emails in PIX) or the last 3 characters
+/// for the other PIX identifiers (CPF, CNPJ, Phone, UUID):
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the real data due to hiding the real length of the email address.
+///    neither exposes the essential part of CPF (11 chars), CNPJ (14 chars), Phone (10 chars),
+///    random UUID (36 chars).
+///
+/// # Warning
+/// This masking is designed for logging/debugging purposes only.
+/// LGPD compliance requires risk assessment: if your system has few users
+/// or VPAs have unique structural patterns, even this partial masking may
+/// allow re-identification. Perform a Data Protection Impact Assessment (DPIA)
+/// to verify that re-identification risk remains acceptably low in your context.
+/// Consider full redaction if a risk assessment indicates a high re-identification risk.
 unsafe impl Masked for VirtualPaymentAddress {
     const TYPE_WRAPPER: &'static str = "VirtualPaymentAddress";
 

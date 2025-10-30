@@ -39,7 +39,7 @@ use crate::types::{Address, EmailAddress, FullName, IBAN};
 /// - **[ISO 20022](https://www.iso20022.org/)**: XML message format for SEPA payments
 /// - **[ISO 13616](https://www.iso.org/standard/81090.html)**: IBAN (International Bank Account Number) standard
 /// - **[PSD2](https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX:32015L2366)**: Payment Services Directive (AML/KYC requirements)
-/// - **[EPC SEPA Instant Credit Transfer Scheme](https://www.europeanpaymentscouncil.eu/what-we-do/sepa-instant-credit-transfer)**: European Payments Council specifications
+/// - **[EPC SEPA Instant Credit Transfer Scheme](https://www.europeanpaymentscouncil.eu/what-we-do/sepa-instant-credit-transfer)**: European Payment Council specifications
 ///
 /// ## SEPA Zone Coverage
 ///

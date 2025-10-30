@@ -3,15 +3,34 @@ use async_trait::async_trait;
 use crate::Error;
 use crate::types::{Transaction, TransactionId};
 
-/// The base trait defining a payment gateway adapter's core identity and capabilities.
-/// This trait is the minimal requirement for any adapter.
+/// Base mandatory trait for all payment gateway adapters.
 ///
-/// Every trait must support only one operation,
-/// namely provide the status of transactions by their IDs (primary key).
-/// All the other capabilities are optional and can vary from one adapter to another.
+/// Every gateway adapter must implement this trait as the minimal requirement.
+/// Provides transaction status lookup by ID, which is universally supported by all payment gateways.
+///
+/// # Purpose
+///
+/// * **Webhook verification**: Validate transaction status from webhook notifications
+/// * **Reconciliation**: Match gateway transactions with internal records
+/// * **Customer support**: Investigate transaction status for support inquiries
+/// * **Status polling**: Check completion status for external payment flows
+/// * **Audit compliance**: Retrieve transaction trail for audit purposes
+///
+/// # Implementation Note
+///
+/// This is the only mandatory trait - all payment flow traits (`ImmediatePayments`,
+/// `DeferredPayments`, etc.) are optional based on gateway capabilities.
 #[allow(private_bounds)]
 #[async_trait]
 pub trait CheckTransaction {
-    /// Get the status of a transaction.
+    /// Retrieve transaction status and details by transaction ID.
+    ///
+    /// # Parameters
+    ///
+    /// * `transaction_id` - Unique transaction identifier assigned by the gateway
+    ///
+    /// # Returns
+    ///
+    /// Current transaction record with status, amount, and other details
     async fn status(&self, transaction_id: TransactionId) -> Result<Transaction, Error>;
 }

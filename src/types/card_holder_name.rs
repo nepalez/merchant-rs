@@ -73,11 +73,12 @@ impl Validated for CardHolderName {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data
-//    due to hiding the real length of the name.
+/// # Safety
+/// The trait is safely implemented because exposing the first 1 and last 1 character:
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the essential part of the sensitive VALID data
+///    due to hiding the real length of the name.
 unsafe impl Masked for CardHolderName {
     const TYPE_WRAPPER: &'static str = "CardHolderName";
 

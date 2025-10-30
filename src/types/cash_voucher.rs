@@ -70,7 +70,7 @@ use crate::types::{Address, FullName, Metadata, NationalId};
 /// - Full name, email, address, and optionally tax ID (CPF/CNPJ for Boleto)
 /// - All PII must be protected per GDPR, LGPD, or local regulations
 /// - Use appropriate types with masking where required
-/// - Tax IDs (CPF/CNPJ) should use `NationalId` type with SecretString
+/// - Tax IDs (CPF/CNPJ) should use `NationalId` type with automatic memory zeroization
 ///
 /// ### Voucher Security
 /// - Unique voucher codes prevent duplicate payments

@@ -4,23 +4,36 @@ use crate::Error;
 use crate::internal::ExternalPaymentSource;
 use crate::types::{ExternalPayment, ExternalPaymentData, TransactionId};
 
-/// Optional trait for payment gateways that support asynchronous payments.
+/// Payment gateway trait for asynchronous external payment flows.
 ///
-/// Within the flow the payment is initiated but not completed. The completion
-/// of the payment happens outside the current flow, e.g., via redirect or webhook.
+/// Supports payment methods where the transaction is initiated but not immediately completed.
+/// The payment completion happens outside the direct flow through customer redirect, webhook, or other async mechanism.
 ///
-/// The `initiate` method builds a transaction along with the data for payment completion
-/// (like the link to redirect the customer, or some data like the Multibanco does etc.)
-/// The adapter can also send the data under the hood (for example, if it requires
-/// the customer's phone to send him the SMS).
+/// # Flow
 ///
-/// The client can:
-/// * show the data to the customer or redirect him to some url,
-///   and then wait for the completion of the transaction;
-/// * receive the `payment_data` later by the `transaction_id`
-///   to repeat the redirect or display the data in the UI;
-/// * check the status of the transaction via `CheckTransactions` trait implementation;
-/// * handle the webhook response using the `HandleWebhooks` trait implementation.
+/// 1. **Initiate**: Create transaction and receive payment completion data
+/// 2. **External Completion**: Customer completes payment through redirect/voucher/QR code
+/// 3. **Status Check**: Poll transaction status via `CheckTransaction` trait
+/// 4. **Webhook**: Receive async notification of completion (if supported by gateway)
+///
+/// # Payment Completion Methods
+///
+/// * **Redirect**: Customer redirected to payment provider (BNPL, online banking)
+/// * **Voucher**: Customer receives code to pay at physical location (cash vouchers)
+/// * **QR Code**: Customer scans code with mobile banking app
+/// * **Bank Transfer**: Customer makes manual transfer with reference number
+///
+/// # Usage
+///
+/// The client application should:
+/// * Display `payment_data` to guide customer through completion
+/// * Poll transaction status using `CheckTransaction::status()`
+/// * Handle webhook notifications for async status updates
+/// * Retrieve payment data again via `payment_data()` if needed for retry
+///
+/// # Type Parameter
+///
+/// * `Source` - Payment source type constrained to external sources (vouchers, BNPL, etc.)
 #[async_trait]
 pub trait ExternalPayments {
     #[allow(private_bounds)]

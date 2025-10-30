@@ -6,6 +6,19 @@ use crate::types::{
     MerchantInitiatedType, Money, TransactionId, TransactionIdempotenceKey, TransactionStatus,
 };
 
+/// Transaction result returned by payment gateway operations.
+///
+/// Represents the outcome of a payment operation (charge, authorize, capture, refund, void).
+/// Contains the gateway-assigned transaction ID, idempotence key for duplicate detection,
+/// current transaction status, processed amount, and merchant-initiated transaction type if applicable.
+///
+/// # Fields
+///
+/// * `transaction_id` - Unique identifier assigned by the payment gateway
+/// * `idempotence_key` - Key used to prevent duplicate transaction processing
+/// * `status` - Current transaction status (authorized, captured, failed, etc.)
+/// * `amount` - Transaction amount and currency
+/// * `merchant_initiated_type` - Type of merchant-initiated transaction (for recurring/unscheduled)
 #[derive(Debug, Clone)]
 pub struct Transaction {
     /// The unique transaction ID returned by the payment gateway.

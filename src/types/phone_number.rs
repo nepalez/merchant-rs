@@ -74,13 +74,14 @@ impl Validated for PhoneNumber {
     }
 }
 
-// SAFETY: The trait is safely implemented because exposing the `+` sign
-// along with the last 2 characters:
-// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
-//    due to fallbacks to the empty strings,
-// 2. Nor leaks the sensitive VALID data (which has at least 5 digits) in total
-//    and does not expose its actual length (this could be done by the first digits
-//    which aren't exposed anyway).
+/// # Safety
+/// The trait is safely implemented because exposing the `+` sign
+/// along with the last 2 characters:
+/// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
+///    due to fallbacks to the empty strings,
+/// 2. Nor leaks the sensitive VALID data (which has at least 5 digits) in total
+///    and does not expose its actual length (this could be done by the first digits
+///    which aren't exposed anyway).
 unsafe impl Masked for PhoneNumber {
     const TYPE_WRAPPER: &'static str = "PhoneNumber";
 

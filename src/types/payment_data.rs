@@ -5,7 +5,17 @@ use crate::inputs::PaymentData as Input;
 use crate::internal::PaymentSource;
 use crate::types::{MerchantInitiatedType, Money, TransactionIdempotenceKey};
 
-/// Information to create (either charge or authorize) a payment.
+/// Payment data with a raw payment source for direct processing.
+///
+/// Contains the payment source (e.g., CreditCard, BankAccount) along with transaction metadata
+/// such as amount, idempotence key, and merchant-initiated transaction type.
+///
+/// Used for first-time payments where the customer provides payment details directly,
+/// as opposed to tokenized payments using stored credentials.
+///
+/// # Type Parameter
+///
+/// * `Source` - The payment source type constrained by PaymentSource marker trait
 #[derive(Debug, Clone)]
 #[allow(private_bounds)]
 pub struct PaymentData<Source: PaymentSource> {
