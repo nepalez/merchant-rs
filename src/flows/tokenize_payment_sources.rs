@@ -11,7 +11,7 @@ use crate::types::{
 ///
 /// This trait can be used to support 3D Secure payments.
 #[async_trait]
-pub trait TokenizePayments {
+pub trait TokenizePaymentSources {
     #[allow(private_bounds)]
     type Source: Source;
 

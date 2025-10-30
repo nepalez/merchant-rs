@@ -23,3 +23,5 @@ strum_macros = { version = "0.27", default-features = false }
 thiserror = { version = "2.0.17", default-features = false }
 zeroize = { version = "1", default-features = false }
 zeroize_derive = { version = "1", default-features = false }
+serde = { version = "1.0.228", features = ["derive"] }
+input = "0.9.1"

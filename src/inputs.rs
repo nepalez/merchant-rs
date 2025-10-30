@@ -12,6 +12,7 @@ mod external_payment;
 mod external_payment_data;
 mod instant_account;
 mod payment;
+mod payment_data;
 mod sepa_account;
 mod transaction;
 
@@ -26,6 +27,7 @@ pub use external_payment::ExternalPayment;
 pub use external_payment_data::ExternalPaymentData;
 pub use instant_account::InstantAccount;
 pub use payment::Payment;
+pub use payment_data::PaymentData;
 pub use sepa_account::SEPAAccount;
 pub use transaction::Transaction;
 

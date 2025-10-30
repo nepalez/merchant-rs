@@ -1,47 +1,15 @@
 use std::convert::TryFrom;
 
-use crate::Error;
 use crate::inputs::Payment as Input;
-use crate::internal::PaymentSource;
-use crate::types::{MerchantInitiatedType, Money, TransactionIdempotenceKey};
+use crate::types::{payment_token::Source as PaymentSource, PaymentData, PaymentToken};
+use crate::Error;
 
 /// Information to create (either charge or authorize) a payment.
 #[derive(Debug, Clone)]
 #[allow(private_bounds)]
-pub struct Payment<Source: PaymentSource> {
-    /// The source of the payment to charge funds from
-    source: Source,
-    /// The amount to charge
-    amount: Money,
-    /// The idempotency key
-    idempotence_key: TransactionIdempotenceKey,
-    /// The scope of the payment initiated by the merchant
-    /// (use `None` if the payment was initiated by a customer).
-    merchant_initiated_type: Option<MerchantInitiatedType>,
-}
-
-#[allow(private_bounds)]
-impl<Source: PaymentSource> Payment<Source> {
-    /// The source of the payment to charge funds from
-    pub fn source(&self) -> &Source {
-        &self.source
-    }
-
-    /// The amount to charge
-    pub fn amount(&self) -> Money {
-        self.amount
-    }
-
-    /// The idempotency key
-    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
-        &self.idempotence_key
-    }
-
-    /// The scope of the payment initiated by the merchant
-    /// (use `None` if the payment was initiated by a customer).
-    pub fn merchant_initiated_type(&self) -> Option<MerchantInitiatedType> {
-        self.merchant_initiated_type
-    }
+pub enum Payment<Source: PaymentSource> {
+    Plain(PaymentData<Source>),
+    Secure(PaymentToken<Source>),
 }
 
 impl<'a, InputSource, Source> TryFrom<Input<'a, InputSource>> for Payment<Source>
@@ -52,11 +20,9 @@ where
     type Error = Error;
 
     fn try_from(input: Input<'a, InputSource>) -> Result<Self, Self::Error> {
-        Ok(Self {
-            source: input.source.try_into()?,
-            amount: input.amount,
-            idempotence_key: input.idempotence_key.try_into()?,
-            merchant_initiated_type: input.merchant_initiated_type,
+        Ok(match input {
+            Input::Secure(token) => Self::Secure(token.try_into()?),
+            Input::Plain(source) => Self::Plain(source.try_into()?),
         })
     }
 }
