@@ -1,5 +1,5 @@
 use crate::Error;
-use crate::inputs::InstantBankAccount as Input;
+use crate::inputs::InstantAccount as Input;
 use crate::types::{
     AccountHolderType, AccountNumber, Address, BankCode, EmailAddress, FullName, Metadata,
     NationalId, PhoneNumber, VirtualPaymentAddress,
@@ -107,20 +107,20 @@ use crate::types::{
 /// - **PIX regulations** (Brazil): CPF/CNPJ required for identification
 /// - **GDPR/LGPD**: Customer data protection requirements
 #[derive(Clone, Debug)]
-pub struct InstantBankAccount {
+pub struct InstantAccount {
     email: EmailAddress,
     full_name: FullName,
     account_number: Option<AccountNumber>,
     bank_code: Option<BankCode>,
     billing_address: Option<Address>,
-    customer_type: Option<AccountHolderType>,
+    holder_type: AccountHolderType,
     national_id: Option<NationalId>,
     phone: Option<PhoneNumber>,
     virtual_payment_address: Option<VirtualPaymentAddress>,
     metadata: Option<Metadata>,
 }
 
-impl InstantBankAccount {
+impl InstantAccount {
     /// User email for transaction notifications
     pub fn email(&self) -> &EmailAddress {
         &self.email
@@ -147,8 +147,8 @@ impl InstantBankAccount {
     }
 
     /// Type of user (person or organization)
-    pub fn customer_type(&self) -> Option<AccountHolderType> {
-        self.customer_type
+    pub fn holder_type(&self) -> AccountHolderType {
+        self.holder_type
     }
 
     /// National identification number (tax ID)
@@ -172,7 +172,7 @@ impl InstantBankAccount {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for InstantBankAccount {
+impl<'a> TryFrom<Input<'a>> for InstantAccount {
     type Error = Error;
 
     fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
@@ -182,7 +182,7 @@ impl<'a> TryFrom<Input<'a>> for InstantBankAccount {
             account_number: input.account_number.map(TryFrom::try_from).transpose()?,
             bank_code: input.bank_code.map(TryFrom::try_from).transpose()?,
             billing_address: input.billing_address.map(TryFrom::try_from).transpose()?,
-            customer_type: input.customer_type,
+            holder_type: input.holder_type,
             national_id: input.national_id.map(TryFrom::try_from).transpose()?,
             phone: input.phone.map(TryFrom::try_from).transpose()?,
             virtual_payment_address: input

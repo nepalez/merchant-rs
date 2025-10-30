@@ -106,7 +106,7 @@ use crate::types::{
 /// - **PSD2** (Europe): AML/KYC requirements for account verification
 /// - **GDPR**: Bank account data is PII, must follow data protection regulations
 #[derive(Clone, Debug)]
-pub struct DirectBankAccount {
+pub struct BankAccount {
     account_number: AccountNumber,
     full_name: FullName,
     routing_number: RoutingNumber,
@@ -115,7 +115,7 @@ pub struct DirectBankAccount {
     metadata: Option<Metadata>,
 }
 
-impl DirectBankAccount {
+impl BankAccount {
     /// The bank account number
     pub fn account_number(&self) -> &AccountNumber {
         &self.account_number
@@ -147,7 +147,7 @@ impl DirectBankAccount {
     }
 }
 
-impl TryFrom<Input<'_>> for DirectBankAccount {
+impl TryFrom<Input<'_>> for BankAccount {
     type Error = Error;
 
     fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {

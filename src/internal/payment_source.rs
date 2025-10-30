@@ -1,5 +1,5 @@
 use crate::types::{
-    BNPL, CashVoucher, CreditCard, DirectBankAccount, InstantBankAccount, SEPAAccount, Token,
+    BNPL, BankAccount, CashVoucher, CreditCard, InstantAccount, SEPAAccount, Token,
 };
 
 /// A marker trait for types that can be used as payment sources
@@ -9,7 +9,7 @@ pub(crate) trait PaymentSource {}
 impl PaymentSource for BNPL {}
 impl PaymentSource for CashVoucher {}
 impl PaymentSource for CreditCard {}
-impl PaymentSource for DirectBankAccount {}
-impl PaymentSource for InstantBankAccount {}
+impl PaymentSource for BankAccount {}
+impl PaymentSource for InstantAccount {}
 impl PaymentSource for SEPAAccount {}
 impl PaymentSource for Token {}
