@@ -1,5 +1,6 @@
 use crate::Error;
 use crate::inputs::InstantAccount as Input;
+use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{
     AccountHolderType, AccountNumber, Address, BankCode, EmailAddress, FullName, Metadata,
     NationalId, PhoneNumber, VirtualPaymentAddress,
@@ -119,6 +120,14 @@ pub struct InstantAccount {
     virtual_payment_address: Option<VirtualPaymentAddress>,
     metadata: Option<Metadata>,
 }
+
+// Marker implementations
+
+impl PaymentSource for InstantAccount {}
+impl InternalPaymentSource for InstantAccount {}
+impl TokenizablePaymentSource for InstantAccount {}
+
+// Converters
 
 impl InstantAccount {
     /// User email for transaction notifications

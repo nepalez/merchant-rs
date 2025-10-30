@@ -3,7 +3,9 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated};
+use crate::internal::{
+    AsUnsafeRef, ExternalPaymentSource, InternalPaymentSource, Masked, PaymentSource, Validated,
+};
 
 /// Tokenized credential from a payment processor or vault
 ///
@@ -21,6 +23,14 @@ use crate::internal::{AsUnsafeRef, Masked, Validated};
 ///   via **unsafe** method `with_exposed_secret`.
 #[derive(Clone, ZeroizeOnDrop)]
 pub struct Token(String);
+
+// Marker implementations
+
+impl PaymentSource for Token {}
+impl InternalPaymentSource for Token {}
+impl ExternalPaymentSource for Token {}
+
+// Converters
 
 impl<'a> TryFrom<&'a str> for Token {
     type Error = Error;

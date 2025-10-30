@@ -1,8 +1,9 @@
 use std::convert::TryFrom;
 
-use crate::inputs::Payment as Input;
-use crate::types::{payment_token::Source as PaymentSource, PaymentData, PaymentToken};
 use crate::Error;
+use crate::inputs::Payment as Input;
+use crate::internal::PaymentSource;
+use crate::types::{PaymentData, PaymentToken};
 
 /// Information to create (either charge or authorize) a payment.
 #[derive(Debug, Clone)]

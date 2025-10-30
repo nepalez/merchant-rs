@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::BNPL as Input;
+use crate::internal::{ExternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{
     AccountHolderType, Address, BirthDate, EmailAddress, FullName, Metadata, NationalId,
     PhoneNumber,
@@ -102,6 +103,14 @@ pub struct BNPL {
     phone: Option<PhoneNumber>,
     metadata: Option<Metadata>,
 }
+
+// Marker implementations
+
+impl PaymentSource for BNPL {}
+impl ExternalPaymentSource for BNPL {}
+impl TokenizablePaymentSource for BNPL {}
+
+// Converters
 
 impl BNPL {
     /// User billing address

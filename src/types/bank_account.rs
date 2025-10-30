@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::BankAccount as Input;
+use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{
     AccountHolderType, AccountNumber, AccountType, FullName, Metadata, RoutingNumber,
 };
@@ -114,6 +115,14 @@ pub struct BankAccount {
     holder_type: AccountHolderType,
     metadata: Option<Metadata>,
 }
+
+// Marker implementations
+
+impl PaymentSource for BankAccount {}
+impl InternalPaymentSource for BankAccount {}
+impl TokenizablePaymentSource for BankAccount {}
+
+// Converters
 
 impl BankAccount {
     /// The bank account number

@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
 use crate::Error;
-use crate::internal::PaymentSource;
-use crate::types::{BNPL, CashVoucher, ExternalPayment, ExternalPaymentData, Token, TransactionId};
+use crate::internal::ExternalPaymentSource;
+use crate::types::{ExternalPayment, ExternalPaymentData, TransactionId};
 
 /// Optional trait for payment gateways that support asynchronous payments.
 ///
@@ -24,7 +24,7 @@ use crate::types::{BNPL, CashVoucher, ExternalPayment, ExternalPaymentData, Toke
 #[async_trait]
 pub trait ExternalPayments {
     #[allow(private_bounds)]
-    type Source: Source;
+    type Source: ExternalPaymentSource;
 
     /// Initiate the transaction and receive it along with a `PaymentData`
     /// The payment should be made outside the gateway's flow.
@@ -37,9 +37,3 @@ pub trait ExternalPayments {
         transaction_id: TransactionId,
     ) -> Result<ExternalPaymentData, Error>;
 }
-
-/// Marker trait for sources that support external payments.
-trait Source: PaymentSource {}
-impl Source for BNPL {}
-impl Source for CashVoucher {}
-impl Source for Token {}

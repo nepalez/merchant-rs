@@ -2,14 +2,15 @@ use async_trait::async_trait;
 use rust_decimal::Decimal;
 
 use crate::Error;
-use crate::types::{Payment, Transaction, TransactionId, payment_token::Source as PaymentSource};
+use crate::internal::InternalPaymentSource;
+use crate::types::{Payment, Transaction, TransactionId};
 
 /// Optional trait for payment gateways that support completing a two-step flow,
 /// where the first step is an authorization and the second is a capture.
 #[async_trait]
 pub trait DeferredPayments {
     #[allow(private_bounds)]
-    type Source: PaymentSource;
+    type Source: InternalPaymentSource;
 
     /// Immediately charge the payment.
     async fn authorize(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>;

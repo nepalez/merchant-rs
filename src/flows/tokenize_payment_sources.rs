@@ -1,10 +1,8 @@
 use async_trait::async_trait;
 
 use crate::Error;
-use crate::internal::PaymentSource;
-use crate::types::{
-    BNPL, BankAccount, CashVoucher, CreditCard, InstantAccount, SEPAAccount, Token,
-};
+use crate::internal::TokenizablePaymentSource;
+use crate::types::Token;
 
 /// Optional trait for payment gateways that support tokenizing payment data.
 /// The received token can be used later to either charge or authorize the payment.
@@ -13,16 +11,7 @@ use crate::types::{
 #[async_trait]
 pub trait TokenizePaymentSources {
     #[allow(private_bounds)]
-    type Source: Source;
+    type Source: TokenizablePaymentSource;
 
     async fn tokenize(&self, source: Self::Source) -> Result<Token, Error>;
 }
-
-/// Marker trait for payment sources that can be tokenized.
-trait Source: PaymentSource {}
-impl Source for BNPL {}
-impl Source for BankAccount {}
-impl Source for CashVoucher {}
-impl Source for CreditCard {}
-impl Source for InstantAccount {}
-impl Source for SEPAAccount {}

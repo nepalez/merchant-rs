@@ -1,5 +1,6 @@
 use crate::Error;
 use crate::inputs::CreditCard as Input;
+use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{CVV, CardExpiry, CardHolderName, PrimaryAccountNumber};
 
 /// Credit or Debit Card
@@ -117,6 +118,14 @@ pub struct CreditCard {
     card_expiry: CardExpiry,
     holder_name: CardHolderName,
 }
+
+// Marker implementations
+
+impl PaymentSource for CreditCard {}
+impl InternalPaymentSource for CreditCard {}
+impl TokenizablePaymentSource for CreditCard {}
+
+// Converters
 
 impl CreditCard {
     /// Card Verification Value (CVV/CVC/CID)

@@ -2,6 +2,7 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::SEPAAccount as Input;
+use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{Address, EmailAddress, FullName, IBAN};
 
 /// SEPA Bank Account
@@ -90,6 +91,14 @@ pub struct SEPAAccount {
     full_name: FullName,
     iban: IBAN,
 }
+
+// Marker implementations
+
+impl PaymentSource for SEPAAccount {}
+impl InternalPaymentSource for SEPAAccount {}
+impl TokenizablePaymentSource for SEPAAccount {}
+
+// Converters
 
 impl SEPAAccount {
     /// User billing address (required per PSD2 AML)
