@@ -6,8 +6,8 @@ The merchant-rs project requires a strategy for organizing code across payment f
 
 Key considerations:
 - Gateway adapters implement only supported flows (Stripe supports authorize+capture but not refunds)
-- Clients use only needed flows (simple e-commerce needs authorize+capture, not fraud detection)
-- Internal sealed traits (`Exposed`, `Sanitized`, `Validated`) must remain `pub(crate)` for security
+- Clients use only necessary flows (simple e-commerce needs authorize+capture, not fraud detection)
+- Internal sealed traits (`AsUnsafeRef`, `Sanitized`, `Validated`, `Masked`) must remain `pub(crate)` for security
 - No heavy dependencies in core (validation uses lightweight crates, ML libraries belong in adapters)
 
 ## Problem
@@ -36,7 +36,7 @@ recurring = []
 webhooks = []
 ```
 
-Gateway adapters and clients select only needed features, reducing type checking overhead without sacrificing sealed trait security.
+Gateway adapters and clients select only the necessary features, reducing type checking overhead without sacrificing sealed trait security.
 
 ## Alternatives Considered
 
@@ -48,18 +48,18 @@ Split into `merchant-rs-core` (implementation) and `merchant-rs` (facade with re
 ### Subcrates per flow
 Separate crates (`merchant-rs-flow-auth`, `merchant-rs-flow-capture`, etc.) with shared `merchant-rs-internal` for sealed traits.
 
-**Rejection:** Sealed traits require `pub(crate)` visibility, which only works within a single crate. Making `Exposed` public (even with `#[doc(hidden)]`) violates security assumptions by allowing end-users to implement sensitive traits.
+**Rejection:** Sealed traits require `pub(crate)` visibility, which only works within a single crate. Making `AsUnsafeRef` or other security-critical traits public (even with `#[doc(hidden)]`) violates security assumptions by allowing end-users to implement sensitive traits.
 
 ## Consequences
 
 ### Pros
 - Sealed traits remain sealed (`pub(crate)`) in single crate
-- Unused flows not compiled (faster type checking and reduced compilation time)
+- Unused flows are not compiled (faster type checking and reduced compilation time)
 - Simple architecture (one crate, transparent for security audit)
 - Gateway adapters choose only supported flows
 - Clear import paths (`use merchant_rs::*`)
 - Industry pattern (ActiveMerchant is monolithic, Omnipay publishes core directly)
 
 ### Cons
-- Single crate contains all flows (acceptable—flows only declare interfaces and types)
+- A single crate contains all flows (acceptable—flows only declare interfaces and types)
 - Feature flag dependencies require documentation (capture requires authorize, refund requires capture)

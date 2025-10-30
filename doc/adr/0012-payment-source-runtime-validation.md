@@ -7,31 +7,78 @@ Payment gateways support different payment methods with fundamentally different 
 Key observations from industry analysis:
 - ActiveMerchant, Stripe SDK, Adyen, Spreedly, Klarna all use runtime method selection
 - Payment method availability depends on runtime factors (amount, currency, geography, customer eligibility)
-- Gateways commonly support 5-15+ payment methods through a single API endpoint
+- Gateways commonly support 5–15+ payment methods through a single API endpoint
 - No production payment library uses compile-time enforcement of gateway-method compatibility
 
 ## Problem
 
-Should the system enforce gateway-payment method compatibility at compile time (via type system) or runtime (via validation)?
+Should the system enforce gateway-payment method compatibility at compile time (via the type system) or runtime (via validation)?
 
 ## Decision
 
-Use runtime validation with explicit capability declaration.
+Use marker trait hierarchy with compile-time source classification instead of runtime validation.
 
-Gateway adapters declare supported payment methods via `supported_sources()` method returning static list of `PaymentSourceType` discriminants. The `Authorizable` trait validates source compatibility before delegating to adapter implementation. Validation occurs early in the request pipeline with clear error messages.
+**Marker trait architecture:**
 
-`PaymentSource` remains a unified enum (per ADR-0001) with strongly-typed variants. Gateway adapters use pattern matching to route to method-specific authorization logic. The separation between declaration (`supported_sources`), validation (`validate_source_support`), and implementation (`authorize_impl`) provides clear contract boundaries.
+```rust
+// Base trait - all payment sources implement this
+trait PaymentSource {}
 
-This aligns with ADR-0008 principle: core provides payment source types as data containers, adapters implement network-specific business rules.
+// Flow-specific marker traits
+trait InternalPaymentSource: PaymentSource {}  // Cards, tokens - synchronous flows
+trait ExternalPaymentSource: PaymentSource {}  // Vouchers, BNPL, redirects - async flows
+trait TokenizablePaymentSource: PaymentSource {} // Sources that can be tokenized
+```
+
+**Flow trait design with associated types:**
+
+Each payment flow trait uses associated type with trait bound to restrict compatible sources:
+
+```rust
+trait ImmediatePayments {
+    type Source: InternalPaymentSource;
+    async fn charge(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>;
+}
+
+trait ExternalPayments {
+    type Source: ExternalPaymentSource;
+    async fn initiate(&self, source: Self::Source) -> Result<ExternalPayment, Error>;
+}
+```
+
+**Gateway implementation:**
+
+Gateway declares supported source type via associated type (not runtime list):
+
+```rust
+impl ImmediatePayments for StripeGateway {
+    type Source = CreditCard;  // Only credit cards for immediate flow
+    // ...
+}
+```
+
+**Rationale:**
+
+- **Compile-time safety:** Invalid source-flow combinations prevented at compile time, not runtime
+- **No validation overhead:** Type system enforces constraints, no runtime checks needed
+- **Explicit contracts:** Associated type makes supported source visible in trait signature
+- **Flexible composition:** Payment sources can implement multiple marker traits (e.g., CreditCard is both InternalPaymentSource and TokenizablePaymentSource)
+
+This aligns with Rust's philosophy of zero-cost abstractions and compile-time guarantees.
 
 ## Alternatives Considered
 
-### Compile-time enforcement via associated types
-Gateway declares single supported source via associated type, separate traits per payment method.
+### Runtime validation with unified PaymentSource enum
+Create unified enum with all payment source variants, validate gateway support at runtime via `supported_sources()` method.
 
-**Rationale:** Type safety prevents unsupported method usage.
+**Rationale:** Type safety for payment data, runtime flexibility for gateway capabilities.
 
-**Rejection:** Incompatible with reality of multi-method gateways. Stripe supporting cards, ACH, SEPA would require three separate Gateway implementations, fragmenting the API. No industry precedent for this approach.
+**Rejection:**
+- Runtime errors instead of compile-time prevention
+- Validation overhead on every request
+- No benefit over marker traits which provide same safety at compile time
+- Industry practice (ActiveMerchant, Stripe SDK) shows runtime works for dynamic languages, but Rust offers superior compile-time alternative
+- Cannot leverage Rust's zero-cost abstraction philosophy
 
 ### Compile-time enforcement via trait bounds
 Generic authorize method with trait bound requiring gateway to prove support: `authorize<S: PaymentSource>() where Self: Supports<S>`.
@@ -45,29 +92,21 @@ One Gateway implementation per supported payment method.
 
 **Rationale:** Perfect separation of concerns.
 
-**Rejection:** NopCommerce (.NET) attempted this; developers explicitly request single plugin supporting multiple methods. Operationally burdensome (separate configurations, credentials, monitoring per method). Industry consensus: unify payment methods under single gateway integration.
+**Rejection:** NopCommerce (.NET) attempted this; developers explicitly request a single plugin supporting multiple methods. Operationally burdensome (separate configurations, credentials, monitoring per method). Industry consensus: unify payment methods under a single gateway integration.
 
 ## Consequences
 
 ### Pros
-- Industry alignment: matches ActiveMerchant, Stripe, Adyen, Spreedly architecture patterns
-- Operational simplicity: single gateway handles all supported methods
-- Flexibility: method availability can depend on runtime factors
-- Clear errors: validation failures provide actionable messages
-- Extensibility: adding payment methods requires core change (enum variant) but not adapter interface changes
-- Type safety preserved: each PaymentSource variant has strongly-typed data
+- Compile-time prevention of invalid source-flow combinations
+- Zero runtime validation overhead
+- Associated types make gateway capabilities explicit in trait signature
+- Payment sources can belong to multiple categories via multiple trait impls
+- Type safety at every level: flow traits, source types, marker traits
+- Clear compilation errors instead of runtime failures
 
 ### Cons
-- No compile-time prevention of unsupported method usage
-- Validation happens at runtime with error result
-- Developer must check gateway documentation or handle validation errors
+- More complex trait hierarchy to understand
+- Cannot handle runtime availability factors (method disabled for specific amounts/currencies)
+- Adding new source category requires new marker trait
+- Less flexible than runtime validation for dynamic gateway capabilities
 
-### Action
-
-Implementation tasks tracked in TODO.md:
-1. Add `PaymentSourceType` enum with discriminants for all PaymentSource variants
-2. Add `supported_sources()` to Gateway trait
-3. Add `validate_source_support()` helper to Gateway trait
-4. Add `UnsupportedPaymentSource` error variant
-5. Update Authorizable trait to validate before delegating to adapter
-6. Update all gateway adapters to declare supported sources

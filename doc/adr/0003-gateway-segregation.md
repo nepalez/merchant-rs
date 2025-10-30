@@ -10,31 +10,45 @@ The architectural question: Should gateway adapters implement a monolithic inter
 
 ## Decision
 
-Apply Interface Segregation Principle: segregate traits by capability rather than requiring a monolithic gateway interface.
+Apply Interface Segregation Principle: segregate traits by capability and payment flow type.
 
-**Core transaction traits:**
-- `Authorizable`: mandatory for all gateways (authorize and void operations)
-- `Capturable`: optional, only for gateways supporting two-step flows
-- `Refundable`: optional, only for gateways supporting refunds
+**Base trait (mandatory for all gateways):**
+- `CheckTransaction` - retrieve transaction status by ID (minimal requirement for any adapter)
 
-**Extension traits follow the same principle** (per [ADR-0001]):
-- `Tokenizable` (`vault` extension): only for gateways with server-side tokenization
-- `ThreeDSecure` (`3ds` extension): only for gateways supporting authentication
-- `CustomerVault` (`vault` extension): only for gateways with customer storage
+**Payment flow traits (optional, based on gateway capabilities):**
 
-Gateway adapters implement only the traits matching their actual capabilities. This enables the modular extension architecture described in the [ADR-0001].
+*Synchronous flows:*
+- `ImmediatePayments` - one-step charge (authorization and capture in single call)
+- `DeferredPayments` - two-step flow (separate authorize and capture operations)
+
+*Asynchronous flows:*
+- `ExternalPayments` - initiate payment with external completion (redirects, webhooks, vouchers)
+
+**Transaction management traits:**
+- `RefundPayments` - return funds to customer
+- `CancelPayments` - void/cancel authorization or recent transaction
+- `AdjustPayments` - modify transaction amount or details
+
+**Advanced capabilities:**
+- `RecoverTransactions` - search transactions by idempotence key (disaster recovery)
+- `TokenizePaymentSources` - create tokens from payment data
+- `ThreeDSecure` - 3D Secure authentication flows
+
+Gateway adapters implement only the traits matching their actual capabilities. Each trait uses associated types with marker trait bounds to restrict compatible payment sources at compile time.
 
 ## Consequences
 
 ### Pros
-- Adapters not forced to implement unsupported operations with stub/error responses
-- Clear compile-time contract: trait presence indicates capability
-- Easier to understand adapter capabilities through implemented traits
-- Supports modular extensions without core dependencies
+- Adapters implement only supported flows and capabilities
+- Clear separation: immediate vs deferred vs external payment flows
+- Each trait focused on single responsibility (ISP compliance)
+- CheckTransaction as minimal base contract reduces adapter complexity
+- Compile-time safety through associated types with marker trait bounds
+- Flow-specific traits make payment completion semantics explicit
 
 ### Cons
 - Client code must check trait bounds at compile time or handle missing capabilities at runtime
-- More traits to understand compared to single monolithic interface
+- More traits to understand compared to a single monolithic interface
 
 ## Alternatives Considered
 

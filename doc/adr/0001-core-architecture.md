@@ -1,11 +1,20 @@
 # [ADR-0001]: Core Architecture and Modular Design
 
+> **Note:** This ADR describes the initial modular architecture with separate subcrates. This decision was later superseded by [ADR-0010], which adopts a monolithic crate with feature flags instead.
+>
+> **Implementation Note:** While this ADR describes the architectural vision with unified `PaymentSource` enum and `Authorizable`/`Capturable` traits, the actual implementation evolved to use:
+> - Marker trait hierarchy (`InternalPaymentSource`, `ExternalPaymentSource`, `TokenizablePaymentSource`) instead of unified enum - see [ADR-0012]
+> - Flow-specific traits (`ImmediatePayments`, `DeferredPayments`, `ExternalPayments`) instead of `Authorizable`/`Capturable` - see [ADR-0003] and [ADR-0004]
+> - `CheckTransaction` as base mandatory trait instead of `Authorizable` - see [ADR-0011]
+>
+> The core principles (payment abstraction, trait segregation, type safety) remain valid, but the specific trait names and architecture differ.
+
 ## Context
 
 The merchant-rs project must provide a payment processing abstraction that works across diverse gateways (`Stripe`, `Adyen`, `PayPal`), payment methods (cards, bank transfers, digital wallets, BNPL, cryptocurrency), and value-added services (tokenization, 3D Secure, fraud detection).
 
 Key requirements from stakeholder analysis:
-- **Payment clients**: Need maximum simplicity, minimal dependencies, polymorphic interface independent of payment type
+- **Payment clients**: Need maximum simplicity, minimal dependencies, polymorphic interface independent of a payment type
 - **Gateway implementers**: Professional developers who can manage complex dependencies and selectively implement capabilities
 
 ## Problem
@@ -43,9 +52,9 @@ External crates that depend directly on `merchant-rs-core` and selected extensio
 
 ### Pros
 - Client simplicity: single dependency, single `authorize()` interface for all payment types
-- True polymorphism: client code independent of payment source type via enum
+- True polymorphism: client code independent of a payment source type via enum
 - Compile-time safety: Rust enum with pattern matching, no runtime type discrimination
-- Adapter flexibility: implementers cherry-pick only needed extension dependencies
+- Adapter flexibility: implementers cherry-pick only necessary extension dependencies
 - No fragmentation: unified payment flow, not separate APIs per payment type
 - Industry alignment: matches architectural patterns of major payment libraries
 

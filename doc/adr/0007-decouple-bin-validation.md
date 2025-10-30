@@ -2,7 +2,7 @@
 
 ## Context
 
-Credit card numbers contain a Bank Identification Number (`BIN`) in the first 6-8 digits that identifies the issuing institution and card network. BIN validation can determine card type (Visa, Mastercard, etc.), country of issuance, and validity against known issuer ranges.
+Credit card numbers contain a Bank Identification Number (`BIN`) in the first 6–8 digits that identifies the issuing institution and card network. BIN validation can determine card type (Visa, Mastercard, etc.), country of issuance, and validity against known issuer ranges.
 
 ## Problem
 
@@ -12,7 +12,7 @@ Should `PrimaryAccountNumber` type in core include BIN validation logic, or shou
 
 Decouple BIN validation from core `PrimaryAccountNumber` type.
 
-The `PrimaryAccountNumber` type in payments/card/ performs only structural validation: length bounds (13-19 digits) and Luhn algorithm checksum. BIN-based validation (card network detection, issuer identification, country checks) is delegated to gateway adapters and application layer.
+The `PrimaryAccountNumber` type in types/ performs only structural validation: length bounds (13–19 digits) and Luhn algorithm checksum. BIN-based validation (card network detection, issuer identification, country checks) is delegated to gateway adapters and application layer.
 
 Core validation ensures data integrity: the PAN is structurally valid and passes the Luhn check. Business logic validation (BIN ranges, network rules) belongs in adapters where it can be tailored to gateway-specific requirements.
 
@@ -40,7 +40,7 @@ This follows the principle from the [ADR-0001]: core contains fundamental paymen
 Including BIN databases and validation logic in `PrimaryAccountNumber` type. Rejected because it creates external data dependencies in core (BIN ranges must be updated regularly), imposes business logic that may not apply to all gateways, increases core complexity and maintenance burden, and couples core to specific card network rules.
 
 ### Separate BIN validation crate
-Creating merchant-rs-bin-validator as a shared optional library. Rejected because BIN validation requirements vary significantly by use case (payment routing decisions vs UX card type detection vs fraud prevention), and a one-size-fits-all solution would not serve any use case optimally. Adapters and applications can create their own BIN validators as needed.
+Creating merchant-rs-bin-validator as a shared optional library. Rejected because BIN validation requirements vary significantly by use case (payment routing decisions vs. UX card type detection vs. fraud prevention), and a one-size-fits-all solution would not serve any use case optimally. Adapters and applications can create their own BIN validators as needed.
 
-### BIN validation as trait in core
-Providing optional BIN validation trait that types can implement. Rejected because it still requires maintaining BIN data somewhere, and trait-based approach doesn't solve the fundamental problem of where BIN databases live and who maintains them.
+### BIN validation as a trait in the core
+Providing optional BIN validation trait that types can implement. Rejected because it still requires maintaining BIN data somewhere, and a trait-based approach doesn't solve the fundamental problem of where BIN databases live and who maintains them.
