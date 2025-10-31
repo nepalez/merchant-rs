@@ -1,6 +1,6 @@
 use crate::inputs::Metadata;
 
 pub struct CryptoPayment<'a> {
-    /// Carrier-specific extensions
+    /// Crypto-specific extensions (currency, network, wallet address)
     pub metadata: Metadata<'a>,
 }

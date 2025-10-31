@@ -2,6 +2,7 @@ use crate::inputs::{Address, Credentials};
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPACredentials<'a> {
+    /// International Bank Account Number
     pub iban: &'a str,
 }
 

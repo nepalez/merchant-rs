@@ -131,6 +131,7 @@ impl SEPA {
 }
 
 impl SEPACredentials {
+    /// International Bank Account Number
     pub fn iban(&self) -> &IBAN {
         &self.iban
     }
