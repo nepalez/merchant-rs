@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 /// Monetary value with currency
 ///
 /// # Data Protection
-/// Money values are not considered sensitive data 
+/// Money values are not considered sensitive data
 /// because they represent transaction amounts which can be shared.
 ///
 /// As such, they are:
