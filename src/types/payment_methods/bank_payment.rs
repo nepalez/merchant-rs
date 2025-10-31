@@ -1,10 +1,10 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::BankAccount as Input;
-use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
+use crate::inputs::{BankPayment as Input, BankPaymentCredentials as CredentialsInput};
 use crate::types::{
-    AccountHolderType, AccountNumber, AccountType, FullName, Metadata, RoutingNumber,
+    AccountHolderType, AccountNumber, AccountType, Credentials, FullName, InternalPaymentMethod,
+    Metadata, PaymentMethod, RoutingNumber, TokenizablePaymentMethod,
 };
 
 /// Direct Bank Account
@@ -62,7 +62,7 @@ use crate::types::{
 /// - **NACHA Operating Rules**: National Automated Clearing House Association (United States ACH)
 /// - **Bacs Payment Schemes**: Direct Debit scheme (United Kingdom)
 /// - **Payments Canada Rule H1**: Pre-Authorized Debit (PAD) framework
-/// - **[EFT Code of Conduct](https://www.asic.gov.au/regulatory-resources/financial-services/eft-code-of-conduct/)**: Electronic Funds Transfer (Australia)
+/// - **[EFT Code of Conduct](https://www.asic.gov.au/regulatory-remethods/financial-services/eft-code-of-conduct/)**: Electronic Funds Transfer (Australia)
 /// - **GIRO**: Interbank GIRO system (Singapore)
 /// - **CNP Standards**: China National Payment System
 /// - **Zengin System**: Japanese bank clearing network
@@ -107,37 +107,49 @@ use crate::types::{
 /// - **PSD2** (Europe): AML/KYC requirements for account verification
 /// - **GDPR**: Bank account data is PII, must follow data protection regulations
 #[derive(Clone, Debug)]
-pub struct BankAccount {
-    account_number: AccountNumber,
+pub struct BankPayment {
+    credentials: Credentials<BankPaymentCredentials>,
     full_name: FullName,
-    routing_number: RoutingNumber,
     account_type: AccountType,
     holder_type: AccountHolderType,
     metadata: Option<Metadata>,
 }
 
+#[derive(Clone, Debug)]
+pub struct BankPaymentCredentials {
+    account_number: AccountNumber,
+    routing_number: RoutingNumber,
+}
+
 // Marker implementations
 
-impl PaymentSource for BankAccount {}
-impl InternalPaymentSource for BankAccount {}
-impl TokenizablePaymentSource for BankAccount {}
+impl PaymentMethod for BankPayment {}
+impl InternalPaymentMethod for BankPayment {}
+impl TokenizablePaymentMethod for BankPayment {}
 
 // Converters
 
-impl BankAccount {
-    /// The bank account number
+impl BankPaymentCredentials {
+    /// The bank account number.
     pub fn account_number(&self) -> &AccountNumber {
         &self.account_number
+    }
+
+    /// Bank routing identifier.
+    pub fn routing_number(&self) -> &RoutingNumber {
+        &self.routing_number
+    }
+}
+
+impl BankPayment {
+    /// The tokenizable credentials of the account
+    pub fn credentials(&self) -> &Credentials<BankPaymentCredentials> {
+        &self.credentials
     }
 
     /// User full name as registered with the bank account
     pub fn full_name(&self) -> &FullName {
         &self.full_name
-    }
-
-    /// Bank routing identifier
-    pub fn routing_number(&self) -> &RoutingNumber {
-        &self.routing_number
     }
 
     /// Type of bank account (checking or savings)
@@ -156,16 +168,26 @@ impl BankAccount {
     }
 }
 
-impl TryFrom<Input<'_>> for BankAccount {
+impl<'a> TryFrom<CredentialsInput<'a>> for BankPaymentCredentials {
+    type Error = Error;
+
+    fn try_from(input: CredentialsInput<'a>) -> Result<Self, Self::Error> {
+        Ok(Self {
+            account_number: input.account_number.try_into()?,
+            routing_number: input.routing_number.try_into()?,
+        })
+    }
+}
+
+impl TryFrom<Input<'_>> for BankPayment {
     type Error = Error;
 
     fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {
         Ok(Self {
-            account_number: input.account_number.try_into()?,
+            credentials: input.credentials.try_into()?,
             full_name: input.full_name.try_into()?,
-            routing_number: input.routing_number.try_into()?,
-            account_type: AccountType::Checking,
-            holder_type: AccountHolderType::Individual,
+            account_type: input.account_type,
+            holder_type: input.holder_type,
             metadata: input.metadata.map(TryFrom::try_from).transpose()?,
         })
     }

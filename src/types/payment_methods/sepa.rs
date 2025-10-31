@@ -1,9 +1,11 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::SEPAAccount as Input;
-use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
-use crate::types::{Address, EmailAddress, FullName, IBAN};
+use crate::inputs::{SEPA as Input, SEPACredentials as CredentialsInput};
+use crate::types::{
+    Address, Credentials, EmailAddress, FullName, IBAN, InternalPaymentMethod, PaymentMethod,
+    TokenizablePaymentMethod,
+};
 
 /// SEPA Bank Account
 ///
@@ -85,22 +87,33 @@ use crate::types::{Address, EmailAddress, FullName, IBAN};
 /// - Respect the 8-week dispute window
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
-pub struct SEPAAccount {
+pub struct SEPA {
+    credentials: Credentials<SEPACredentials>,
     billing_address: Address,
     email: EmailAddress,
     full_name: FullName,
+}
+
+#[derive(Clone, Debug)]
+#[allow(clippy::upper_case_acronyms)]
+pub struct SEPACredentials {
     iban: IBAN,
 }
 
 // Marker implementations
 
-impl PaymentSource for SEPAAccount {}
-impl InternalPaymentSource for SEPAAccount {}
-impl TokenizablePaymentSource for SEPAAccount {}
+impl PaymentMethod for SEPA {}
+impl InternalPaymentMethod for SEPA {}
+impl TokenizablePaymentMethod for SEPA {}
 
 // Converters
 
-impl SEPAAccount {
+impl SEPA {
+    /// International Bank Account Number
+    pub fn credentials(&self) -> &Credentials<SEPACredentials> {
+        &self.credentials
+    }
+
     /// User billing address (required per PSD2 AML)
     pub fn billing_address(&self) -> &Address {
         &self.billing_address
@@ -115,21 +128,32 @@ impl SEPAAccount {
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
+}
 
-    /// International Bank Account Number
+impl SEPACredentials {
     pub fn iban(&self) -> &IBAN {
         &self.iban
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for SEPAAccount {
+impl<'a> TryFrom<Input<'a>> for SEPA {
     type Error = Error;
 
     fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
-            billing_address: input.billing_address.try_into()?,
+            credentials: input.credentials.try_into()?,
             email: input.email.try_into()?,
+            billing_address: input.billing_address.try_into()?,
             full_name: input.full_name.try_into()?,
+        })
+    }
+}
+
+impl<'a> TryFrom<CredentialsInput<'a>> for SEPACredentials {
+    type Error = Error;
+
+    fn try_from(input: CredentialsInput<'a>) -> Result<Self, Self::Error> {
+        Ok(Self {
             iban: input.iban.try_into()?,
         })
     }

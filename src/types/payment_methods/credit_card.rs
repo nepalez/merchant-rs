@@ -1,7 +1,10 @@
+use std::convert::TryFrom;
+
 use crate::Error;
 use crate::inputs::CreditCard as Input;
-use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
-use crate::types::{CVV, CardExpiry, CardHolderName, PrimaryAccountNumber};
+use crate::types::{
+    CVV, CardExpiry, CardHolderName, InternalPaymentMethod, PaymentMethod, PrimaryAccountNumber,
+};
 
 /// Credit or Debit Card
 ///
@@ -114,16 +117,15 @@ use crate::types::{CVV, CardExpiry, CardHolderName, PrimaryAccountNumber};
 #[derive(Clone, Debug)]
 pub struct CreditCard {
     cvv: CVV,
-    number: PrimaryAccountNumber,
-    card_expiry: CardExpiry,
-    holder_name: CardHolderName,
+    pub(crate) number: PrimaryAccountNumber,
+    pub(crate) card_expiry: CardExpiry,
+    pub(crate) holder_name: CardHolderName,
 }
 
 // Marker implementations
 
-impl PaymentSource for CreditCard {}
-impl InternalPaymentSource for CreditCard {}
-impl TokenizablePaymentSource for CreditCard {}
+impl PaymentMethod for CreditCard {}
+impl InternalPaymentMethod for CreditCard {}
 
 // Converters
 

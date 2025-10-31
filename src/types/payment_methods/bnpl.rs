@@ -2,10 +2,9 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::BNPL as Input;
-use crate::internal::{ExternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{
-    AccountHolderType, Address, BirthDate, EmailAddress, FullName, Metadata, NationalId,
-    PhoneNumber,
+    AccountHolderType, Address, BirthDate, EmailAddress, ExternalPaymentMethod, FullName, Metadata,
+    NationalId, PaymentMethod, PhoneNumber,
 };
 
 /// Buy Now Pay Later
@@ -106,9 +105,8 @@ pub struct BNPL {
 
 // Marker implementations
 
-impl PaymentSource for BNPL {}
-impl ExternalPaymentSource for BNPL {}
-impl TokenizablePaymentSource for BNPL {}
+impl PaymentMethod for BNPL {}
+impl ExternalPaymentMethod for BNPL {}
 
 // Converters
 

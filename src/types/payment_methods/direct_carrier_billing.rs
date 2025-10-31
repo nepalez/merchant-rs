@@ -2,24 +2,22 @@ use std::convert::TryFrom;
 
 use crate::error::Error;
 use crate::inputs::DirectCarrier as Input;
-use crate::internal::{ExternalPaymentSource, PaymentSource, TokenizablePaymentSource};
-use crate::types::{Metadata, PhoneNumber};
+use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
 
 #[derive(Debug, Clone)]
-pub struct DirectCarrier {
+pub struct DirectCarrierBilling {
     phone: PhoneNumber,
     metadata: Option<Metadata>,
 }
 
 // Marker implementations
 
-impl PaymentSource for DirectCarrier {}
-impl ExternalPaymentSource for DirectCarrier {}
-impl TokenizablePaymentSource for DirectCarrier {}
+impl PaymentMethod for DirectCarrierBilling {}
+impl ExternalPaymentMethod for DirectCarrierBilling {}
 
 // Converters
 
-impl DirectCarrier {
+impl DirectCarrierBilling {
     /// User phone number (primary payment identifier)
     #[inline]
     pub fn phone(&self) -> &PhoneNumber {
@@ -32,7 +30,7 @@ impl DirectCarrier {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for DirectCarrier {
+impl<'a> TryFrom<Input<'a>> for DirectCarrierBilling {
     type Error = Error;
 
     fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {

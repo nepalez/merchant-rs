@@ -2,8 +2,7 @@ use async_trait::async_trait;
 use rust_decimal::Decimal;
 
 use crate::Error;
-use crate::internal::InternalPaymentSource;
-use crate::types::{Payment, Transaction, TransactionId};
+use crate::types::{InternalPaymentMethod, Payment, Transaction, TransactionId};
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -30,7 +29,7 @@ use crate::types::{Payment, Transaction, TransactionId};
 #[async_trait]
 pub trait DeferredPayments {
     #[allow(private_bounds)]
-    type Source: InternalPaymentSource;
+    type Source: InternalPaymentMethod;
 
     /// Authorize payment and reserve funds without immediate capture.
     ///

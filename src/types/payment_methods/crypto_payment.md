@@ -2,7 +2,7 @@
 
 ## Overview
 
-Customer sends cryptocurrency directly from their wallet to a gateway-generated deposit address. Payment is settled on-chain through blockchain network confirmation. Transaction is irreversible once confirmed on the blockchain (typically 1-6 block confirmations depending on network and amount). Gateway monitors blockchain for incoming transactions and confirms payment asynchronously via webhook.
+Customer sends cryptocurrency directly from their wallet to a gateway-generated deposit address. Payment is settled on-chain through blockchain network confirmation. Transaction is irreversible once confirmed on the blockchain (typically 1-6 block confirmations depending on network and amount). Gateway monitors the blockchain for incoming transactions and confirms payment asynchronously via webhook.
 
 ## When to Use
 

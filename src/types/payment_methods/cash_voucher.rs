@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
+use super::{ExternalPaymentMethod, PaymentMethod};
 use crate::Error;
 use crate::inputs::CashVoucher as Input;
-use crate::internal::{ExternalPaymentSource, PaymentSource, TokenizablePaymentSource};
 use crate::types::{Address, FullName, Metadata, NationalId};
 
 /// Cash-Based Voucher
@@ -101,9 +101,8 @@ pub struct CashVoucher {
 
 // Marker implementations
 
-impl PaymentSource for CashVoucher {}
-impl ExternalPaymentSource for CashVoucher {}
-impl TokenizablePaymentSource for CashVoucher {}
+impl PaymentMethod for CashVoucher {}
+impl ExternalPaymentMethod for CashVoucher {}
 
 // Converters
 

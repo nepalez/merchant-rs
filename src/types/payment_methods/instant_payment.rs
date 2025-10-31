@@ -1,12 +1,13 @@
+use std::convert::TryFrom;
+
 use crate::Error;
-use crate::inputs::InstantAccount as Input;
-use crate::internal::{InternalPaymentSource, PaymentSource, TokenizablePaymentSource};
+use crate::inputs::InstantPayment as Input;
 use crate::types::{
-    AccountHolderType, AccountNumber, Address, BankCode, EmailAddress, FullName, Metadata,
-    NationalId, PhoneNumber, VirtualPaymentAddress,
+    AccountHolderType, AccountNumber, Address, BankCode, EmailAddress, ExternalPaymentMethod,
+    FullName, Metadata, NationalId, PaymentMethod, PhoneNumber, VirtualPaymentAddress,
 };
 
-/// Bank Account outside SEPA
+/// Instant payment systems
 ///
 /// ## Overview
 ///
@@ -123,9 +124,8 @@ pub struct InstantAccount {
 
 // Marker implementations
 
-impl PaymentSource for InstantAccount {}
-impl InternalPaymentSource for InstantAccount {}
-impl TokenizablePaymentSource for InstantAccount {}
+impl PaymentMethod for InstantAccount {}
+impl ExternalPaymentMethod for InstantAccount {}
 
 // Converters
 
@@ -188,17 +188,17 @@ impl<'a> TryFrom<Input<'a>> for InstantAccount {
         Ok(Self {
             email: input.email.try_into()?,
             full_name: input.full_name.try_into()?,
-            account_number: input.account_number.map(TryFrom::try_from).transpose()?,
-            bank_code: input.bank_code.map(TryFrom::try_from).transpose()?,
-            billing_address: input.billing_address.map(TryFrom::try_from).transpose()?,
+            account_number: input.account_number.map(TryInto::try_into).transpose()?,
+            bank_code: input.bank_code.map(TryInto::try_into).transpose()?,
+            billing_address: input.billing_address.map(TryInto::try_into).transpose()?,
             holder_type: input.holder_type,
-            national_id: input.national_id.map(TryFrom::try_from).transpose()?,
-            phone: input.phone.map(TryFrom::try_from).transpose()?,
+            national_id: input.national_id.map(TryInto::try_into).transpose()?,
+            phone: input.phone.map(TryInto::try_into).transpose()?,
             virtual_payment_address: input
                 .virtual_payment_address
-                .map(TryFrom::try_from)
+                .map(TryInto::try_into)
                 .transpose()?,
-            metadata: input.metadata.map(TryFrom::try_from).transpose()?,
+            metadata: input.metadata.map(TryInto::try_into).transpose()?,
         })
     }
 }

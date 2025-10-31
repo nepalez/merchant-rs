@@ -1,8 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
-use crate::internal::InternalPaymentSource;
-use crate::types::{Payment, Transaction};
+use crate::types::{InternalPaymentMethod, Payment, Transaction};
 
 /// Payment gateway trait for one-step payment flows.
 ///
@@ -22,7 +21,7 @@ use crate::types::{Payment, Transaction};
 #[async_trait]
 pub trait ImmediatePayments {
     #[allow(private_bounds)]
-    type Source: InternalPaymentSource;
+    type Source: InternalPaymentMethod;
 
     /// Immediately charge the payment (authorization and capture in one step).
     ///

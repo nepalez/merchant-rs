@@ -1,7 +1,7 @@
 use crate::inputs::{Address, Metadata};
 use crate::types::AccountHolderType;
 
-pub struct InstantAccount<'a> {
+pub struct InstantPayment<'a> {
     /// User email for transaction notifications
     pub email: &'a str,
     /// User full name as registered with a bank

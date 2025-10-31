@@ -2,38 +2,40 @@
 //! used to simplify the creation of secure containers.
 
 mod address;
-mod bank_account;
+mod bank_payment;
 mod birth_date;
 mod bnpl;
 mod card_expiry;
 mod cash_voucher;
+mod credentials;
 mod credit_card;
+mod crypto_payment;
 mod direct_carrier;
 mod external_payment;
 mod external_payment_data;
-mod instant_account;
+mod instant_payment;
 mod payment;
-mod payment_data;
-mod sepa_account;
+mod sepa;
+mod stored_card;
 mod transaction;
-mod crypto_account;
 
 pub use address::Address;
-pub use bank_account::BankAccount;
+pub use bank_payment::{BankPayment, BankPaymentCredentials};
 pub use birth_date::BirthDate;
 pub use bnpl::BNPL;
 pub use card_expiry::CardExpiry;
 pub use cash_voucher::CashVoucher;
+pub use credentials::Credentials;
 pub use credit_card::CreditCard;
+pub use crypto_payment::CryptoPayment;
 pub use direct_carrier::DirectCarrier;
 pub use external_payment::ExternalPayment;
 pub use external_payment_data::ExternalPaymentData;
-pub use instant_account::InstantAccount;
+pub use instant_payment::InstantPayment;
 pub use payment::Payment;
-pub use payment_data::PaymentData;
-pub use sepa_account::SEPAAccount;
+pub use sepa::{SEPA, SEPACredentials};
+pub use stored_card::{StoredCard, StoredCardCredentials};
 pub use transaction::Transaction;
-pub use crypto_account::CryptoAccount;
 
 use std::collections::HashMap;
 /// Insecure container of additional adapter-specific parameters

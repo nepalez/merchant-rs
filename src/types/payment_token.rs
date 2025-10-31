@@ -4,16 +4,17 @@ use std::marker::PhantomData;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, PaymentSource, Validated};
+use crate::internal::{AsUnsafeRef, Masked, Validated};
+use crate::types::PaymentMethod;
 
 #[derive(Clone, ZeroizeOnDrop)]
 #[allow(private_bounds)]
-pub struct PaymentToken<Content: PaymentSource> {
+pub struct PaymentToken<Content: PaymentMethod> {
     value: String,
     _content: PhantomData<Content>,
 }
 
-impl<'a, Content: PaymentSource> TryFrom<&'a str> for PaymentToken<Content> {
+impl<'a, Content: PaymentMethod> TryFrom<&'a str> for PaymentToken<Content> {
     type Error = Error;
 
     fn try_from(token: &'a str) -> Result<Self, Self::Error> {
@@ -24,13 +25,13 @@ impl<'a, Content: PaymentSource> TryFrom<&'a str> for PaymentToken<Content> {
     }
 }
 
-impl<Content: PaymentSource> AsUnsafeRef<str> for PaymentToken<Content> {
+impl<Content: PaymentMethod> AsUnsafeRef<str> for PaymentToken<Content> {
     unsafe fn as_ref(&self) -> &str {
         self.value.as_str()
     }
 }
 
-impl<Content: PaymentSource> fmt::Debug for PaymentToken<Content> {
+impl<Content: PaymentMethod> fmt::Debug for PaymentToken<Content> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
     }
@@ -38,7 +39,7 @@ impl<Content: PaymentSource> fmt::Debug for PaymentToken<Content> {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl<Content: PaymentSource> Validated for PaymentToken<Content> {
+impl<Content: PaymentMethod> Validated for PaymentToken<Content> {
     #[inline]
     fn validate(self) -> Result<Self, Error> {
         self._validate_length(&self.value, 16, 4096)?;
@@ -55,7 +56,7 @@ impl<Content: PaymentSource> Validated for PaymentToken<Content> {
 
 // SAFETY: The trait is safely implemented as it does NOT expose any part of the token,
 // fully protecting this sensitive authentication data from exposure in debug output.
-unsafe impl<Content: PaymentSource> Masked for PaymentToken<Content> {
+unsafe impl<Content: PaymentMethod> Masked for PaymentToken<Content> {
     const TYPE_WRAPPER: &'static str = "PaymentToken";
 
     #[inline]
