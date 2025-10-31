@@ -7,8 +7,8 @@ use crate::types::{InternalPaymentMethod, Payment, PaymentToken};
 #[async_trait]
 pub trait ThreeDSecure {
     #[allow(private_bounds)]
-    async fn authenticate<Source: InternalPaymentMethod>(
+    async fn authenticate<Method: InternalPaymentMethod>(
         &self,
-        payment: Payment<Source>,
-    ) -> Result<PaymentToken<Source>, Error>;
+        payment: Payment<Method>,
+    ) -> Result<PaymentToken<Method>, Error>;
 }

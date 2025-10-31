@@ -2,7 +2,7 @@ use crate::types::{MerchantInitiatedType, Money};
 
 /// Insecure structure representing a payment.
 pub struct Payment<'a, Method: 'a> {
-    /// The source of the payment to charge funds from
+    /// The method of the payment to charge funds from
     pub method: Method,
     /// The amount to charge
     pub amount: Money,

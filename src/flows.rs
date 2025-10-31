@@ -9,7 +9,7 @@ mod immediate_payments;
 mod recover_transactions;
 mod refund_payments;
 mod three_d_secure;
-mod tokenize_payment_sources;
+mod tokenize_credentials;
 
 pub use adjust_payments::AdjustPayments;
 pub use cancel_payments::CancelPayments;
@@ -20,4 +20,4 @@ pub use immediate_payments::ImmediatePayments;
 pub use recover_transactions::{RecoverTransactions, TransactionIterator};
 pub use refund_payments::RefundPayments;
 pub use three_d_secure::ThreeDSecure;
-pub use tokenize_payment_sources::TokenizePaymentSources;
+pub use tokenize_credentials::TokenizeCredentials;

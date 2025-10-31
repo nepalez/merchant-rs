@@ -8,9 +8,9 @@ use crate::types::{Token, TokenizablePaymentMethod};
 ///
 /// This trait can be used to support 3D Secure payments.
 #[async_trait]
-pub trait TokenizePaymentSources {
+pub trait TokenizeCredentials {
     #[allow(private_bounds)]
-    type Source: TokenizablePaymentMethod;
+    type Method: TokenizablePaymentMethod;
 
-    async fn tokenize(&self, source: Self::Source) -> Result<Token, Error>;
+    async fn tokenize(&self, method: Self::Method) -> Result<Token, Error>;
 }

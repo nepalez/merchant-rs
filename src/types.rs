@@ -3,7 +3,7 @@
 //!
 //! This module ensures **type safety** and consistency across all financial operations.
 //! It includes fundamental types for transactions (requests/responses), financial
-//! entities (currencies, amounts, tokens), and payment sources (cards, bank accounts).
+//! entities (currencies, amounts, tokens), and payment methods (cards, bank accounts).
 //!
 //! By making these structures canonical, the core decouples the business logic
 //! from the specific data formats required by external Payment Gateways (PAGs),

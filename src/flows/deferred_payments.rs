@@ -25,11 +25,11 @@ use crate::types::{InternalPaymentMethod, Payment, Transaction, TransactionId};
 ///
 /// # Type Parameter
 ///
-/// * `Source` - Payment source type constrained to internal sources (cards, tokens, etc.)
+/// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
 pub trait DeferredPayments {
     #[allow(private_bounds)]
-    type Source: InternalPaymentMethod;
+    type Method: InternalPaymentMethod;
 
     /// Authorize payment and reserve funds without immediate capture.
     ///
@@ -38,12 +38,12 @@ pub trait DeferredPayments {
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing source and transaction details
+    /// * `payment` - Payment data containing method and transaction details
     ///
     /// # Returns
     ///
     /// Transaction record with authorization status
-    async fn authorize(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>;
+    async fn authorize(&self, payment: Payment<Self::Method>) -> Result<Transaction, Error>;
 
     /// Capture previously authorized funds.
     ///

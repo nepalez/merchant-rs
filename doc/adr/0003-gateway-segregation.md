@@ -19,10 +19,18 @@ Apply Interface Segregation Principle: segregate traits by capability and paymen
 
 *Synchronous flows:*
 - `ImmediatePayments` - one-step charge (authorization and capture in single call)
+  - Associated type: `Source: InternalPaymentMethod`
+  - Method: `async fn charge(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>`
 - `DeferredPayments` - two-step flow (separate authorize and capture operations)
+  - Associated type: `Source: InternalPaymentMethod`
+  - Methods: `async fn authorize(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>`
+  - `async fn capture(&self, transaction_id: TransactionId, amount: Option<Decimal>) -> Result<Transaction, Error>`
 
 *Asynchronous flows:*
 - `ExternalPayments` - initiate payment with external completion (redirects, webhooks, vouchers)
+  - Associated type: `Source: ExternalPaymentMethod`
+  - Methods: `async fn initiate(&self, source: Self::Source) -> Result<ExternalPayment, Error>`
+  - `async fn payment_data(&self, transaction_id: TransactionId) -> Result<ExternalPaymentData, Error>`
 
 **Transaction management traits:**
 - `RefundPayments` - return funds to customer
@@ -34,7 +42,7 @@ Apply Interface Segregation Principle: segregate traits by capability and paymen
 - `TokenizePaymentSources` - create tokens from payment data
 - `ThreeDSecure` - 3D Secure authentication flows
 
-Gateway adapters implement only the traits matching their actual capabilities. Each trait uses associated types with marker trait bounds to restrict compatible payment sources at compile time.
+Gateway adapters implement only the traits matching their actual capabilities. Each trait uses associated types with marker trait bounds to restrict compatible payment methods at compile time.
 
 ## Consequences
 
@@ -45,10 +53,12 @@ Gateway adapters implement only the traits matching their actual capabilities. E
 - CheckTransaction as minimal base contract reduces adapter complexity
 - Compile-time safety through associated types with marker trait bounds
 - Flow-specific traits make payment completion semantics explicit
+- Associated types prevent invalid payment method-flow combinations at compile time
 
 ### Cons
 - Client code must check trait bounds at compile time or handle missing capabilities at runtime
 - More traits to understand compared to a single monolithic interface
+- Associated type syntax adds complexity to trait definitions
 
 ## Alternatives Considered
 

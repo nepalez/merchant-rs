@@ -32,16 +32,16 @@ use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, 
 ///
 /// # Type Parameter
 ///
-/// * `Source` - Payment source type constrained to external sources (vouchers, BNPL, etc.)
+/// * `Method` - Payment method type constrained to external methods (vouchers, BNPL, etc.)
 #[async_trait]
 pub trait ExternalPayments {
     #[allow(private_bounds)]
-    type Source: ExternalPaymentMethod;
+    type Method: ExternalPaymentMethod;
 
     /// Initiate the transaction and receive it along with a `PaymentData`
     /// The payment should be made outside the gateway's flow.
     /// The client should check the status of the transaction later.
-    async fn initiate(&self, source: Self::Source) -> Result<ExternalPayment, Error>;
+    async fn initiate(&self, method: Self::Method) -> Result<ExternalPayment, Error>;
 
     /// Retrieve the payment data for a previously initiated transaction by its ID.
     async fn payment_data(

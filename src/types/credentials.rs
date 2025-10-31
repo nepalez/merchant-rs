@@ -11,16 +11,16 @@ pub enum Credentials<Plain: Sized> {
     Tokenized(Token),
 }
 
-impl<'a, Source, Target> TryFrom<Input<'a, Source>> for Credentials<Target>
+impl<'a, InputMethod, TypeMethod> TryFrom<Input<'a, InputMethod>> for Credentials<TypeMethod>
 where
-    Source: Sized,
-    Target: Sized + TryFrom<Source, Error = Error>,
+    InputMethod: Sized,
+    TypeMethod: Sized + TryFrom<InputMethod, Error = Error>,
 {
     type Error = Error;
 
-    fn try_from(input: Input<'a, Source>) -> Result<Self, Self::Error> {
+    fn try_from(input: Input<'a, InputMethod>) -> Result<Self, Self::Error> {
         Ok(match input {
-            Input::Plain(plain) => Self::Plain(plain.try_into()?),
+            Input::Plain(input_method) => Self::Plain(input_method.try_into()?),
             Input::Tokenized(token) => Self::Tokenized(token.try_into()?),
         })
     }

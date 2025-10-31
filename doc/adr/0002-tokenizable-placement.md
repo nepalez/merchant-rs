@@ -1,6 +1,11 @@
 # [ADR-0002]: Token Usage vs Token Creation Separation
 
-> **Note:** This ADR describes the separation between token usage and token creation in the context of the initial modular architecture. While [ADR-0010] changed the implementation to a monolithic crate, the core principle remains valid: `PaymentToken` as a payment source is part of the core functionality, while tokenization capabilities would be feature-gated if implemented.
+> **Note:** This ADR describes the separation between token usage and token creation in the context of the initial modular architecture. While [ADR-0010] changed the implementation to a monolithic crate, the core principle remains valid.
+>
+> **Implementation Note:** The actual implementation differs from the original design:
+> - Instead of `PaymentSource::Token` enum variant, the library provides `Token` and generic `PaymentToken<Content: PaymentMethod>` types
+> - Tokens are used through `Credentials<Plain>` enum (Plain vs Tokenized) in tokenizable payment methods
+> - `TokenizePaymentSources` trait exists in core as an optional capability trait
 
 ## Context
 
@@ -20,8 +25,8 @@ Key observations:
 
 Separate token usage (core) from token creation (extension).
 
-**Core includes `PaymentToken` as a `PaymentSource` variant:**
-`PaymentSource::Token(PaymentToken)` is a fundamental payment source type because using stored payment methods is essential to production payment flows. This enables recurring payments, subscription billing, and PCI-compliant payment processing where backends work exclusively with tokens after initial capture.
+**Core includes token types for tokenizable payment methods:**
+Tokenizable payment methods use `Credentials<Plain>` enum which allows either plain credentials or tokenized credentials via `Token`. This is fundamental because using stored payment methods is essential to production payment flows. This enables recurring payments, subscription billing, and PCI-compliant payment processing where backends work exclusively with tokens after initial capture.
 
 **Core includes `TokenizePaymentSources` trait:**
 The `TokenizePaymentSources` trait for creating tokens from raw payment data is part of the core flows module (per [ADR-0010] monolithic architecture) as an optional capability:

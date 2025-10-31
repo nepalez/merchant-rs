@@ -9,7 +9,7 @@ Payment processing requires reliable transaction status retrieval for reconcilia
 
 ## Problem
 
-Should transaction retrieval by ID be part of the core `Authorizable` contract, or treated as an optional capability? How should recovery from lost transaction IDs be handled when `merchant_reference_id` is the only available identifier?
+Should transaction retrieval by ID be part of the payment flow traits, or treated as a separate base capability? How should recovery from lost transaction IDs be handled when `merchant_reference_id` is the only available identifier?
 
 ## Decision
 

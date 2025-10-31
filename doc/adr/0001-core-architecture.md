@@ -1,11 +1,12 @@
 # [ADR-0001]: Core Architecture and Modular Design
 
-> **Note:** This ADR describes the initial modular architecture with separate subcrates. This decision was later superseded by [ADR-0010], which adopts a monolithic crate with feature flags instead.
+> **Note:** This ADR describes the initial modular architecture with separate subcrates. This decision was later superseded by [ADR-0010], which adopts a monolithic crate instead.
 >
 > **Implementation Note:** While this ADR describes the architectural vision with unified `PaymentSource` enum and `Authorizable`/`Capturable` traits, the actual implementation evolved to use:
-> - Marker trait hierarchy (`InternalPaymentSource`, `ExternalPaymentSource`, `TokenizablePaymentSource`) instead of unified enum - see [ADR-0012]
+> - Marker trait hierarchy (`PaymentMethod`, `InternalPaymentMethod`, `ExternalPaymentMethod`, `TokenizablePaymentMethod`) instead of unified enum - see [ADR-0012]
 > - Flow-specific traits (`ImmediatePayments`, `DeferredPayments`, `ExternalPayments`) instead of `Authorizable`/`Capturable` - see [ADR-0003] and [ADR-0004]
 > - `CheckTransaction` as base mandatory trait instead of `Authorizable` - see [ADR-0011]
+> - Generic `Payment<Method: PaymentMethod>` struct instead of `PaymentSource` enum
 >
 > The core principles (payment abstraction, trait segregation, type safety) remain valid, but the specific trait names and architecture differ.
 

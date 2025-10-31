@@ -1,4 +1,4 @@
-# [ADR-0012]: Payment Source Runtime Validation
+# [ADR-0012]: Payment Method Type Safety via Marker Traits
 
 ## Context
 
@@ -21,34 +21,34 @@ Use marker trait hierarchy with compile-time source classification instead of ru
 **Marker trait architecture:**
 
 ```rust
-// Base trait - all payment sources implement this
-trait PaymentSource {}
+// Base trait - all payment methods implement this
+trait PaymentMethod {}
 
 // Flow-specific marker traits
-trait InternalPaymentSource: PaymentSource {}  // Cards, tokens - synchronous flows
-trait ExternalPaymentSource: PaymentSource {}  // Vouchers, BNPL, redirects - async flows
-trait TokenizablePaymentSource: PaymentSource {} // Sources that can be tokenized
+trait InternalPaymentMethod: PaymentMethod {}  // Cards, tokens - synchronous flows
+trait ExternalPaymentMethod: PaymentMethod {}  // Vouchers, BNPL, redirects - async flows
+trait TokenizablePaymentMethod: PaymentMethod {} // Methods that can be tokenized
 ```
 
 **Flow trait design with associated types:**
 
-Each payment flow trait uses associated type with trait bound to restrict compatible sources:
+Each payment flow trait uses associated type with trait bound to restrict compatible methods:
 
 ```rust
 trait ImmediatePayments {
-    type Source: InternalPaymentSource;
+    type Source: InternalPaymentMethod;
     async fn charge(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>;
 }
 
 trait ExternalPayments {
-    type Source: ExternalPaymentSource;
+    type Source: ExternalPaymentMethod;
     async fn initiate(&self, source: Self::Source) -> Result<ExternalPayment, Error>;
 }
 ```
 
 **Gateway implementation:**
 
-Gateway declares supported source type via associated type (not runtime list):
+Gateway declares supported method type via associated type (not runtime list):
 
 ```rust
 impl ImmediatePayments for StripeGateway {
@@ -59,17 +59,17 @@ impl ImmediatePayments for StripeGateway {
 
 **Rationale:**
 
-- **Compile-time safety:** Invalid source-flow combinations prevented at compile time, not runtime
+- **Compile-time safety:** Invalid method-flow combinations prevented at compile time, not runtime
 - **No validation overhead:** Type system enforces constraints, no runtime checks needed
-- **Explicit contracts:** Associated type makes supported source visible in trait signature
-- **Flexible composition:** Payment sources can implement multiple marker traits (e.g., CreditCard is both InternalPaymentSource and TokenizablePaymentSource)
+- **Explicit contracts:** Associated type makes supported method visible in trait signature
+- **Flexible composition:** Payment methods can implement multiple marker traits (e.g., CreditCard is both InternalPaymentMethod and TokenizablePaymentMethod)
 
 This aligns with Rust's philosophy of zero-cost abstractions and compile-time guarantees.
 
 ## Alternatives Considered
 
-### Runtime validation with unified PaymentSource enum
-Create unified enum with all payment source variants, validate gateway support at runtime via `supported_sources()` method.
+### Runtime validation with unified PaymentMethod enum
+Create unified enum with all payment method variants, validate gateway support at runtime via `supported_methods()` method.
 
 **Rationale:** Type safety for payment data, runtime flexibility for gateway capabilities.
 
@@ -81,7 +81,7 @@ Create unified enum with all payment source variants, validate gateway support a
 - Cannot leverage Rust's zero-cost abstraction philosophy
 
 ### Compile-time enforcement via trait bounds
-Generic authorize method with trait bound requiring gateway to prove support: `authorize<S: PaymentSource>() where Self: Supports<S>`.
+Generic authorize method with trait bound requiring gateway to prove support: `authorize<M: PaymentMethod>() where Self: Supports<M>`.
 
 **Rationale:** Compile-time guarantee of compatibility.
 
@@ -97,16 +97,16 @@ One Gateway implementation per supported payment method.
 ## Consequences
 
 ### Pros
-- Compile-time prevention of invalid source-flow combinations
+- Compile-time prevention of invalid method-flow combinations
 - Zero runtime validation overhead
 - Associated types make gateway capabilities explicit in trait signature
-- Payment sources can belong to multiple categories via multiple trait impls
-- Type safety at every level: flow traits, source types, marker traits
+- Payment methods can belong to multiple categories via multiple trait impls
+- Type safety at every level: flow traits, method types, marker traits
 - Clear compilation errors instead of runtime failures
 
 ### Cons
 - More complex trait hierarchy to understand
 - Cannot handle runtime availability factors (method disabled for specific amounts/currencies)
-- Adding new source category requires new marker trait
+- Adding new method category requires new marker trait
 - Less flexible than runtime validation for dynamic gateway capabilities
 

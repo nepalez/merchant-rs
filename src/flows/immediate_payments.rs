@@ -17,20 +17,20 @@ use crate::types::{InternalPaymentMethod, Payment, Transaction};
 ///
 /// # Type Parameter
 ///
-/// * `Source` - Payment source type constrained to internal sources (cards, tokens, etc.)
+/// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
 pub trait ImmediatePayments {
     #[allow(private_bounds)]
-    type Source: InternalPaymentMethod;
+    type Method: InternalPaymentMethod;
 
     /// Immediately charge the payment (authorization and capture in one step).
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing source and transaction details
+    /// * `payment` - Payment data containing method and transaction details
     ///
     /// # Returns
     ///
     /// Transaction record with status indicating success or failure
-    async fn charge(&self, payment: Payment<Self::Source>) -> Result<Transaction, Error>;
+    async fn charge(&self, payment: Payment<Self::Method>) -> Result<Transaction, Error>;
 }
