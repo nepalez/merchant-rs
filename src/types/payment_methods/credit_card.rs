@@ -116,40 +116,20 @@ use crate::types::{
 /// - **Geolocation**: Flag transactions from unusual locations
 #[derive(Clone, Debug)]
 pub struct CreditCard {
-    cvv: CVV,
-    pub(crate) number: PrimaryAccountNumber,
-    pub(crate) card_expiry: CardExpiry,
-    pub(crate) holder_name: CardHolderName,
+    /// Card Verification Value (CVV/CVC/CID)
+    pub cvv: CVV,
+    /// Primary Account Number (PAN)
+    pub number: PrimaryAccountNumber,
+    /// Card expiration date (month and year)
+    pub card_expiry: CardExpiry,
+    /// Cardholder name as embossed on the card
+    pub holder_name: CardHolderName,
 }
 
 // Marker implementations
 
 impl PaymentMethod for CreditCard {}
 impl InternalPaymentMethod for CreditCard {}
-
-// Converters
-
-impl CreditCard {
-    /// Card Verification Value (CVV/CVC/CID)
-    pub fn cvv(&self) -> &CVV {
-        &self.cvv
-    }
-
-    /// Primary Account Number (PAN)
-    pub fn number(&self) -> &PrimaryAccountNumber {
-        &self.number
-    }
-
-    /// Card expiration date (month and year)
-    pub fn card_expiry(&self) -> &CardExpiry {
-        &self.card_expiry
-    }
-
-    /// Cardholder name as embossed on the card
-    pub fn holder_name(&self) -> &CardHolderName {
-        &self.holder_name
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for CreditCard {
     type Error = Error;

@@ -110,76 +110,32 @@ use crate::types::{
 /// - **GDPR/LGPD**: Customer data protection requirements
 #[derive(Clone, Debug)]
 pub struct InstantAccount {
-    email: EmailAddress,
-    full_name: FullName,
-    account_number: Option<AccountNumber>,
-    bank_code: Option<BankCode>,
-    billing_address: Option<Address>,
-    holder_type: AccountHolderType,
-    national_id: Option<NationalId>,
-    phone: Option<PhoneNumber>,
-    virtual_payment_address: Option<VirtualPaymentAddress>,
-    metadata: Option<Metadata>,
+    /// User email for transaction notifications
+    pub email: EmailAddress,
+    /// User full name as registered with a bank
+    pub full_name: FullName,
+    /// Bank account number (CLABE for SPEI)
+    pub account_number: Option<AccountNumber>,
+    /// Bank identifier code
+    pub bank_code: Option<BankCode>,
+    /// User billing address
+    pub billing_address: Option<Address>,
+    /// Type of user (person or organization)
+    pub holder_type: AccountHolderType,
+    /// National identification number (tax ID)
+    pub national_id: Option<NationalId>,
+    /// User phone number
+    pub phone: Option<PhoneNumber>,
+    /// Virtual Payment Address (UPI)
+    pub virtual_payment_address: Option<VirtualPaymentAddress>,
+    /// Method-specific extensions
+    pub metadata: Option<Metadata>,
 }
 
 // Marker implementations
 
 impl PaymentMethod for InstantAccount {}
 impl ExternalPaymentMethod for InstantAccount {}
-
-// Converters
-
-impl InstantAccount {
-    /// User email for transaction notifications
-    pub fn email(&self) -> &EmailAddress {
-        &self.email
-    }
-
-    /// User full name as registered with a bank
-    pub fn full_name(&self) -> &FullName {
-        &self.full_name
-    }
-
-    /// Bank account number (CLABE for SPEI)
-    pub fn account_number(&self) -> Option<&AccountNumber> {
-        self.account_number.as_ref()
-    }
-
-    /// Bank identifier code
-    pub fn bank_code(&self) -> Option<&BankCode> {
-        self.bank_code.as_ref()
-    }
-
-    /// User billing address
-    pub fn billing_address(&self) -> Option<&Address> {
-        self.billing_address.as_ref()
-    }
-
-    /// Type of user (person or organization)
-    pub fn holder_type(&self) -> AccountHolderType {
-        self.holder_type
-    }
-
-    /// National identification number (tax ID)
-    pub fn national_id(&self) -> Option<&NationalId> {
-        self.national_id.as_ref()
-    }
-
-    /// User phone number
-    pub fn phone(&self) -> Option<&PhoneNumber> {
-        self.phone.as_ref()
-    }
-
-    /// Virtual Payment Address (UPI)
-    pub fn virtual_payment_address(&self) -> Option<&VirtualPaymentAddress> {
-        self.virtual_payment_address.as_ref()
-    }
-
-    /// Method-specific extensions
-    pub fn metadata(&self) -> Option<&Metadata> {
-        self.metadata.as_ref()
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for InstantAccount {
     type Error = Error;

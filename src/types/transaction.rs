@@ -33,33 +33,6 @@ pub struct Transaction {
     pub merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
-impl Transaction {
-    /// The unique transaction ID returned by the payment gateway.
-    pub fn transaction_id(&self) -> &TransactionId {
-        &self.transaction_id
-    }
-
-    /// The idempotency key.
-    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
-        &self.idempotence_key
-    }
-
-    /// The canonical status of the transaction.
-    pub fn status(&self) -> TransactionStatus {
-        self.status
-    }
-
-    /// The amount of the transaction.
-    pub fn amount(&self) -> Money {
-        self.amount
-    }
-
-    /// The MIT (merchant initiated type of the transaction)
-    pub fn merchant_initiated_type(&self) -> Option<MerchantInitiatedType> {
-        self.merchant_initiated_type
-    }
-}
-
 impl<'a> TryFrom<Input<'a>> for Transaction {
     type Error = Error;
 

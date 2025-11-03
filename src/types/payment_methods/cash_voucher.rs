@@ -93,40 +93,20 @@ use crate::types::{Address, FullName, Metadata, NationalId};
 /// - **Consumer protection**: Clear expiration dates and payment instructions
 #[derive(Clone, Debug)]
 pub struct CashVoucher {
-    full_name: FullName,
-    billing_address: Option<Address>,
-    national_id: Option<NationalId>,
-    metadata: Option<Metadata>,
+    /// User full name
+    pub full_name: FullName,
+    /// User billing address
+    pub billing_address: Option<Address>,
+    /// National identification number (CPF/CNPJ for Boleto)
+    pub national_id: Option<NationalId>,
+    /// Method-specific extensions
+    pub metadata: Option<Metadata>,
 }
 
 // Marker implementations
 
 impl PaymentMethod for CashVoucher {}
 impl ExternalPaymentMethod for CashVoucher {}
-
-// Converters
-
-impl CashVoucher {
-    /// User full name
-    pub fn full_name(&self) -> &FullName {
-        &self.full_name
-    }
-
-    /// User billing address
-    pub fn billing_address(&self) -> Option<&Address> {
-        self.billing_address.as_ref()
-    }
-
-    /// National identification number (CPF/CNPJ for Boleto)
-    pub fn national_id(&self) -> Option<&NationalId> {
-        self.national_id.as_ref()
-    }
-
-    /// Method-specific extensions
-    pub fn metadata(&self) -> Option<&Metadata> {
-        self.metadata.as_ref()
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for CashVoucher {
     type Error = Error;

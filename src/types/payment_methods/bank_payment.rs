@@ -108,17 +108,24 @@ use crate::types::{
 /// - **GDPR**: Bank account data is PII, must follow data protection regulations
 #[derive(Clone, Debug)]
 pub struct BankPayment {
-    credentials: Credentials<BankPaymentCredentials>,
-    full_name: FullName,
-    account_type: AccountType,
-    holder_type: AccountHolderType,
-    metadata: Option<Metadata>,
+    /// The tokenizable credentials of the account
+    pub credentials: Credentials<BankPaymentCredentials>,
+    /// User full name as registered with the bank account
+    pub full_name: FullName,
+    /// Type of bank account (checking or savings)
+    pub account_type: AccountType,
+    /// Type of account holder (individual or company)
+    pub holder_type: AccountHolderType,
+    /// Method-specific extensions
+    pub metadata: Option<Metadata>,
 }
 
 #[derive(Clone, Debug)]
 pub struct BankPaymentCredentials {
-    account_number: AccountNumber,
-    routing_number: RoutingNumber,
+    /// The bank account number.
+    pub account_number: AccountNumber,
+    /// Bank routing identifier.
+    pub routing_number: RoutingNumber,
 }
 
 // Marker implementations
@@ -126,47 +133,6 @@ pub struct BankPaymentCredentials {
 impl PaymentMethod for BankPayment {}
 impl InternalPaymentMethod for BankPayment {}
 impl TokenizablePaymentMethod for BankPayment {}
-
-// Converters
-
-impl BankPaymentCredentials {
-    /// The bank account number.
-    pub fn account_number(&self) -> &AccountNumber {
-        &self.account_number
-    }
-
-    /// Bank routing identifier.
-    pub fn routing_number(&self) -> &RoutingNumber {
-        &self.routing_number
-    }
-}
-
-impl BankPayment {
-    /// The tokenizable credentials of the account
-    pub fn credentials(&self) -> &Credentials<BankPaymentCredentials> {
-        &self.credentials
-    }
-
-    /// User full name as registered with the bank account
-    pub fn full_name(&self) -> &FullName {
-        &self.full_name
-    }
-
-    /// Type of bank account (checking or savings)
-    pub fn account_type(&self) -> AccountType {
-        self.account_type
-    }
-
-    /// Type of account holder (individual or company)
-    pub fn holder_type(&self) -> AccountHolderType {
-        self.holder_type
-    }
-
-    /// Method-specific extensions
-    pub fn metadata(&self) -> Option<&Metadata> {
-        self.metadata.as_ref()
-    }
-}
 
 impl<'a> TryFrom<CredentialsInput<'a>> for BankPaymentCredentials {
     type Error = Error;

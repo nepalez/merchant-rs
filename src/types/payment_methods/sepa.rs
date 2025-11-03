@@ -88,16 +88,21 @@ use crate::types::{
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPA {
-    credentials: Credentials<SEPACredentials>,
-    billing_address: Address,
-    email: EmailAddress,
-    full_name: FullName,
+    /// International Bank Account Number
+    pub credentials: Credentials<SEPACredentials>,
+    /// User billing address (required per PSD2 AML)
+    pub billing_address: Address,
+    /// User email for transaction notifications
+    pub email: EmailAddress,
+    /// User full name as registered with bank
+    pub full_name: FullName,
 }
 
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPACredentials {
-    iban: IBAN,
+    /// International Bank Account Number
+    pub iban: IBAN,
 }
 
 // Marker implementations
@@ -105,37 +110,6 @@ pub struct SEPACredentials {
 impl PaymentMethod for SEPA {}
 impl InternalPaymentMethod for SEPA {}
 impl TokenizablePaymentMethod for SEPA {}
-
-// Converters
-
-impl SEPA {
-    /// International Bank Account Number
-    pub fn credentials(&self) -> &Credentials<SEPACredentials> {
-        &self.credentials
-    }
-
-    /// User billing address (required per PSD2 AML)
-    pub fn billing_address(&self) -> &Address {
-        &self.billing_address
-    }
-
-    /// User email for transaction notifications
-    pub fn email(&self) -> &EmailAddress {
-        &self.email
-    }
-
-    /// User full name as registered with bank
-    pub fn full_name(&self) -> &FullName {
-        &self.full_name
-    }
-}
-
-impl SEPACredentials {
-    /// International Bank Account Number
-    pub fn iban(&self) -> &IBAN {
-        &self.iban
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for SEPA {
     type Error = Error;

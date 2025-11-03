@@ -19,38 +19,14 @@ use crate::types::{MerchantInitiatedType, Money, PaymentMethod, TransactionIdemp
 #[allow(private_bounds)]
 pub struct Payment<Method: PaymentMethod> {
     /// The method of the payment to charge funds from
-    method: Method,
+    pub method: Method,
     /// The amount to charge
-    amount: Money,
+    pub amount: Money,
     /// The idempotency key
-    idempotence_key: TransactionIdempotenceKey,
+    pub idempotence_key: TransactionIdempotenceKey,
     /// The scope of the payment initiated by the merchant
     /// (use `None` if the payment was initiated by a customer).
-    merchant_initiated_type: Option<MerchantInitiatedType>,
-}
-
-#[allow(private_bounds)]
-impl<Method: PaymentMethod> Payment<Method> {
-    /// The method of the payment to charge funds from
-    pub fn method(&self) -> &Method {
-        &self.method
-    }
-
-    /// The amount to charge
-    pub fn amount(&self) -> Money {
-        self.amount
-    }
-
-    /// The idempotency key
-    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
-        &self.idempotence_key
-    }
-
-    /// The scope of the payment initiated by the merchant
-    /// (use `None` if the payment was initiated by a customer).
-    pub fn merchant_initiated_type(&self) -> Option<MerchantInitiatedType> {
-        self.merchant_initiated_type
-    }
+    pub merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
 impl<'a, InputMethod, Method> TryFrom<Input<'a, InputMethod>> for Payment<Method>

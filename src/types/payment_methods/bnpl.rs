@@ -93,64 +93,28 @@ use crate::types::{
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct BNPL {
-    billing_address: Address,
-    email: EmailAddress,
-    full_name: FullName,
-    account_holder_type: AccountHolderType,
-    date_of_birth: Option<BirthDate>,
-    national_id: Option<NationalId>,
-    phone: Option<PhoneNumber>,
-    metadata: Option<Metadata>,
+    /// User billing address
+    pub billing_address: Address,
+    /// User email address
+    pub email: EmailAddress,
+    /// User full name
+    pub full_name: FullName,
+    /// Type of account holder (individual or company)
+    pub account_holder_type: AccountHolderType,
+    /// User date of birth
+    pub date_of_birth: Option<BirthDate>,
+    /// National identification number
+    pub national_id: Option<NationalId>,
+    /// User phone number
+    pub phone: Option<PhoneNumber>,
+    /// Method-specific extensions
+    pub metadata: Option<Metadata>,
 }
 
 // Marker implementations
 
 impl PaymentMethod for BNPL {}
 impl ExternalPaymentMethod for BNPL {}
-
-// Converters
-
-impl BNPL {
-    /// User billing address
-    pub fn billing_address(&self) -> &Address {
-        &self.billing_address
-    }
-
-    /// User email address
-    pub fn email(&self) -> &EmailAddress {
-        &self.email
-    }
-
-    /// User full name
-    pub fn full_name(&self) -> &FullName {
-        &self.full_name
-    }
-
-    /// Type of account holder (individual or company)
-    pub fn account_holder_type(&self) -> AccountHolderType {
-        self.account_holder_type
-    }
-
-    /// User date of birth
-    pub fn date_of_birth(&self) -> Option<&BirthDate> {
-        self.date_of_birth.as_ref()
-    }
-
-    /// National identification number
-    pub fn national_id(&self) -> Option<&NationalId> {
-        self.national_id.as_ref()
-    }
-
-    /// User phone number
-    pub fn phone(&self) -> Option<&PhoneNumber> {
-        self.phone.as_ref()
-    }
-
-    /// Method-specific extensions
-    pub fn metadata(&self) -> Option<&Metadata> {
-        self.metadata.as_ref()
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for BNPL {
     type Error = Error;

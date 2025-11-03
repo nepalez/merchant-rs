@@ -94,29 +94,16 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
 /// - **GDPR**: Phone numbers are PII, must be protected
 #[derive(Debug, Clone)]
 pub struct DirectCarrierBilling {
-    phone: PhoneNumber,
-    metadata: Option<Metadata>,
+    /// User phone number (primary payment identifier)
+    pub phone: PhoneNumber,
+    /// Carrier-specific extensions
+    pub metadata: Option<Metadata>,
 }
 
 // Marker implementations
 
 impl PaymentMethod for DirectCarrierBilling {}
 impl ExternalPaymentMethod for DirectCarrierBilling {}
-
-// Converters
-
-impl DirectCarrierBilling {
-    /// User phone number (primary payment identifier)
-    #[inline]
-    pub fn phone(&self) -> &PhoneNumber {
-        &self.phone
-    }
-    /// Carrier-specific extensions
-    #[inline]
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
-    }
-}
 
 impl<'a> TryFrom<Input<'a>> for DirectCarrierBilling {
     type Error = Error;

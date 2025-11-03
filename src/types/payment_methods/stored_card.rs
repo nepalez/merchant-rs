@@ -88,7 +88,7 @@ use crate::types::{
 /// - **Notification requirements**: Inform customers before charging (varies by region)
 #[derive(Clone, Debug)]
 pub struct StoredCard {
-    credentials: Credentials<StoredCardCredentials>,
+    pub credentials: Credentials<StoredCardCredentials>,
 }
 
 /// Tokenizable credentials for StoredCard
@@ -97,9 +97,12 @@ pub struct StoredCard {
 /// Should be tokenized by the gateway rather than stored as plain text.
 #[derive(Clone, Debug)]
 pub struct StoredCardCredentials {
-    number: PrimaryAccountNumber,
-    card_expiry: CardExpiry,
-    holder_name: CardHolderName,
+    /// Primary Account Number (PAN)
+    pub number: PrimaryAccountNumber,
+    /// Card expiration date (month and year)
+    pub card_expiry: CardExpiry,
+    /// Cardholder name as embossed on the card
+    pub holder_name: CardHolderName,
 }
 
 // Marker implementations
@@ -107,31 +110,6 @@ pub struct StoredCardCredentials {
 impl PaymentMethod for StoredCard {}
 impl InternalPaymentMethod for StoredCard {}
 impl TokenizablePaymentMethod for StoredCard {}
-
-// Converters
-
-impl StoredCard {
-    pub fn credentials(&self) -> &Credentials<StoredCardCredentials> {
-        &self.credentials
-    }
-}
-
-impl StoredCardCredentials {
-    /// Primary Account Number (PAN)
-    pub fn number(&self) -> &PrimaryAccountNumber {
-        &self.number
-    }
-
-    /// Card expiration date (month and year)
-    pub fn card_expiry(&self) -> &CardExpiry {
-        &self.card_expiry
-    }
-
-    /// Cardholder name as embossed on the card
-    pub fn holder_name(&self) -> &CardHolderName {
-        &self.holder_name
-    }
-}
 
 impl<'a> TryFrom<CredentialsInput<'a>> for StoredCardCredentials {
     type Error = Error;
