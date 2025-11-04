@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Virtual Payment Address (UPI, PIX)
 ///
@@ -107,7 +107,9 @@ unsafe impl Masked for VirtualPaymentAddress {
         if self.0.contains('@') {
             self.0.split_once('@').unwrap_or_default().1
         } else {
-            self.0.get(self.0.len().saturating_sub(3)..).unwrap_or_default()
+            self.0
+                .get(self.0.len().saturating_sub(3)..)
+                .unwrap_or_default()
         }
         .to_string()
     }
@@ -125,7 +127,12 @@ mod tests {
 
         #[test]
         fn accepts_valid_addresses() {
-            for input in [VALID_UPI, VALID_PIX_CPF, "a@b.com", "a".repeat(255).as_str()] {
+            for input in [
+                VALID_UPI,
+                VALID_PIX_CPF,
+                "a@b.com",
+                "a".repeat(255).as_str(),
+            ] {
                 let result = VirtualPaymentAddress::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

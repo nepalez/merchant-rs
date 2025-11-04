@@ -1,8 +1,8 @@
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Full name of a payer
 ///
@@ -105,7 +105,13 @@ mod tests {
 
         #[test]
         fn accepts_valid_names() {
-            for input in [VALID_NAME, "Ann Smith", "Mary-Jane O'Brien", "Dr. House", VALID_NAME_WITH_NUMBERS] {
+            for input in [
+                VALID_NAME,
+                "Ann Smith",
+                "Mary-Jane O'Brien",
+                "Dr. House",
+                VALID_NAME_WITH_NUMBERS,
+            ] {
                 let result = FullName::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

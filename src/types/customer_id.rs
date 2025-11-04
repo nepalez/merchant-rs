@@ -1,8 +1,8 @@
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// User identifier from an external vault or payment system
 ///

@@ -11,7 +11,7 @@ use crate::types::{
 ///
 /// ## Overview
 ///
-/// Payment card credentials stored after initial authorization for subsequent merchant-initiated
+/// Payment card credentials are stored after initial authorization for later merchant-initiated
 /// transactions (MIT). Used for recurring subscriptions, installment payments, or unscheduled
 /// account top-ups. Requires initial customer authorization and consent to store credentials.
 /// CVV is never stored per PCI DSS, only PAN, expiry, and cardholder name.
@@ -31,7 +31,7 @@ use crate::types::{
 /// ### Initial Authorization (CIT - Customer Initiated Transaction)
 ///
 /// 1. **Customer provides full card details**: Including CVV for initial transaction
-/// 2. **CVV validates card possession**: Proves customer has physical card
+/// 2. **CVV validates card possession**: Proves customer has a physical card
 /// 3. **Customer grants storage consent**: Explicit permission to store credentials
 /// 4. **Gateway tokenizes credentials**: PAN replaced with non-sensitive token
 /// 5. **CVV discarded**: Must never be stored per PCI DSS 3.2
@@ -142,5 +142,133 @@ impl From<CreditCard> for StoredCard {
                 holder_name: input.holder_name,
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input_plain() -> Input<'static> {
+        inputs::StoredCard {
+            credentials: inputs::Credentials::Plain(inputs::StoredCardCredentials {
+                number: " 4532-0151-1283-0366 \n\t",
+                card_expiry: inputs::CardExpiry {
+                    month: 12,
+                    year: 2030,
+                },
+                holder_name: " john doe \n\t",
+            }),
+        }
+    }
+
+    fn valid_input_tokenized() -> Input<'static> {
+        inputs::StoredCard {
+            credentials: inputs::Credentials::Tokenized("tok_abcdef1234567890"),
+        }
+    }
+
+    fn valid_credit_card() -> CreditCard {
+        inputs::CreditCard {
+            cvv: " 123 \n\t",
+            number: " 4532-0151-1283-0366 \n\t",
+            card_expiry: inputs::CardExpiry {
+                month: 12,
+                year: 2030,
+            },
+            holder_name: " john doe \n\t",
+        }
+        .try_into()
+        .expect("Valid credit card")
+    }
+
+    #[test]
+    fn constructed_from_valid_input_plain() {
+        let input = valid_input_plain();
+        let stored_card = StoredCard::try_from(input).unwrap();
+
+        match stored_card.credentials {
+            Credentials::Plain(creds) => unsafe {
+                assert_eq!(creds.number.as_ref(), "4532015112830366");
+                assert_eq!(creds.card_expiry.month(), 12);
+                assert_eq!(creds.card_expiry.year(), 2030);
+                assert_eq!(creds.holder_name.as_ref(), "JOHN DOE");
+            },
+            Credentials::Tokenized(_) => panic!("Expected Plain credentials"),
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input_tokenized() {
+        let input = valid_input_tokenized();
+        let stored_card = StoredCard::try_from(input).unwrap();
+
+        match stored_card.credentials {
+            Credentials::Tokenized(token) => unsafe {
+                assert_eq!(token.as_ref(), "tok_abcdef1234567890");
+            },
+            Credentials::Plain(_) => panic!("Expected Tokenized credentials"),
+        }
+    }
+
+    #[test]
+    fn constructed_from_credit_card() {
+        let credit_card = valid_credit_card();
+        let stored_card = StoredCard::from(credit_card);
+
+        match stored_card.credentials {
+            Credentials::Plain(creds) => unsafe {
+                assert_eq!(creds.number.as_ref(), "4532015112830366");
+                assert_eq!(creds.card_expiry.month(), 12);
+                assert_eq!(creds.card_expiry.year(), 2030);
+                assert_eq!(creds.holder_name.as_ref(), "JOHN DOE");
+            },
+            Credentials::Tokenized(_) => panic!("Expected Plain credentials"),
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_pan() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.number = "1234567890123";
+        }
+
+        let result = StoredCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_card_expiry() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.card_expiry.month = 13;
+        }
+
+        let result = StoredCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_holder_name() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.holder_name = "X";
+        }
+
+        let result = StoredCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_token() {
+        let input = inputs::StoredCard {
+            credentials: inputs::Credentials::Tokenized("short"),
+        };
+
+        let result = StoredCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 }

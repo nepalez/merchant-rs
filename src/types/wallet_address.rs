@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Cryptocurrency wallet address
 ///
@@ -106,7 +106,11 @@ mod tests {
 
         #[test]
         fn accepts_valid_wallets() {
-            for input in [VALID_WALLET, "a".repeat(20).as_str(), "a".repeat(90).as_str()] {
+            for input in [
+                VALID_WALLET,
+                "a".repeat(20).as_str(),
+                "a".repeat(90).as_str(),
+            ] {
                 let result = WalletAddress::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

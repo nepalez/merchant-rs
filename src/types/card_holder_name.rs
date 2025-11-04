@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Cardholder name as it appears on a payment card
 ///
@@ -100,7 +100,6 @@ mod tests {
 
     const VALID_NAME: &str = "John Doe";
     const VALID_NAME_UPPER: &str = "JOHN DOE";
-    const VALID_NAME_WITH_APOSTROPHE: &str = "O'Brien";
 
     mod construction {
         use super::*;

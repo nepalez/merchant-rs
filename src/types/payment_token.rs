@@ -3,9 +3,9 @@ use std::fmt;
 use std::marker::PhantomData;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated};
+use crate::internal::{Masked, Validated};
 use crate::types::PaymentMethod;
+use crate::{AsUnsafeRef, Error};
 
 #[derive(Clone, ZeroizeOnDrop)]
 #[allow(private_bounds)]

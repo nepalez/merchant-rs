@@ -119,3 +119,28 @@ impl<'a> TryFrom<Input<'a>> for CryptoPayment {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::inputs;
+    use std::collections::HashMap;
+
+    fn valid_input() -> Input<'static> {
+        let mut meta = HashMap::new();
+        meta.insert("currency", "BTC");
+        meta.insert("network", "mainnet");
+
+        inputs::CryptoPayment { metadata: meta }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let crypto = CryptoPayment::try_from(input).unwrap();
+
+        // Metadata exists
+        let debug = format!("{:?}", crypto.metadata);
+        assert!(!debug.is_empty());
+    }
+}

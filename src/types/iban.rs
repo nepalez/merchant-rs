@@ -3,8 +3,8 @@ use std::fmt;
 use std::str::FromStr;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// International Bank Account Number (IBAN)
 ///

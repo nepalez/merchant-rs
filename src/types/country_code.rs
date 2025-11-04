@@ -65,7 +65,7 @@ impl Sanitized for CountryCode {
 impl Validated for CountryCode {
     // We don't care about zeroization of the temporary data, that is not PII.
     fn validate(self) -> Result<Self, Error> {
-        let (country_part, _) = self.0.split_once('-').unwrap_or_default();
+        let (country_part, _) = self.0.split_once('-').unwrap_or((self.0.as_ref(), ""));
         part_1::CountryCode::from_str(country_part)
             .map_err(|_| Error::InvalidInput(format!("{self:?} is invalid")))
             .map(|_| self)
@@ -84,12 +84,14 @@ mod tests {
 
         #[test]
         fn accepts_valid_region_codes() {
-            let result = CountryCode::try_from(VALID_REGION);
-            assert!(result.is_ok(), "{VALID_REGION:?} failed validation");
+            [VALID_COUNTRY, VALID_REGION].iter().for_each(|&input| {
+                let result = CountryCode::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            });
         }
 
         #[test]
-        fn converts_dots_and_underscores_to_hyphens() {
+        fn constructed_from_dots_and_underscores_to_hyphens() {
             let input = "us.ca";
             let code = CountryCode::try_from(input).unwrap();
             let result = code.as_ref();

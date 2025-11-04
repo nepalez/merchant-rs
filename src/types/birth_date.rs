@@ -92,7 +92,7 @@ impl fmt::Debug for BirthDate {
 impl Ord for BirthDate {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        (self.year, self.month, self.day).cmp(&(other.year, other.month, self.day))
+        (self.year, self.month, self.day).cmp(&(other.year, other.month, other.day))
     }
 }
 
@@ -122,4 +122,191 @@ impl Validated for BirthDate {
 unsafe impl Masked for BirthDate {
     const TYPE_WRAPPER: &'static str = "BirthDate";
     const MASKING_STR: &'static str = "**/**/****";
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_dates() {
+            let inputs = [
+                (1, 1, 1909),
+                (31, 12, 1909),
+                (29, 2, 2000), // Leap year
+                (15, 8, 1990),
+                (31, 12, 2050),
+            ];
+
+            for (day, month, year) in inputs {
+                let input = Input { day, month, year };
+                let result = BirthDate::try_from(input);
+                assert!(result.is_ok(), "({day}, {month}, {year}) failed validation");
+            }
+        }
+
+        #[test]
+        fn rejects_year_too_old() {
+            let input = Input {
+                day: 15,
+                month: 8,
+                year: 1908,
+            };
+            let result = BirthDate::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_year_too_far() {
+            let input = Input {
+                day: 15,
+                month: 8,
+                year: 2051,
+            };
+            let result = BirthDate::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_day_zero() {
+            let input = Input {
+                day: 0,
+                month: 8,
+                year: 1990,
+            };
+            let result = BirthDate::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_day_for_month() {
+            let input = Input {
+                day: 31,
+                month: 4, // April has 30 days
+                year: 1990,
+            };
+            let result = BirthDate::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_leap_day() {
+            let input = Input {
+                day: 29,
+                month: 2,
+                year: 1999, // Not a leap year
+            };
+            let result = BirthDate::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let input = Input {
+                day: 15,
+                month: 8,
+                year: 1990,
+            };
+            let birth_date = BirthDate::try_from(input).unwrap();
+            let debug_output = format!("{:?}", birth_date);
+            assert!(
+                debug_output.contains(r#"BirthDate("**/**/****")"#),
+                "Expected masked debug output, got: {debug_output}"
+            );
+            assert!(!debug_output.contains("15"));
+            assert!(!debug_output.contains("8"));
+            assert!(!debug_output.contains("1990"));
+        }
+
+        #[test]
+        fn getters_are_unsafe() {
+            let input = Input {
+                day: 15,
+                month: 8,
+                year: 1990,
+            };
+            let birth_date = BirthDate::try_from(input).unwrap();
+
+            unsafe {
+                assert_eq!(*birth_date.day(), 15);
+                assert_eq!(*birth_date.month(), 8);
+                assert_eq!(*birth_date.year(), 1990);
+            }
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let day_ptr: *const u8;
+            let month_ptr: *const u8;
+            let year_ptr: *const u16;
+
+            {
+                let birth_date = BirthDate::try_from(Input {
+                    day: 15,
+                    month: 8,
+                    year: 1990,
+                })
+                .unwrap();
+                day_ptr = &birth_date.day as *const u8;
+                month_ptr = &birth_date.month as *const u8;
+                year_ptr = &birth_date.year as *const u16;
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                assert_ne!(*day_ptr, 15, "Day should be zeroed after drop");
+                assert_ne!(*month_ptr, 8, "Month should be zeroed after drop");
+                assert_ne!(*year_ptr, 1990, "Year should be zeroed after drop");
+            }
+        }
+    }
+
+    mod comparison {
+        use super::*;
+
+        #[test]
+        fn compares_by_year_month_day() {
+            let earlier = BirthDate::try_from(Input {
+                day: 15,
+                month: 8,
+                year: 1990,
+            })
+            .unwrap();
+            let later = BirthDate::try_from(Input {
+                day: 20,
+                month: 8,
+                year: 1990,
+            })
+            .unwrap();
+
+            assert!(earlier < later);
+        }
+
+        #[test]
+        fn equal_dates_are_equal() {
+            let first = BirthDate::try_from(Input {
+                day: 15,
+                month: 8,
+                year: 1990,
+            })
+            .unwrap();
+            let second = BirthDate::try_from(Input {
+                day: 15,
+                month: 8,
+                year: 1990,
+            })
+            .unwrap();
+
+            assert_eq!(first, second);
+        }
+    }
 }

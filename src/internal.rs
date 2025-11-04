@@ -4,9 +4,7 @@
 mod masked;
 mod validated;
 
-mod as_unsafe_ref;
 pub(crate) mod sanitized;
 
-pub use as_unsafe_ref::AsUnsafeRef;
 pub(crate) use masked::Masked;
 pub(crate) use validated::Validated;

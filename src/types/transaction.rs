@@ -46,3 +46,60 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use iso_currency::Currency;
+    use rust_decimal_macros::dec;
+
+    fn valid_input() -> Input<'static> {
+        Input {
+            transaction_id: " txn_12345678 \n\t",
+            idempotence_key: " idempotence-key-123 \n\t",
+            status: TransactionStatus::Captured,
+            amount: Money {
+                amount: dec!(100.00),
+                currency: Currency::USD,
+            },
+            merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let transaction = Transaction::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(transaction.transaction_id.as_ref(), "txn_12345678");
+            assert_eq!(transaction.idempotence_key.as_ref(), "idempotence-key-123");
+            assert_eq!(transaction.status, TransactionStatus::Captured);
+            assert_eq!(transaction.amount.amount, dec!(100.00));
+            assert_eq!(transaction.amount.currency, Currency::USD);
+            assert_eq!(
+                transaction.merchant_initiated_type,
+                Some(MerchantInitiatedType::Recurring)
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_transaction_id() {
+        let mut input = valid_input();
+        input.transaction_id = "short";
+
+        let result = Transaction::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_idempotence_key() {
+        let mut input = valid_input();
+        input.idempotence_key = "";
+
+        let result = Transaction::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

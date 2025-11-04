@@ -158,3 +158,95 @@ impl TryFrom<Input<'_>> for BankPayment {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input_plain() -> Input<'static> {
+        inputs::BankPayment {
+            credentials: inputs::Credentials::Plain(inputs::BankPaymentCredentials {
+                account_number: " 1234567890 \n\t",
+                routing_number: " 123456789 \n\t",
+            }),
+            full_name: " john doe \n\t",
+            account_type: AccountType::Checking,
+            holder_type: AccountHolderType::Individual,
+            metadata: None,
+        }
+    }
+
+    fn valid_input_tokenized() -> Input<'static> {
+        inputs::BankPayment {
+            credentials: inputs::Credentials::Tokenized("tok_bank1234567890"),
+            full_name: " john doe \n\t",
+            account_type: AccountType::Savings,
+            holder_type: AccountHolderType::Company,
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input_plain() {
+        let input = valid_input_plain();
+        let bank_payment = BankPayment::try_from(input).unwrap();
+
+        match bank_payment.credentials {
+            Credentials::Plain(creds) => unsafe {
+                assert_eq!(creds.account_number.as_ref(), "1234567890");
+                assert_eq!(creds.routing_number.as_ref(), "123456789");
+                assert_eq!(bank_payment.full_name.as_ref(), "JOHN DOE");
+                assert!(bank_payment.metadata.is_none());
+            },
+            Credentials::Tokenized(_) => panic!("Expected Plain credentials"),
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input_tokenized() {
+        let input = valid_input_tokenized();
+        let bank_payment = BankPayment::try_from(input).unwrap();
+
+        match bank_payment.credentials {
+            Credentials::Tokenized(token) => unsafe {
+                assert_eq!(token.as_ref(), "tok_bank1234567890");
+                assert_eq!(bank_payment.full_name.as_ref(), "JOHN DOE");
+                assert!(bank_payment.metadata.is_none());
+            },
+            Credentials::Plain(_) => panic!("Expected Tokenized credentials"),
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_account_number() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.account_number = "123";
+        }
+
+        let result = BankPayment::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_routing_number() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.routing_number = "12345";
+        }
+
+        let result = BankPayment::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_full_name() {
+        let mut input = valid_input_plain();
+        input.full_name = "X";
+
+        let result = BankPayment::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

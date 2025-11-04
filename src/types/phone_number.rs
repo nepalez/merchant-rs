@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Personal phone number
 ///
@@ -104,7 +104,6 @@ mod tests {
     use super::*;
 
     const VALID_PHONE: &str = "+1234567890";
-    const VALID_PHONE_SHORT: &str = "+12345";
 
     mod construction {
         use super::*;

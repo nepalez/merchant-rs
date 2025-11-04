@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated};
+use crate::internal::{Masked, Validated};
+use crate::{AsUnsafeRef, Error};
 
 /// Tokenized credential from a payment processor or vault
 ///
@@ -82,7 +82,12 @@ mod tests {
 
         #[test]
         fn accepts_valid_tokens() {
-            for input in [VALID_TOKEN, VALID_TOKEN_LONG, "a".repeat(16).as_str(), "a".repeat(4096).as_str()] {
+            for input in [
+                VALID_TOKEN,
+                VALID_TOKEN_LONG,
+                "a".repeat(16).as_str(),
+                "a".repeat(4096).as_str(),
+            ] {
                 let result = Token::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

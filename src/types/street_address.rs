@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
 use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Street address of a user
 ///
@@ -32,6 +32,13 @@ impl<'a> TryFrom<&'a str> for StreetAddress {
     #[inline]
     fn try_from(input: &'a str) -> Result<Self, Self::Error> {
         Self::sanitize(input).validate()
+    }
+}
+
+impl AsUnsafeRef<str> for StreetAddress {
+    #[inline]
+    unsafe fn as_ref(&self) -> &str {
+        self.0.as_str()
     }
 }
 
@@ -128,6 +135,16 @@ mod tests {
             let debug_output = format!("{:?}", address);
             assert!(debug_output.contains(r#"StreetAddress("***")"#));
             assert!(!debug_output.contains("Main"));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(StreetAddress: AsRef<str>);
+
+            let input = " 123 Main Street \n\t\r ";
+            let address = StreetAddress::try_from(input).unwrap();
+            let exposed = unsafe { <StreetAddress as AsUnsafeRef<str>>::as_ref(&address) };
+            assert_eq!(exposed, VALID_ADDRESS);
         }
     }
 }

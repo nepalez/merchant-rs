@@ -115,3 +115,37 @@ impl<'a> TryFrom<Input<'a>> for DirectCarrierBilling {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input() -> Input<'static> {
+        inputs::DirectCarrier {
+            phone: " +1234567890 \n\t",
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let dcb = DirectCarrierBilling::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(dcb.phone.as_ref(), "+1234567890");
+            assert!(dcb.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_phone() {
+        let mut input = valid_input();
+        input.phone = "123";
+
+        let result = DirectCarrierBilling::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

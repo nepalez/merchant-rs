@@ -92,3 +92,154 @@ impl Validated for CardExpiry {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_dates() {
+            let inputs = [(1, 1950), (12, 1950), (6, 2025), (12, 2050)];
+
+            for (month, year) in inputs {
+                let input = Input { month, year };
+                let result = CardExpiry::try_from(input);
+                assert!(result.is_ok(), "({month}, {year}) failed validation");
+            }
+        }
+
+        #[test]
+        fn rejects_invalid_month_zero() {
+            let input = Input {
+                month: 0,
+                year: 2025,
+            };
+            let result = CardExpiry::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_month_thirteen() {
+            let input = Input {
+                month: 13,
+                year: 2025,
+            };
+            let result = CardExpiry::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_year_too_old() {
+            let input = Input {
+                month: 6,
+                year: 1949,
+            };
+            let result = CardExpiry::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_year_too_far() {
+            let input = Input {
+                month: 6,
+                year: 2051,
+            };
+            let result = CardExpiry::try_from(input);
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn exposes_debug() {
+            let input = Input {
+                month: 12,
+                year: 2030,
+            };
+            let expiry = CardExpiry::try_from(input).unwrap();
+            let debug_output = format!("{:?}", expiry);
+            assert!(debug_output.contains("CardExpiry"));
+            assert!(debug_output.contains("month: 12"));
+            assert!(debug_output.contains("year: 2030"));
+        }
+
+        #[test]
+        fn getters_are_unsafe() {
+            let input = Input {
+                month: 12,
+                year: 2030,
+            };
+            let expiry = CardExpiry::try_from(input).unwrap();
+
+            unsafe {
+                assert_eq!(expiry.month(), 12);
+                assert_eq!(expiry.year(), 2030);
+            }
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let month_ptr: *const u8;
+            let year_ptr: *const u16;
+
+            {
+                let expiry = CardExpiry::try_from(Input {
+                    month: 12,
+                    year: 2030,
+                })
+                .unwrap();
+                month_ptr = &expiry.month as *const u8;
+                year_ptr = &expiry.year as *const u16;
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                assert_ne!(*month_ptr, 12, "Month should be zeroed after drop");
+                assert_ne!(*year_ptr, 2030, "Year should be zeroed after drop");
+            }
+        }
+    }
+
+    mod comparison {
+        use super::*;
+
+        #[test]
+        fn compares_by_year_then_month() {
+            let earlier = CardExpiry::try_from(Input {
+                month: 6,
+                year: 2025,
+            })
+            .unwrap();
+            let later = CardExpiry::try_from(Input {
+                month: 12,
+                year: 2025,
+            })
+            .unwrap();
+
+            assert!(earlier < later);
+        }
+
+        #[test]
+        fn equal_dates_are_equal() {
+            let first = CardExpiry::try_from(Input {
+                month: 6,
+                year: 2025,
+            })
+            .unwrap();
+            let second = CardExpiry::try_from(Input {
+                month: 6,
+                year: 2025,
+            })
+            .unwrap();
+
+            assert_eq!(first, second);
+        }
+    }
+}

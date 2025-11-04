@@ -71,7 +71,12 @@ mod tests {
 
         #[test]
         fn accepts_valid_codes() {
-            for input in [VALID_CODE, VALID_SWIFT, "AB", "12345678901234567890123456789012"] {
+            for input in [
+                VALID_CODE,
+                VALID_SWIFT,
+                "AB",
+                "12345678901234567890123456789012",
+            ] {
                 let result = BankCode::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

@@ -133,3 +133,103 @@ impl<'a> TryFrom<CredentialsInput<'a>> for SEPACredentials {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input_plain() -> Input<'static> {
+        inputs::SEPA {
+            credentials: inputs::Credentials::Plain(inputs::SEPACredentials {
+                iban: " DE89370400440532013000 \n\t",
+            }),
+            email: " user@example.com \n\t",
+            billing_address: inputs::Address {
+                country_code: " DE \n\t",
+                postal_code: " 10115 \n\t",
+                city: " Berlin \n\t",
+                line: " Hauptstrasse 1 \n\t",
+            },
+            full_name: " john doe \n\t",
+        }
+    }
+
+    fn valid_input_tokenized() -> Input<'static> {
+        inputs::SEPA {
+            credentials: inputs::Credentials::Tokenized("tok_sepa1234567890"),
+            email: " user@example.com \n\t",
+            billing_address: inputs::Address {
+                country_code: " DE \n\t",
+                postal_code: " 10115 \n\t",
+                city: " Berlin \n\t",
+                line: " Hauptstrasse 1 \n\t",
+            },
+            full_name: " john doe \n\t",
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input_plain() {
+        let input = valid_input_plain();
+        let sepa = SEPA::try_from(input).unwrap();
+
+        match sepa.credentials {
+            Credentials::Plain(creds) => unsafe {
+                assert_eq!(creds.iban.as_ref(), "DE89370400440532013000");
+                assert_eq!(sepa.email.as_ref(), "user@example.com");
+                assert_eq!(sepa.billing_address.country_code.as_ref(), "DE");
+                assert_eq!(sepa.billing_address.postal_code.as_ref(), "10115");
+                assert_eq!(sepa.billing_address.city.as_ref(), "Berlin");
+                assert_eq!(sepa.billing_address.line.as_ref(), "Hauptstrasse 1");
+                assert_eq!(sepa.full_name.as_ref(), "JOHN DOE");
+            },
+            Credentials::Tokenized(_) => panic!("Expected Plain credentials"),
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input_tokenized() {
+        let input = valid_input_tokenized();
+        let sepa = SEPA::try_from(input).unwrap();
+
+        match sepa.credentials {
+            Credentials::Tokenized(token) => unsafe {
+                assert_eq!(token.as_ref(), "tok_sepa1234567890");
+                assert_eq!(sepa.email.as_ref(), "user@example.com");
+                assert_eq!(sepa.full_name.as_ref(), "JOHN DOE");
+            },
+            Credentials::Plain(_) => panic!("Expected Tokenized credentials"),
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_iban() {
+        let mut input = valid_input_plain();
+        if let inputs::Credentials::Plain(ref mut creds) = input.credentials {
+            creds.iban = "invalid";
+        }
+
+        let result = SEPA::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_email() {
+        let mut input = valid_input_plain();
+        input.email = "invalid";
+
+        let result = SEPA::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_full_name() {
+        let mut input = valid_input_plain();
+        input.full_name = "X";
+
+        let result = SEPA::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

@@ -2,8 +2,8 @@ use std::convert::TryFrom;
 use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
-use crate::Error;
-use crate::internal::{AsUnsafeRef, Masked, Validated, sanitized::*};
+use crate::internal::{Masked, Validated, sanitized::*};
+use crate::{AsUnsafeRef, Error};
 
 /// Postal code used in addresses
 ///
@@ -101,7 +101,13 @@ mod tests {
 
         #[test]
         fn accepts_valid_codes() {
-            for input in [VALID_CODE_US, VALID_CODE_UK, VALID_CODE_CA, "123", "1234567890"] {
+            for input in [
+                VALID_CODE_US,
+                VALID_CODE_UK,
+                VALID_CODE_CA,
+                "123",
+                "1234567890",
+            ] {
                 let result = PostalCode::try_from(input);
                 assert!(result.is_ok(), "{input:?} failed validation");
             }

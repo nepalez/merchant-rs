@@ -25,3 +25,4 @@ zeroize_derive = { version = "1", default-features = false }
 
 [dev-dependencies]
 static_assertions = "1"
+rust_decimal_macros = "1"

@@ -9,7 +9,7 @@ use std::fmt::Display;
 ///
 /// * `Individual` - Personal account held by a natural person
 /// * `Company` - Business account held by a legal entity (corporation, LLC, partnership, etc.)
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum AccountHolderType {
     /// Personal account held by an individual consumer
     Individual,

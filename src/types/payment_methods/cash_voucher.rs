@@ -120,3 +120,68 @@ impl<'a> TryFrom<Input<'a>> for CashVoucher {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input() -> Input<'static> {
+        inputs::CashVoucher {
+            full_name: " john doe \n\t",
+            billing_address: Some(inputs::Address {
+                country_code: " BR \n\t",
+                postal_code: " 01310-100 \n\t",
+                city: " Sao Paulo \n\t",
+                line: " Av Paulista 1578 \n\t",
+            }),
+            national_id: Some(" 12345678901 \n\t"),
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let voucher = CashVoucher::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(voucher.full_name.as_ref(), "JOHN DOE");
+            assert!(voucher.billing_address.is_some());
+            if let Some(ref national_id) = voucher.national_id {
+                assert_eq!(national_id.as_ref(), "12345678901");
+            }
+            assert!(voucher.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_full_name() {
+        let mut input = valid_input();
+        input.full_name = "X";
+
+        let result = CashVoucher::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_national_id() {
+        let mut input = valid_input();
+        input.national_id = Some("12");
+
+        let result = CashVoucher::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_billing_address() {
+        let mut input = valid_input();
+        if let Some(ref mut address) = input.billing_address {
+            address.city = "";
+        }
+
+        let result = CashVoucher::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

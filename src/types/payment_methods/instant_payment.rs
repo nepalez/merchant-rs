@@ -158,3 +158,94 @@ impl<'a> TryFrom<Input<'a>> for InstantAccount {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input() -> Input<'static> {
+        inputs::InstantPayment {
+            email: " user@example.com \n\t",
+            full_name: " john doe \n\t",
+            account_number: Some(" 1234567890123456 \n\t"),
+            bank_code: Some(" 12345678 \n\t"),
+            billing_address: Some(inputs::Address {
+                country_code: " IN \n\t",
+                postal_code: " 110001 \n\t",
+                city: " New Delhi \n\t",
+                line: " Connaught Place \n\t",
+            }),
+            holder_type: AccountHolderType::Individual,
+            national_id: Some(" ABCDE1234F \n\t"),
+            phone: Some(" +911234567890 \n\t"),
+            virtual_payment_address: Some(" user@upi \n\t"),
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let instant = InstantAccount::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(instant.email.as_ref(), "user@example.com");
+            assert_eq!(instant.full_name.as_ref(), "JOHN DOE");
+            if let Some(ref account_number) = instant.account_number {
+                assert_eq!(account_number.as_ref(), "1234567890123456");
+            }
+            if let Some(ref bank_code) = instant.bank_code {
+                assert_eq!(bank_code.as_ref(), "12345678");
+            }
+            assert!(instant.billing_address.is_some());
+            if let Some(ref national_id) = instant.national_id {
+                assert_eq!(national_id.as_ref(), "ABCDE1234F");
+            }
+            if let Some(ref phone) = instant.phone {
+                assert_eq!(phone.as_ref(), "+911234567890");
+            }
+            if let Some(ref vpa) = instant.virtual_payment_address {
+                assert_eq!(vpa.as_ref(), "user@upi");
+            }
+            assert!(instant.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_email() {
+        let mut input = valid_input();
+        input.email = "invalid";
+
+        let result = InstantAccount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_full_name() {
+        let mut input = valid_input();
+        input.full_name = "X";
+
+        let result = InstantAccount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_account_number() {
+        let mut input = valid_input();
+        input.account_number = Some("123");
+
+        let result = InstantAccount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_phone() {
+        let mut input = valid_input();
+        input.phone = Some("123");
+
+        let result = InstantAccount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

@@ -132,3 +132,95 @@ impl<'a> TryFrom<Input<'a>> for BNPL {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input() -> Input<'static> {
+        inputs::BNPL {
+            billing_address: inputs::Address {
+                country_code: " US \n\t",
+                postal_code: " 10001 \n\t",
+                city: " New York \n\t",
+                line: " 123 Main St \n\t",
+            },
+            email: " user@example.com \n\t",
+            full_name: " john doe \n\t",
+            account_holder_type: AccountHolderType::Individual,
+            date_of_birth: Some(inputs::BirthDate {
+                day: 15,
+                month: 8,
+                year: 1990,
+            }),
+            national_id: Some(" 123456789 \n\t"),
+            phone: Some(" +1234567890 \n\t"),
+            metadata: None,
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let bnpl = BNPL::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(bnpl.billing_address.country_code.as_ref(), "US");
+            assert_eq!(bnpl.billing_address.postal_code.as_ref(), "10001");
+            assert_eq!(bnpl.billing_address.city.as_ref(), "New York");
+            assert_eq!(bnpl.billing_address.line.as_ref(), "123 Main St");
+            assert_eq!(bnpl.email.as_ref(), "user@example.com");
+            assert_eq!(bnpl.full_name.as_ref(), "JOHN DOE");
+            if let Some(ref dob) = bnpl.date_of_birth {
+                assert_eq!(*dob.day(), 15);
+                assert_eq!(*dob.month(), 8);
+                assert_eq!(*dob.year(), 1990);
+            }
+            if let Some(ref national_id) = bnpl.national_id {
+                assert_eq!(national_id.as_ref(), "123456789");
+            }
+            if let Some(ref phone) = bnpl.phone {
+                assert_eq!(phone.as_ref(), "+1234567890");
+            }
+            assert!(bnpl.metadata.is_none());
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_email() {
+        let mut input = valid_input();
+        input.email = "invalid";
+
+        let result = BNPL::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_full_name() {
+        let mut input = valid_input();
+        input.full_name = "X";
+
+        let result = BNPL::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_billing_address() {
+        let mut input = valid_input();
+        input.billing_address.city = "";
+
+        let result = BNPL::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_phone() {
+        let mut input = valid_input();
+        input.phone = Some("123");
+
+        let result = BNPL::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}

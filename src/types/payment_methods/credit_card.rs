@@ -143,3 +143,72 @@ impl<'a> TryFrom<Input<'a>> for CreditCard {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    fn valid_input() -> Input<'static> {
+        inputs::CreditCard {
+            cvv: " 123 \n\t",
+            number: " 4532-0151-1283-0366 \n\t",
+            card_expiry: inputs::CardExpiry {
+                month: 12,
+                year: 2030,
+            },
+            holder_name: " john doe \n\t",
+        }
+    }
+
+    #[test]
+    fn constructed_from_valid_input() {
+        let input = valid_input();
+        let card = CreditCard::try_from(input).unwrap();
+
+        unsafe {
+            assert_eq!(card.cvv.as_ref(), "123");
+            assert_eq!(card.number.as_ref(), "4532015112830366");
+            assert_eq!(card.card_expiry.month(), 12);
+            assert_eq!(card.card_expiry.year(), 2030);
+            assert_eq!(card.holder_name.as_ref(), "JOHN DOE");
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_cvv() {
+        let mut input = valid_input();
+        input.cvv = "12";
+
+        let result = CreditCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_pan() {
+        let mut input = valid_input();
+        input.number = "1234567890123";
+
+        let result = CreditCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_card_expiry() {
+        let mut input = valid_input();
+        input.card_expiry.month = 13;
+
+        let result = CreditCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_invalid_holder_name() {
+        let mut input = valid_input();
+        input.holder_name = "X";
+
+        let result = CreditCard::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+}
