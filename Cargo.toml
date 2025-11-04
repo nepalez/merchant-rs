@@ -18,13 +18,10 @@ iban_validate = { version = "5", default-features = false }
 iso_currency = { version = "0.5", default-features = false }
 luhn3 = { version = "1", default-features = false }
 rust_decimal = { version = "1", default-features = false }
-strum = { version = "0.27.2", default-features = false, features = ["derive"] }
 strum_macros = { version = "0.27", default-features = false }
-thiserror = { version = "2.0.17", default-features = false }
+thiserror = { version = "2", default-features = false }
 zeroize = { version = "1", default-features = false }
 zeroize_derive = { version = "1", default-features = false }
-serde = { version = "1.0.228", features = ["derive"] }
-input = "0.9.1"
 
 [dev-dependencies]
-static_assertions = "1.1"
+static_assertions = "1"
