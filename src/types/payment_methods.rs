@@ -10,6 +10,7 @@ mod direct_carrier_billing;
 mod instant_payment;
 mod sepa;
 mod stored_card;
+mod vault;
 
 // --- Marker traits  ---
 
@@ -38,3 +39,4 @@ pub use direct_carrier_billing::DirectCarrierBilling;
 pub use instant_payment::InstantAccount;
 pub use sepa::SEPA;
 pub use stored_card::StoredCard;
+pub use vault::Vault;
