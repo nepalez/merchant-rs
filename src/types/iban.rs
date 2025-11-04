@@ -112,3 +112,100 @@ unsafe impl Masked for IBAN {
         self.0.get(len - 4..len).unwrap_or_default().to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_IBAN_DE: &str = "DE89370400440532013000";
+    const VALID_IBAN_GB: &str = "GB82WEST12345698765432";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_ibans() {
+            for input in [VALID_IBAN_DE, VALID_IBAN_GB, "FR1420041010050500013M02606"] {
+                let result = IBAN::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_separators() {
+            let input = " DE89 3704 0044 0532 0130 00 \n\t\r ";
+            let iban = IBAN::try_from(input).unwrap();
+            let result = unsafe { iban.as_ref() };
+            assert_eq!(result, VALID_IBAN_DE);
+        }
+
+        #[test]
+        fn rejects_invalid_iban_checksum() {
+            let input = "DE89370400440532013001"; // Wrong checksum
+            let result = IBAN::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_iban_format() {
+            let input = "INVALID123456789";
+            let result = IBAN::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_short_iban() {
+            let input = "DE89";
+            let result = IBAN::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let iban = IBAN::try_from(VALID_IBAN_DE).unwrap();
+            let debug_output = format!("{:?}", iban);
+            assert!(debug_output.contains(r#"IBAN("DE***3000")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(IBAN: AsRef<str>);
+
+            let input = "DE89 3704 0044 0532 0130 00";
+            let iban = IBAN::try_from(input).unwrap();
+            let exposed = unsafe { <IBAN as AsUnsafeRef<str>>::as_ref(&iban) };
+            assert_eq!(exposed, VALID_IBAN_DE);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let iban = IBAN::try_from(VALID_IBAN_DE).unwrap();
+                let s = iban.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_IBAN_DE.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original IBAN should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

@@ -93,3 +93,97 @@ unsafe impl Masked for RoutingNumber {
         self.0.get(len - 1..len).unwrap_or_default().to_uppercase()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_ROUTING: &str = "123456789";
+    const VALID_ROUTING_UPPER: &str = "123456789";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_routing_numbers() {
+            for input in [VALID_ROUTING, "ABCDEF", "123456", "12345678901"] {
+                let result = RoutingNumber::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_separators_and_converts_to_uppercase() {
+            let input = " 123-456.789 \n\t\r ";
+            let routing = RoutingNumber::try_from(input).unwrap();
+            let result = unsafe { routing.as_ref() };
+            assert_eq!(result, VALID_ROUTING_UPPER);
+        }
+
+        #[test]
+        fn rejects_too_short_routing() {
+            let input = "12345"; // 5 characters
+            let result = RoutingNumber::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_routing() {
+            let input = "123456789012"; // 12 characters
+            let result = RoutingNumber::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_non_alphanumeric_characters() {
+            let input = "1234567@9";
+            let result = RoutingNumber::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let routing = RoutingNumber::try_from(VALID_ROUTING).unwrap();
+            let debug_output = format!("{:?}", routing);
+            assert!(debug_output.contains(r#"RoutingNumber("1***9")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(RoutingNumber: AsRef<str>);
+
+            let input = "123-456-789";
+            let routing = RoutingNumber::try_from(input).unwrap();
+            let exposed = unsafe { <RoutingNumber as AsUnsafeRef<str>>::as_ref(&routing) };
+            assert_eq!(exposed, VALID_ROUTING);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let routing = RoutingNumber::try_from(VALID_ROUTING).unwrap();
+                let s = routing.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_ROUTING.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original routing number should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

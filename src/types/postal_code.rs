@@ -87,3 +87,110 @@ unsafe impl Masked for PostalCode {
         self.0.get(0..len).unwrap_or_default().to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_CODE_US: &str = "12345";
+    const VALID_CODE_UK: &str = "SW1A 1AA";
+    const VALID_CODE_CA: &str = "K1A-0B1";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_codes() {
+            for input in [VALID_CODE_US, VALID_CODE_UK, VALID_CODE_CA, "123", "1234567890"] {
+                let result = PostalCode::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " 12345 \n\t\r ";
+            let code = PostalCode::try_from(input).unwrap();
+            let result = unsafe { code.as_ref() };
+            assert_eq!(result, VALID_CODE_US);
+        }
+
+        #[test]
+        fn rejects_too_short_code() {
+            let input = "12"; // 2 characters
+            let result = PostalCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_code() {
+            let input = "12345678901"; // 11 characters
+            let result = PostalCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_characters() {
+            let input = "123@45";
+            let result = PostalCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug_short() {
+            let code = PostalCode::try_from(VALID_CODE_US).unwrap();
+            let debug_output = format!("{:?}", code);
+            // For 5 chars: 5/3 = 1, min(1, 2) = 1
+            assert!(debug_output.contains(r#"PostalCode("1***")"#));
+        }
+
+        #[test]
+        fn masks_debug_long() {
+            let code = PostalCode::try_from("1234567890").unwrap();
+            let debug_output = format!("{:?}", code);
+            // For 10 chars: 10/3 = 3, min(3, 2) = 2
+            assert!(debug_output.contains(r#"PostalCode("12***")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(PostalCode: AsRef<str>);
+
+            let input = " 12345 \n\t";
+            let code = PostalCode::try_from(input).unwrap();
+            let exposed = unsafe { <PostalCode as AsUnsafeRef<str>>::as_ref(&code) };
+            assert_eq!(exposed, VALID_CODE_US);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let code = PostalCode::try_from(VALID_CODE_US).unwrap();
+                let s = code.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_CODE_US.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original postal code should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

@@ -75,3 +75,94 @@ unsafe impl Masked for ReasonForRefund {
         f.debug_tuple(Self::TYPE_WRAPPER).field(&masked).finish()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_REASON: &str = "Customer requested refund";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_reasons() {
+            for input in [VALID_REASON, "A", "a".repeat(255).as_str()] {
+                let result = ReasonForRefund::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn preserves_input() {
+            // ReasonForRefund does NOT sanitize in try_from, only validates
+            let input = "Customer requested refund";
+            let reason = ReasonForRefund::try_from(input).unwrap();
+            let result = unsafe { reason.as_ref() };
+            assert_eq!(result, VALID_REASON);
+        }
+
+        #[test]
+        fn rejects_empty_reason() {
+            let input = "";
+            let result = ReasonForRefund::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_reason() {
+            let input = "a".repeat(256);
+            let result = ReasonForRefund::try_from(input.as_str());
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let reason = ReasonForRefund::try_from(VALID_REASON).unwrap();
+            let debug_output = format!("{:?}", reason);
+            // Should show character count, not content. VALID_REASON = "Customer requested refund" has 25 chars
+            assert!(debug_output.contains("ReasonForRefund"));
+            assert!(debug_output.contains("25 chars"));
+            assert!(!debug_output.contains("Customer"));
+        }
+
+        #[test]
+        fn as_ref_returns_original_value() {
+            // ReasonForRefund does NOT sanitize, so it returns original value
+            let input = "Customer requested refund";
+            let reason = ReasonForRefund::try_from(input).unwrap();
+            let exposed = unsafe { reason.as_ref() };
+            assert_eq!(exposed, VALID_REASON);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let reason = ReasonForRefund::try_from(VALID_REASON).unwrap();
+                let s = reason.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_REASON.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original reason should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

@@ -92,3 +92,75 @@ unsafe impl Masked for TransactionId {
             .to_uppercase()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_ID: &str = "txn_12345678";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_transaction_ids() {
+            for input in [VALID_ID, "12345678", "a".repeat(255).as_str()] {
+                let result = TransactionId::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " txn_12345678 \n\t\r ";
+            let id = TransactionId::try_from(input).unwrap();
+            let result = unsafe { id.as_ref() };
+            assert_eq!(result, VALID_ID);
+        }
+
+        #[test]
+        fn rejects_too_short_id() {
+            let result = TransactionId::try_from("1234567");
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_id() {
+            let input = "a".repeat(256);
+            let result = TransactionId::try_from(input.as_str());
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let id = TransactionId::try_from(VALID_ID).unwrap();
+            let debug_output = format!("{:?}", id);
+            assert!(debug_output.contains(r#"TransactionId("T***8")"#));
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let id = TransactionId::try_from(VALID_ID).unwrap();
+                let s = id.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_ID.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original transaction ID should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

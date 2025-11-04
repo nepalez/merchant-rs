@@ -79,3 +79,112 @@ impl Validated for CVV {
 unsafe impl Masked for CVV {
     const TYPE_WRAPPER: &'static str = "CVV";
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_CVV_3: &str = "123";
+    const VALID_CVV_4: &str = "1234";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_numbers() {
+            for input in [VALID_CVV_3, VALID_CVV_4] {
+                let result = CVV::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " 123\n\t\r ";
+            let cvv = CVV::try_from(input).unwrap();
+            let result = unsafe { cvv.as_ref() };
+            assert_eq!(result, VALID_CVV_3);
+        }
+
+        #[test]
+        fn rejects_too_short_number() {
+            let input = "12"; // 2 digits
+            let result = CVV::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                assert!(msg.contains(r#"CVV("***")"#));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_too_long_number() {
+            let input = "12345"; // 5 digits
+            let result = CVV::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                assert!(msg.contains(r#"CVV("***")"#));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_non_numeric_characters() {
+            let input = "12A";
+            let result = CVV::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                assert!(msg.contains(r#"CVV("***")"#));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let cvv = CVV::try_from(VALID_CVV_3).unwrap();
+            let debug_output = format!("{:?}", cvv);
+            assert!(debug_output.contains(r#"CVV("***")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(CVV: AsRef<str>);
+
+            let input = " 123 \n\t";
+            let cvv = CVV::try_from(input).unwrap();
+            let exposed = unsafe { <CVV as AsUnsafeRef<str>>::as_ref(&cvv) };
+            assert_eq!(exposed, VALID_CVV_3);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let cvv = CVV::try_from(VALID_CVV_3).unwrap();
+                let s = cvv.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_CVV_3.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original CVV should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

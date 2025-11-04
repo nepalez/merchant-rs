@@ -71,3 +71,70 @@ impl Validated for CountryCode {
             .map(|_| self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_COUNTRY: &str = "US";
+    const VALID_REGION: &str = "US-CA";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_region_codes() {
+            let result = CountryCode::try_from(VALID_REGION);
+            assert!(result.is_ok(), "{VALID_REGION:?} failed validation");
+        }
+
+        #[test]
+        fn converts_dots_and_underscores_to_hyphens() {
+            let input = "us.ca";
+            let code = CountryCode::try_from(input).unwrap();
+            let result = code.as_ref();
+            assert_eq!(result, VALID_REGION);
+
+            let input = "us_ca";
+            let code = CountryCode::try_from(input).unwrap();
+            let result = code.as_ref();
+            assert_eq!(result, VALID_REGION);
+        }
+
+        #[test]
+        fn rejects_invalid_country_code() {
+            let input = "ZZ-00";
+            let result = CountryCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_format() {
+            let input = "USA-11";
+            let result = CountryCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn exposes_debug() {
+            let code = CountryCode::try_from(VALID_REGION).unwrap();
+            let debug_output = format!("{:?}", code);
+            // CountryCode is public data, so it's not masked
+            assert!(debug_output.contains(VALID_REGION));
+        }
+
+        #[test]
+        fn as_ref_is_safe() {
+            let input = " us.ca \n\t";
+            let code = CountryCode::try_from(input).unwrap();
+            let exposed = code.as_ref();
+            assert_eq!(exposed, VALID_REGION);
+        }
+    }
+}

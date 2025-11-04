@@ -107,8 +107,91 @@ unsafe impl Masked for VirtualPaymentAddress {
         if self.0.contains('@') {
             self.0.split_once('@').unwrap_or_default().1
         } else {
-            self.0.get(self.0.len() - 3..).unwrap_or_default()
+            self.0.get(self.0.len().saturating_sub(3)..).unwrap_or_default()
         }
         .to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_UPI: &str = "user@paytm";
+    const VALID_PIX_CPF: &str = "12345678901";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_addresses() {
+            for input in [VALID_UPI, VALID_PIX_CPF, "a@b.com", "a".repeat(255).as_str()] {
+                let result = VirtualPaymentAddress::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " user@paytm \n\t\r ";
+            let vpa = VirtualPaymentAddress::try_from(input).unwrap();
+            let result = unsafe { vpa.as_ref() };
+            assert_eq!(result, VALID_UPI);
+        }
+
+        #[test]
+        fn rejects_too_short_address() {
+            let result = VirtualPaymentAddress::try_from("abc123");
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_address() {
+            let input = "a".repeat(256);
+            let result = VirtualPaymentAddress::try_from(input.as_str());
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug_upi() {
+            let vpa = VirtualPaymentAddress::try_from(VALID_UPI).unwrap();
+            let debug_output = format!("{:?}", vpa);
+            // Masked format: first char + *** + domain after @
+            assert!(debug_output.contains("VirtualPaymentAddress"));
+            assert!(debug_output.contains("***"));
+            assert!(debug_output.contains("paytm"));
+        }
+
+        #[test]
+        fn masks_debug_pix() {
+            let vpa = VirtualPaymentAddress::try_from(VALID_PIX_CPF).unwrap();
+            let debug_output = format!("{:?}", vpa);
+            assert!(debug_output.contains("1***901"));
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let vpa = VirtualPaymentAddress::try_from(VALID_UPI).unwrap();
+                let s = vpa.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_UPI.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original VPA should not remain in memory after drop"
+                );
+            }
+        }
     }
 }

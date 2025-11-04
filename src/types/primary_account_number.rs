@@ -207,12 +207,13 @@ mod tests {
         }
 
         #[test]
-        fn as_ref_returns_sanitized_value() {
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(PrimaryAccountNumber: AsRef<str>);
+
             let input = "4532-0151-1283-0366";
             let pan = PrimaryAccountNumber::try_from(input).unwrap();
-            let exposed = unsafe { pan.as_ref() };
+            let exposed = unsafe { <PrimaryAccountNumber as AsUnsafeRef<str>>::as_ref(&pan) };
             assert_eq!(exposed, VALID_VISA_16);
-            assert!(!exposed.contains('-'));
         }
 
         #[test]

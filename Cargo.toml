@@ -25,3 +25,6 @@ zeroize = { version = "1", default-features = false }
 zeroize_derive = { version = "1", default-features = false }
 serde = { version = "1.0.228", features = ["derive"] }
 input = "0.9.1"
+
+[dev-dependencies]
+static_assertions = "1.1"

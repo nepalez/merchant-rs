@@ -67,3 +67,67 @@ impl Validated for StreetAddress {
 unsafe impl Masked for StreetAddress {
     const TYPE_WRAPPER: &'static str = "StreetAddress";
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_ADDRESS: &str = "123 Main Street";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_addresses() {
+            for input in [VALID_ADDRESS, "Apt 5", "a".repeat(200).as_str()] {
+                let result = StreetAddress::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " 123 Main Street \n\t\r ";
+            let address = StreetAddress::try_from(input).unwrap();
+            let debug_output = format!("{:?}", address);
+            // Should be fully masked
+            assert!(debug_output.contains(r#"StreetAddress("***")"#));
+        }
+
+        #[test]
+        fn rejects_too_short_address() {
+            let input = "12"; // 2 characters
+            let result = StreetAddress::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_address() {
+            let input = "a".repeat(201);
+            let result = StreetAddress::try_from(input.as_str());
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_characters() {
+            let input = "123 Main @ Street";
+            let result = StreetAddress::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let address = StreetAddress::try_from(VALID_ADDRESS).unwrap();
+            let debug_output = format!("{:?}", address);
+            assert!(debug_output.contains(r#"StreetAddress("***")"#));
+            assert!(!debug_output.contains("Main"));
+        }
+    }
+}

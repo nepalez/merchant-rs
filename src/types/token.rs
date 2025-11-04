@@ -69,3 +69,88 @@ impl Validated for Token {
 unsafe impl Masked for Token {
     const TYPE_WRAPPER: &'static str = "Token";
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_TOKEN: &str = "1234567890123456";
+    const VALID_TOKEN_LONG: &str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_tokens() {
+            for input in [VALID_TOKEN, VALID_TOKEN_LONG, "a".repeat(16).as_str(), "a".repeat(4096).as_str()] {
+                let result = Token::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn rejects_too_short_token() {
+            let input = "123456789012345"; // 15 characters
+            let result = Token::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_token() {
+            let input = "a".repeat(4097);
+            let result = Token::try_from(input.as_str());
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_token_with_leading_space() {
+            let input = " 1234567890123456";
+            let result = Token::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_token_with_trailing_space() {
+            let input = "1234567890123456 ";
+            let result = Token::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let token = Token::try_from(VALID_TOKEN).unwrap();
+            let debug_output = format!("{:?}", token);
+            assert!(debug_output.contains(r#"Token("***")"#));
+            assert!(!debug_output.contains("1234"));
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let token = Token::try_from(VALID_TOKEN).unwrap();
+                let s = token.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_TOKEN.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original token should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

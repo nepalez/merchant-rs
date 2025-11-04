@@ -93,8 +93,115 @@ unsafe impl Masked for PhoneNumber {
     #[inline]
     fn last_chars(&self) -> String {
         self.0
-            .get(self.0.len() - 2..)
+            .get(self.0.len().saturating_sub(2)..)
             .unwrap_or_default()
             .to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_PHONE: &str = "+1234567890";
+    const VALID_PHONE_SHORT: &str = "+12345";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_phones() {
+            for input in ["1234567890", "+1234567890", "12345", "123456789012345"] {
+                let result = PhoneNumber::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_non_digits_and_adds_plus() {
+            let input = " (123) 456-7890 \n\t\r ";
+            let phone = PhoneNumber::try_from(input).unwrap();
+            let result = unsafe { phone.as_ref() };
+            assert_eq!(result, VALID_PHONE);
+        }
+
+        #[test]
+        fn rejects_too_short_phone() {
+            let input = "1234"; // 4 digits -> +1234 (5 characters)
+            let result = PhoneNumber::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                assert!(msg.contains(r#"PhoneNumber("+***34")"#));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_too_long_phone() {
+            let input = "12345678901234567"; // 17 digits
+            let result = PhoneNumber::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_empty_phone() {
+            let input = "";
+            let result = PhoneNumber::try_from(input);
+
+            // Empty input becomes "+" which has length 1, less than 6
+            if let Err(Error::InvalidInput(msg)) = result {
+                // PhoneNumber will mask as "+***" since last_chars returns empty string for length 1
+                assert!(msg.contains("PhoneNumber"));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let phone = PhoneNumber::try_from(VALID_PHONE.trim_start_matches('+')).unwrap();
+            let debug_output = format!("{:?}", phone);
+            assert!(debug_output.contains(r#"PhoneNumber("+***90")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(PhoneNumber: AsRef<str>);
+
+            let input = "(123) 456-7890";
+            let phone = PhoneNumber::try_from(input).unwrap();
+            let exposed = unsafe { <PhoneNumber as AsUnsafeRef<str>>::as_ref(&phone) };
+            assert_eq!(exposed, VALID_PHONE);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let phone = PhoneNumber::try_from(VALID_PHONE.trim_start_matches('+')).unwrap();
+                let s = phone.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_PHONE.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original phone number should not remain in memory after drop"
+                );
+            }
+        }
     }
 }

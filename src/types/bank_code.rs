@@ -58,3 +58,55 @@ impl Validated for BankCode {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_CODE: &str = "12345678";
+    const VALID_SWIFT: &str = "DEUTDEFF";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_codes() {
+            for input in [VALID_CODE, VALID_SWIFT, "AB", "12345678901234567890123456789012"] {
+                let result = BankCode::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_separators() {
+            let input = " 1234.5678 \n\t\r ";
+            let code = BankCode::try_from(input).unwrap();
+            let result = code.as_ref();
+            assert_eq!(result, VALID_CODE);
+        }
+
+        #[test]
+        fn rejects_too_short_code() {
+            let input = "1"; // 1 character
+            let result = BankCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_code() {
+            let input = "123456789012345678901234567890123456"; // 36 characters
+            let result = BankCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_non_alphanumeric_characters() {
+            let input = "DEUT@DEFF";
+            let result = BankCode::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+}

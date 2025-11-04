@@ -93,3 +93,127 @@ unsafe impl Masked for CardHolderName {
         self.0.get(len - 1..len).unwrap_or_default().to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_NAME: &str = "John Doe";
+    const VALID_NAME_UPPER: &str = "JOHN DOE";
+    const VALID_NAME_WITH_APOSTROPHE: &str = "O'Brien";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_names() {
+            for input in [VALID_NAME, "Ann", "Mary-Jane Smith", "O'Brien", "Dr. House"] {
+                let result = CardHolderName::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters_and_converts_to_uppercase() {
+            let input = " john doe \n\t\r ";
+            let name = CardHolderName::try_from(input).unwrap();
+            let result = unsafe { name.as_ref() };
+            assert_eq!(result, VALID_NAME_UPPER);
+        }
+
+        #[test]
+        fn rejects_too_short_name() {
+            let input = "ab"; // 2 characters (lowercase will be converted to uppercase AB)
+            let result = CardHolderName::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                // The message will contain uppercase version A***B because sanitization happens before validation
+                assert!(msg.contains("***"));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_too_long_name() {
+            let input = "Abcdefghijklmnopqrstuvwxyz"; // 26 characters
+            let result = CardHolderName::try_from(input).unwrap(); // Valid length
+            assert!(unsafe { result.as_ref() }.len() == 26);
+
+            let input = "abcdefghijklmnopqrstuvwxyzz"; // 27 characters (lowercase)
+            let result = CardHolderName::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                // Will contain uppercase version
+                assert!(msg.contains("***"));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_non_alphabetic_characters() {
+            let input = "John Doe123";
+            let result = CardHolderName::try_from(input);
+
+            if let Err(Error::InvalidInput(msg)) = result {
+                assert!(msg.contains("J***3"));
+            } else {
+                panic!("Expected InvalidInput error, got {result:?}");
+            }
+        }
+
+        #[test]
+        fn rejects_non_latin_characters() {
+            let input = "Иван Иванов";
+            let result = CardHolderName::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let name = CardHolderName::try_from(VALID_NAME).unwrap();
+            let debug_output = format!("{:?}", name);
+            assert!(debug_output.contains(r#"CardHolderName("J***E")"#));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(CardHolderName: AsRef<str>);
+
+            let input = " john doe \n\t";
+            let name = CardHolderName::try_from(input).unwrap();
+            let exposed = unsafe { <CardHolderName as AsUnsafeRef<str>>::as_ref(&name) };
+            assert_eq!(exposed, VALID_NAME_UPPER);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let name = CardHolderName::try_from(VALID_NAME).unwrap();
+                let s = name.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_NAME_UPPER.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original cardholder name should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

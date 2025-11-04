@@ -89,8 +89,80 @@ unsafe impl Masked for WalletAddress {
     #[inline]
     fn last_chars(&self) -> String {
         self.0
-            .get(self.0.len() - 6..)
+            .get(self.0.len().saturating_sub(6)..)
             .unwrap_or_default()
             .to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_WALLET: &str = "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_wallets() {
+            for input in [VALID_WALLET, "a".repeat(20).as_str(), "a".repeat(90).as_str()] {
+                let result = WalletAddress::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa \n\t\r ";
+            let wallet = WalletAddress::try_from(input).unwrap();
+            let result = unsafe { wallet.as_ref() };
+            assert_eq!(result, VALID_WALLET);
+        }
+
+        #[test]
+        fn rejects_too_short_wallet() {
+            let result = WalletAddress::try_from("1234567890123456789");
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_wallet() {
+            let input = "a".repeat(91);
+            let result = WalletAddress::try_from(input.as_str());
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let wallet = WalletAddress::try_from(VALID_WALLET).unwrap();
+            let debug_output = format!("{:?}", wallet);
+            assert!(debug_output.contains(r#"WalletAddress("1A1zP1***DivfNa")"#));
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let wallet = WalletAddress::try_from(VALID_WALLET).unwrap();
+                let s = wallet.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_WALLET.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original wallet address should not remain in memory after drop"
+                );
+            }
+        }
     }
 }

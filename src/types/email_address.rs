@@ -111,3 +111,101 @@ unsafe impl Masked for EmailAddress {
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_EMAIL: &str = "user@example.com";
+    const VALID_EMAIL_PLUS: &str = "user+tag@example.com";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_emails() {
+            for input in [VALID_EMAIL, VALID_EMAIL_PLUS, "test@test.co.uk", "a@b.c"] {
+                let result = EmailAddress::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " user@example.com \n\t\r ";
+            let email = EmailAddress::try_from(input).unwrap();
+            let result = unsafe { email.as_ref() };
+            assert_eq!(result, VALID_EMAIL);
+        }
+
+        #[test]
+        fn rejects_invalid_email_no_at() {
+            let input = "userexample.com";
+            let result = EmailAddress::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_email_no_domain() {
+            let input = "user@";
+            let result = EmailAddress::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_invalid_email_no_local() {
+            let input = "@example.com";
+            let result = EmailAddress::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn masks_debug() {
+            let email = EmailAddress::try_from(VALID_EMAIL).unwrap();
+            let debug_output = format!("{:?}", email);
+            assert!(debug_output.contains("u***@example.com"));
+            assert!(!debug_output.contains("user@"));
+        }
+
+        #[test]
+        fn as_ref_is_unsafe() {
+            static_assertions::assert_not_impl_all!(EmailAddress: AsRef<str>);
+
+            let input = " user@example.com \n\t";
+            let email = EmailAddress::try_from(input).unwrap();
+            let exposed = unsafe { <EmailAddress as AsUnsafeRef<str>>::as_ref(&email) };
+            assert_eq!(exposed, VALID_EMAIL);
+        }
+
+        #[test]
+        fn memory_is_not_leaked_after_drop() {
+            let ptr: *const u8;
+            let len: usize;
+            unsafe {
+                let email = EmailAddress::try_from(VALID_EMAIL).unwrap();
+                let s = email.as_ref();
+                ptr = s.as_ptr();
+                len = s.len();
+            }
+
+            // SAFETY: This test verifies memory was zeroed after a drop.
+            // Reading potentially freed memory is unsafe and only valid in tests
+            // immediately after a drop, before any reallocation.
+            unsafe {
+                let slice = std::slice::from_raw_parts(ptr, len);
+                let original_bytes = VALID_EMAIL.as_bytes();
+                assert_ne!(
+                    slice, original_bytes,
+                    "Original email address should not remain in memory after drop"
+                );
+            }
+        }
+    }
+}

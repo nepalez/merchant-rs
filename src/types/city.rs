@@ -55,3 +55,67 @@ impl Validated for City {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_CITY: &str = "New York";
+    const VALID_CITY_LONG: &str = "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_cities() {
+            for input in [VALID_CITY, "London", VALID_CITY_LONG, "São Paulo", "Москва"] {
+                let result = City::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " New York \n\t\r ";
+            let city = City::try_from(input).unwrap();
+            let result = city.as_ref();
+            assert_eq!(result, VALID_CITY);
+        }
+
+        #[test]
+        fn rejects_empty_city() {
+            let input = "";
+            let result = City::try_from(input);
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_city() {
+            let input = "a".repeat(101);
+            let result = City::try_from(input.as_str());
+
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn exposes_debug() {
+            let city = City::try_from(VALID_CITY).unwrap();
+            let debug_output = format!("{:?}", city);
+            // City is public data, so it's not masked
+            assert!(debug_output.contains(VALID_CITY));
+        }
+
+        #[test]
+        fn as_ref_is_safe() {
+            let input = " New York \n\t";
+            let city = City::try_from(input).unwrap();
+            let exposed = city.as_ref();
+            assert_eq!(exposed, VALID_CITY);
+        }
+    }
+}

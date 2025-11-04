@@ -54,3 +54,55 @@ impl Validated for TransactionIdempotenceKey {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VALID_KEY: &str = "unique-key-123";
+
+    mod construction {
+        use super::*;
+
+        #[test]
+        fn accepts_valid_keys() {
+            for input in [VALID_KEY, "a", "a".repeat(255).as_str()] {
+                let result = TransactionIdempotenceKey::try_from(input);
+                assert!(result.is_ok(), "{input:?} failed validation");
+            }
+        }
+
+        #[test]
+        fn removes_control_characters() {
+            let input = " unique-key-123 \n\t\r ";
+            let key = TransactionIdempotenceKey::try_from(input).unwrap();
+            let result = key.as_ref();
+            assert_eq!(result, VALID_KEY);
+        }
+
+        #[test]
+        fn rejects_empty_key() {
+            let result = TransactionIdempotenceKey::try_from("");
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+
+        #[test]
+        fn rejects_too_long_key() {
+            let input = "a".repeat(256);
+            let result = TransactionIdempotenceKey::try_from(input.as_str());
+            assert!(matches!(result, Err(Error::InvalidInput(_))));
+        }
+    }
+
+    mod safety {
+        use super::*;
+
+        #[test]
+        fn exposes_debug() {
+            let key = TransactionIdempotenceKey::try_from(VALID_KEY).unwrap();
+            let debug_output = format!("{:?}", key);
+            // This is public data, not masked
+            assert!(debug_output.contains(VALID_KEY));
+        }
+    }
+}
