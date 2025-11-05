@@ -15,8 +15,10 @@ mod external_payment;
 mod external_payment_data;
 mod instant_payment;
 mod payment;
+mod recurrent_payment;
 mod sepa;
 mod stored_card;
+mod subscription;
 mod transaction;
 
 pub use address::Address;
@@ -33,8 +35,10 @@ pub use external_payment::ExternalPayment;
 pub use external_payment_data::ExternalPaymentData;
 pub use instant_payment::InstantPayment;
 pub use payment::Payment;
+pub use recurrent_payment::RecurrentPayment;
 pub use sepa::{SEPA, SEPACredentials};
 pub use stored_card::{StoredCard, StoredCardCredentials};
+pub use subscription::Subscription;
 pub use transaction::Transaction;
 
 use std::collections::HashMap;

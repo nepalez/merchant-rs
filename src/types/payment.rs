@@ -2,7 +2,9 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::inputs::Payment as Input;
-use crate::types::{MerchantInitiatedType, Money, PaymentMethod, TransactionIdempotenceKey};
+use crate::types::{
+    MerchantInitiatedType, Money, PaymentMethod, StoredCredentialUsage, TransactionIdempotenceKey,
+};
 
 /// Payment data with a raw payment method for direct processing.
 ///
@@ -22,11 +24,16 @@ pub struct Payment<Method: PaymentMethod> {
     pub method: Method,
     /// The amount to charge
     pub amount: Money,
-    /// The idempotency key
+    /// The idempotence key that can be used to retrieve the transaction id,
+    /// and prevent duplication.
     pub idempotence_key: TransactionIdempotenceKey,
     /// The scope of the payment initiated by the merchant
     /// (use `None` if the payment was initiated by a customer).
     pub merchant_initiated_type: Option<MerchantInitiatedType>,
+    /// Indicates whether this is the first or later use of stored credentials.
+    /// Use `None` for one-time payments where credentials are not stored.
+    /// Required for Credential-on-File (COF) compliance with card networks.
+    pub stored_credential_usage: Option<StoredCredentialUsage>,
 }
 
 impl<'a, InputMethod, Method> TryFrom<Input<'a, InputMethod>> for Payment<Method>
@@ -42,6 +49,7 @@ where
             amount: input.amount,
             idempotence_key: input.idempotence_key.try_into()?,
             merchant_initiated_type: input.merchant_initiated_type,
+            stored_credential_usage: input.stored_credential_usage,
         })
     }
 }
@@ -72,6 +80,7 @@ mod tests {
             },
             idempotence_key: " payment-key-123 \n\t",
             merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
+            stored_credential_usage: None,
         }
     }
 

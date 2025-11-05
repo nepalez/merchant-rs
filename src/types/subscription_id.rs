@@ -5,30 +5,37 @@ use zeroize_derive::ZeroizeOnDrop;
 use crate::internal::{Masked, Validated, sanitized::*};
 use crate::{AsUnsafeRef, Error};
 
-/// External transaction identifier from a payment gateway
+/// External subscription identifier from a payment gateway
 ///
 /// # Sanitization
 /// * trims whitespaces,
 /// * removes all ASCII control characters like newlines, tabs, etc.
 ///
 /// # Validation
-/// * length: 8-255 characters,
+/// * length: 4-255 characters,
 /// * only alphanumeric characters, dashes and underscores are allowed
 ///
+/// # Coverage
+/// Supports 100+ payment systems worldwide:
+/// * Global: Stripe `sub_1MowQVLkdIwHu7ixeRlqHVzs`, PayPal `I-8XRLDA4MNEW3`, Square `8151fc89-da15-4eb9-a685-1a70883cebfc`
+/// * Europe: Mollie `sub_rVKGtNd6s3`, GoCardless `SB00003GKMHFFY`
+/// * Asia: Razorpay `sub_00000000000001`, Omise `schd_test_no1t4tnemucod0e51mo`
+/// * Latin America: MercadoPago `2c938084726fca480172750000000000`
+/// * Africa: Paystack `SUB_6phdx225bavuwtb`, Flutterwave `4147`
+///
 /// # Data Protection
-/// While neither PII nor classified as sensitive by PCI DSS, transaction identifiers
-/// can be used to initiate operations (void, capture, refund) and access transaction details,
-/// requiring access control at the highest level.
+/// Subscription identifiers can be used to manage subscriptions (cancel, update, pause)
+/// and access subscription details, requiring access control at the highest level.
 ///
 /// As such, they are:
 /// * masked in logs (via `Debug` implementation) to display
 ///   the first and last characters (both in the upper case) only,
 /// * not exposed publicly except for a part of a request or response
-///   via **unsafe** method `with_exposed_secret`.
+///   via **unsafe** method `as_ref`.
 #[derive(Clone, PartialEq, Eq, ZeroizeOnDrop)]
-pub struct TransactionId(String);
+pub struct SubscriptionId(String);
 
-impl<'a> TryFrom<&'a str> for TransactionId {
+impl<'a> TryFrom<&'a str> for SubscriptionId {
     type Error = Error;
 
     #[inline]
@@ -37,14 +44,14 @@ impl<'a> TryFrom<&'a str> for TransactionId {
     }
 }
 
-impl fmt::Debug for TransactionId {
+impl fmt::Debug for SubscriptionId {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.masked_debug(f)
     }
 }
 
-impl AsUnsafeRef<str> for TransactionId {
+impl AsUnsafeRef<str> for SubscriptionId {
     #[inline]
     unsafe fn as_ref(&self) -> &str {
         self.0.as_str()
@@ -53,7 +60,7 @@ impl AsUnsafeRef<str> for TransactionId {
 
 // --- Sealed traits (not parts of the public API) ---
 
-impl Sanitized for TransactionId {
+impl Sanitized for SubscriptionId {
     #[inline]
     fn sanitize(input: &str) -> Self {
         let mut output = Self(String::with_capacity(input.len()));
@@ -62,10 +69,10 @@ impl Sanitized for TransactionId {
     }
 }
 
-impl Validated for TransactionId {
+impl Validated for SubscriptionId {
     #[inline]
     fn validate(self) -> Result<Self, Error> {
-        self._validate_length(&self.0, 8, 255)?;
+        self._validate_length(&self.0, 4, 255)?;
         self._validate_alphanumeric(&self.0, "-_")?;
         Ok(self)
     }
@@ -74,10 +81,10 @@ impl Validated for TransactionId {
 // SAFETY: The trait is safely implemented because exposing the first 1 and last 1 character:
 // 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 //    due to fallbacks to the empty strings,
-// 2. Nor leaks the essential part of the sensitive VALID data which has at least 8 chars,
-//    while also hiding the real length and case of the authorization ID.
-unsafe impl Masked for TransactionId {
-    const TYPE_WRAPPER: &'static str = "TransactionId";
+// 2. Nor leaks the essential part of the sensitive VALID data which has at least 4 chars,
+//    while also hiding the real length and case of the subscription ID.
+unsafe impl Masked for SubscriptionId {
+    const TYPE_WRAPPER: &'static str = "SubscriptionId";
 
     #[inline]
     fn first_chars(&self) -> String {
@@ -97,37 +104,50 @@ unsafe impl Masked for TransactionId {
 mod tests {
     use super::*;
 
-    const VALID_ID: &str = "txn_12345678";
-
     mod construction {
         use super::*;
 
         #[test]
-        fn accepts_valid_transaction_ids() {
-            for input in [VALID_ID, "12345678", "a".repeat(255).as_str()] {
-                let result = TransactionId::try_from(input);
-                assert!(result.is_ok(), "{input:?} failed validation");
+        fn accepts_valid_formats() {
+            let formats = [
+                ("sub_1MowQVLkdIwHu7ixeRlqHVzs", "Stripe"),
+                ("I-8XRLDA4MNEW3", "PayPal"),
+                ("8151fc89-da15-4eb9-a685-1a70883cebfc", "Square UUID"),
+                ("sub_rVKGtNd6s3", "Mollie"),
+                ("SB00003GKMHFFY", "GoCardless"),
+                ("sub_00000000000001", "Razorpay"),
+                ("schd_test_no1t4tnemucod0e51mo", "Omise"),
+                ("2c938084726fca480172750000000000", "MercadoPago"),
+                ("SUB_6phdx225bavuwtb", "Paystack"),
+                ("4147", "Flutterwave"),
+                ("1234", "min length"),
+                (&"a".repeat(255), "max length"),
+            ];
+
+            for (input, name) in formats {
+                let result = SubscriptionId::try_from(input);
+                assert!(result.is_ok(), "{name} format failed: {input}");
             }
         }
 
         #[test]
         fn removes_control_characters() {
-            let input = " txn_12345678 \n\t\r ";
-            let id = TransactionId::try_from(input).unwrap();
+            let input = " sub_12345678 \n\t\r ";
+            let id = SubscriptionId::try_from(input).unwrap();
             let result = unsafe { id.as_ref() };
-            assert_eq!(result, VALID_ID);
+            assert_eq!(result, "sub_12345678");
         }
 
         #[test]
         fn rejects_too_short_id() {
-            let result = TransactionId::try_from("1234567");
+            let result = SubscriptionId::try_from("123");
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_too_long_id() {
             let input = "a".repeat(256);
-            let result = TransactionId::try_from(input.as_str());
+            let result = SubscriptionId::try_from(input.as_str());
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
     }
@@ -137,9 +157,9 @@ mod tests {
 
         #[test]
         fn masks_debug() {
-            let id = TransactionId::try_from(VALID_ID).unwrap();
+            let id = SubscriptionId::try_from("sub_12345678").unwrap();
             let debug_output = format!("{:?}", id);
-            assert!(debug_output.contains(r#"TransactionId("T***8")"#));
+            assert!(debug_output.contains(r#"SubscriptionId("S***8")"#));
         }
 
         #[test]
@@ -147,7 +167,7 @@ mod tests {
             let ptr: *const u8;
             let len: usize;
             unsafe {
-                let id = TransactionId::try_from(VALID_ID).unwrap();
+                let id = SubscriptionId::try_from("sub_12345678").unwrap();
                 let s = id.as_ref();
                 ptr = s.as_ptr();
                 len = s.len();
@@ -155,10 +175,10 @@ mod tests {
 
             unsafe {
                 let slice = std::slice::from_raw_parts(ptr, len);
-                let original_bytes = VALID_ID.as_bytes();
+                let original_bytes = "sub_12345678".as_bytes();
                 assert_ne!(
                     slice, original_bytes,
-                    "Original transaction ID should not remain in memory after drop"
+                    "Original subscription ID should not remain in memory after drop"
                 );
             }
         }

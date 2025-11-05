@@ -4,7 +4,7 @@ use crate::Error;
 use crate::inputs::{SEPA as Input, SEPACredentials as CredentialsInput};
 use crate::types::{
     Address, Credentials, EmailAddress, FullName, IBAN, InternalPaymentMethod, PaymentMethod,
-    TokenizablePaymentMethod,
+    StorablePaymentMethod,
 };
 
 /// SEPA Bank Account
@@ -109,7 +109,7 @@ pub struct SEPACredentials {
 
 impl PaymentMethod for SEPA {}
 impl InternalPaymentMethod for SEPA {}
-impl TokenizablePaymentMethod for SEPA {}
+impl StorablePaymentMethod for SEPA {}
 
 impl<'a> TryFrom<Input<'a>> for SEPA {
     type Error = Error;

@@ -4,7 +4,7 @@ use crate::Error;
 use crate::inputs::{StoredCard as Input, StoredCardCredentials as CredentialsInput};
 use crate::types::{
     CardExpiry, CardHolderName, Credentials, CreditCard, InternalPaymentMethod, PaymentMethod,
-    PrimaryAccountNumber, TokenizablePaymentMethod,
+    PrimaryAccountNumber, StorablePaymentMethod,
 };
 
 /// Stored Credit or Debit Card for Merchant Initiated Transactions
@@ -109,7 +109,7 @@ pub struct StoredCardCredentials {
 
 impl PaymentMethod for StoredCard {}
 impl InternalPaymentMethod for StoredCard {}
-impl TokenizablePaymentMethod for StoredCard {}
+impl StorablePaymentMethod for StoredCard {}
 
 impl<'a> TryFrom<CredentialsInput<'a>> for StoredCardCredentials {
     type Error = Error;

@@ -14,4 +14,8 @@ pub enum Error {
     /// General data validation error (invalid CVV, expired card, missing field).
     #[error("Validation failed: {0}")]
     InvalidInput(String),
+
+    /// Operation is not supported by the gateway adapter.
+    #[error("Operation not supported: {0}")]
+    NotSupported(String),
 }

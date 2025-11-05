@@ -8,7 +8,7 @@ This crate contains zero network logic, ensuring it is lightweight and highly fo
 
 ## Key Features
 
-**Composable Flow Traits**: Defines specialized traits for different payment flows (`ImmediatePayments`, `DeferredPayments`, `ExternalPayments`, `TokenizeCredentials`, `ThreeDSecure`), allowing gateways to implement only the flows they support.
+**Composable Flow Traits**: Defines specialized traits for different payment flows (`ImmediatePayments`, `DeferredPayments`, `ExternalPayments`, `StoreCredentials`, `ThreeDSecure`), allowing gateways to implement only the flows they support.
 
 **Async-First Design**: All gateway operations use `#[async_trait]`, ensuring non-blocking network calls and high throughput essential for modern Rust web services.
 
@@ -34,13 +34,13 @@ The library organizes payment operations into specialized traits, allowing payme
 
 ### Supporting Flows
 
-* **`TokenizeCredentials`** — Convert payment credentials into reusable tokens for recurring payments and stored payment methods.
+* **`StoreCredentials`** — Store payment credentials in gateway vault and retrieve tokens for recurring payments and stored payment methods. Supports removing stored credentials.
 
 * **`ThreeDSecure`** — Manage 3DS authentication flows for card payments requiring Strong Customer Authentication (SCA).
 
 * **`AdjustPayments`** — Modify authorized amounts before capture (increase/decrease reservations).
 
-* **`CancelPayments`** — Void authorized payments or cancel pending transactions.
+* **`CancelPayments`** — Cancel authorized payments or pending transactions.
 
 * **`RefundPayments`** — Return funds to customers for captured/settled transactions.
 

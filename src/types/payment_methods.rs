@@ -1,6 +1,8 @@
 //! The module defines marker traits to classify payment methods
 //! by their abilities to participate in specific flows.
 
+use std::fmt;
+
 mod bank_payment;
 mod bnpl;
 mod cash_voucher;
@@ -15,7 +17,7 @@ mod vault;
 // --- Marker traits  ---
 
 /// Marker trait for types that can be used as payment methods.
-pub(crate) trait PaymentMethod {}
+pub(crate) trait PaymentMethod: fmt::Debug {}
 
 /// Marker trait for payment methods that can be used
 /// in the internal payment flows (`ThreeDSecure`, `ImmediatePayments`, `DeferredPayments`, `Token`).
@@ -25,8 +27,8 @@ pub(crate) trait InternalPaymentMethod: PaymentMethod {}
 /// in the external payment flows (`CashVoucher`, `BNPL`, `CreditCard`, `InstantAccount`, `SEPAAccount`, `Token`).
 pub(crate) trait ExternalPaymentMethod: PaymentMethod {}
 
-/// Marker trait for payment methods that can be tokenized (exchanged to tokens).
-pub(crate) trait TokenizablePaymentMethod: InternalPaymentMethod {}
+/// Marker trait for payment methods that can be stored in gateway vault (exchanged to tokens).
+pub(crate) trait StorablePaymentMethod: InternalPaymentMethod {}
 
 // --- Types ---
 

@@ -4,7 +4,7 @@ use crate::Error;
 use crate::inputs::{BankPayment as Input, BankPaymentCredentials as CredentialsInput};
 use crate::types::{
     AccountHolderType, AccountNumber, AccountType, Credentials, FullName, InternalPaymentMethod,
-    Metadata, PaymentMethod, RoutingNumber, TokenizablePaymentMethod,
+    Metadata, PaymentMethod, RoutingNumber, StorablePaymentMethod,
 };
 
 /// Direct Bank Account
@@ -132,7 +132,7 @@ pub struct BankPaymentCredentials {
 
 impl PaymentMethod for BankPayment {}
 impl InternalPaymentMethod for BankPayment {}
-impl TokenizablePaymentMethod for BankPayment {}
+impl StorablePaymentMethod for BankPayment {}
 
 impl<'a> TryFrom<CredentialsInput<'a>> for BankPaymentCredentials {
     type Error = Error;
