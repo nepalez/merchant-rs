@@ -116,14 +116,32 @@ use crate::types::{
 /// - **Geolocation**: Flag transactions from unusual locations
 #[derive(Clone, Debug)]
 pub struct CreditCard {
+    pub(crate) cvv: CVV,
+    pub(crate) number: PrimaryAccountNumber,
+    pub(crate) card_expiry: CardExpiry,
+    pub(crate) holder_name: CardHolderName,
+}
+
+impl CreditCard {
     /// Card Verification Value (CVV/CVC/CID)
-    pub cvv: CVV,
+    pub fn cvv(&self) -> &CVV {
+        &self.cvv
+    }
+
     /// Primary Account Number (PAN)
-    pub number: PrimaryAccountNumber,
+    pub fn number(&self) -> &PrimaryAccountNumber {
+        &self.number
+    }
+
     /// Card expiration date (month and year)
-    pub card_expiry: CardExpiry,
+    pub fn card_expiry(&self) -> &CardExpiry {
+        &self.card_expiry
+    }
+
     /// Cardholder name as embossed on the card
-    pub holder_name: CardHolderName,
+    pub fn holder_name(&self) -> &CardHolderName {
+        &self.holder_name
+    }
 }
 
 // Marker implementations

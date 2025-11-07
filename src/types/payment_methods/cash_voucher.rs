@@ -93,14 +93,32 @@ use crate::types::{Address, FullName, Metadata, NationalId};
 /// - **Consumer protection**: Clear expiration dates and payment instructions
 #[derive(Clone, Debug)]
 pub struct CashVoucher {
+    pub(crate) full_name: FullName,
+    pub(crate) billing_address: Option<Address>,
+    pub(crate) national_id: Option<NationalId>,
+    pub(crate) metadata: Option<Metadata>,
+}
+
+impl CashVoucher {
     /// User full name
-    pub full_name: FullName,
+    pub fn full_name(&self) -> &FullName {
+        &self.full_name
+    }
+
     /// User billing address
-    pub billing_address: Option<Address>,
+    pub fn billing_address(&self) -> &Option<Address> {
+        &self.billing_address
+    }
+
     /// National identification number (CPF/CNPJ for Boleto)
-    pub national_id: Option<NationalId>,
+    pub fn national_id(&self) -> &Option<NationalId> {
+        &self.national_id
+    }
+
     /// Method-specific extensions
-    pub metadata: Option<Metadata>,
+    pub fn metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
 }
 
 // Marker implementations

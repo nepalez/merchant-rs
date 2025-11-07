@@ -13,14 +13,32 @@ use crate::types::{City, CountryCode, PostalCode, StreetAddress};
 /// The rest (country-region-city) are not protected by design.
 #[derive(Clone, Debug)]
 pub struct Address {
+    pub(crate) country_code: CountryCode,
+    pub(crate) postal_code: PostalCode,
+    pub(crate) city: City,
+    pub(crate) line: StreetAddress,
+}
+
+impl Address {
     /// The country-specific code of the region (ISO 3166-2 alpha-2).
-    pub country_code: CountryCode,
+    pub fn country_code(&self) -> &CountryCode {
+        &self.country_code
+    }
+
     /// The country-specific postal code of the address.
-    pub postal_code: PostalCode,
+    pub fn postal_code(&self) -> &PostalCode {
+        &self.postal_code
+    }
+
     /// The name of the city, town, village, or another locality.
-    pub city: City,
+    pub fn city(&self) -> &City {
+        &self.city
+    }
+
     /// The street address, P.O. box, company name, c/o, etc.
-    pub line: StreetAddress,
+    pub fn line(&self) -> &StreetAddress {
+        &self.line
+    }
 }
 
 impl TryFrom<Input<'_>> for Address {

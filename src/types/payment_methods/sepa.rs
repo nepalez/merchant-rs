@@ -88,21 +88,45 @@ use crate::types::{
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPA {
+    pub(crate) credentials: Credentials<SEPACredentials>,
+    pub(crate) billing_address: Address,
+    pub(crate) email: EmailAddress,
+    pub(crate) full_name: FullName,
+}
+
+impl SEPA {
     /// International Bank Account Number
-    pub credentials: Credentials<SEPACredentials>,
+    pub fn credentials(&self) -> &Credentials<SEPACredentials> {
+        &self.credentials
+    }
+
     /// User billing address (required per PSD2 AML)
-    pub billing_address: Address,
+    pub fn billing_address(&self) -> &Address {
+        &self.billing_address
+    }
+
     /// User email for transaction notifications
-    pub email: EmailAddress,
+    pub fn email(&self) -> &EmailAddress {
+        &self.email
+    }
+
     /// User full name as registered with bank
-    pub full_name: FullName,
+    pub fn full_name(&self) -> &FullName {
+        &self.full_name
+    }
 }
 
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPACredentials {
+    pub(crate) iban: IBAN,
+}
+
+impl SEPACredentials {
     /// International Bank Account Number
-    pub iban: IBAN,
+    pub fn iban(&self) -> &IBAN {
+        &self.iban
+    }
 }
 
 // Marker implementations

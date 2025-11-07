@@ -94,10 +94,20 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
 /// - **GDPR**: Phone numbers are PII, must be protected
 #[derive(Debug, Clone)]
 pub struct DirectCarrierBilling {
+    pub(crate) phone: PhoneNumber,
+    pub(crate) metadata: Option<Metadata>,
+}
+
+impl DirectCarrierBilling {
     /// User phone number (primary payment identifier)
-    pub phone: PhoneNumber,
+    pub fn phone(&self) -> &PhoneNumber {
+        &self.phone
+    }
+
     /// Carrier-specific extensions
-    pub metadata: Option<Metadata>,
+    pub fn metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
 }
 
 // Marker implementations

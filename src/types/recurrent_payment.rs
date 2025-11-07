@@ -19,14 +19,33 @@ use crate::types::{Money, PaymentMethod, SubscriptionInterval, TransactionIdempo
 #[derive(Debug, Clone)]
 #[allow(private_bounds)]
 pub struct RecurrentPayment<Method: PaymentMethod> {
+    pub(crate) method: Method,
+    pub(crate) amount: Money,
+    pub(crate) interval: SubscriptionInterval,
+    pub(crate) idempotence_key: TransactionIdempotenceKey,
+}
+
+#[allow(private_bounds)]
+impl<Method: PaymentMethod> RecurrentPayment<Method> {
     /// The method of the payment to charge funds from
-    pub method: Method,
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
     /// The amount to charge per billing cycle
-    pub amount: Money,
+    pub fn amount(&self) -> &Money {
+        &self.amount
+    }
+
     /// The billing interval (how often the customer is charged)
-    pub interval: SubscriptionInterval,
+    pub fn interval(&self) -> &SubscriptionInterval {
+        &self.interval
+    }
+
     /// The idempotence key that can be used to prevent duplicate subscription creation
-    pub idempotence_key: TransactionIdempotenceKey,
+    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
+        &self.idempotence_key
+    }
 }
 
 impl<Method: PaymentMethod> Validated for RecurrentPayment<Method> {

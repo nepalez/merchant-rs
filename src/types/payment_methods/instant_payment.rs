@@ -110,26 +110,68 @@ use crate::types::{
 /// - **GDPR/LGPD**: Customer data protection requirements
 #[derive(Clone, Debug)]
 pub struct InstantAccount {
+    pub(crate) email: EmailAddress,
+    pub(crate) full_name: FullName,
+    pub(crate) account_number: Option<AccountNumber>,
+    pub(crate) bank_code: Option<BankCode>,
+    pub(crate) billing_address: Option<Address>,
+    pub(crate) holder_type: AccountHolderType,
+    pub(crate) national_id: Option<NationalId>,
+    pub(crate) phone: Option<PhoneNumber>,
+    pub(crate) virtual_payment_address: Option<VirtualPaymentAddress>,
+    pub(crate) metadata: Option<Metadata>,
+}
+
+impl InstantAccount {
     /// User email for transaction notifications
-    pub email: EmailAddress,
+    pub fn email(&self) -> &EmailAddress {
+        &self.email
+    }
+
     /// User full name as registered with a bank
-    pub full_name: FullName,
+    pub fn full_name(&self) -> &FullName {
+        &self.full_name
+    }
+
     /// Bank account number (CLABE for SPEI)
-    pub account_number: Option<AccountNumber>,
+    pub fn account_number(&self) -> &Option<AccountNumber> {
+        &self.account_number
+    }
+
     /// Bank identifier code
-    pub bank_code: Option<BankCode>,
+    pub fn bank_code(&self) -> &Option<BankCode> {
+        &self.bank_code
+    }
+
     /// User billing address
-    pub billing_address: Option<Address>,
+    pub fn billing_address(&self) -> &Option<Address> {
+        &self.billing_address
+    }
+
     /// Type of user (person or organization)
-    pub holder_type: AccountHolderType,
+    pub fn holder_type(&self) -> &AccountHolderType {
+        &self.holder_type
+    }
+
     /// National identification number (tax ID)
-    pub national_id: Option<NationalId>,
+    pub fn national_id(&self) -> &Option<NationalId> {
+        &self.national_id
+    }
+
     /// User phone number
-    pub phone: Option<PhoneNumber>,
+    pub fn phone(&self) -> &Option<PhoneNumber> {
+        &self.phone
+    }
+
     /// Virtual Payment Address (UPI)
-    pub virtual_payment_address: Option<VirtualPaymentAddress>,
+    pub fn virtual_payment_address(&self) -> &Option<VirtualPaymentAddress> {
+        &self.virtual_payment_address
+    }
+
     /// Method-specific extensions
-    pub metadata: Option<Metadata>,
+    pub fn metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
 }
 
 // Marker implementations

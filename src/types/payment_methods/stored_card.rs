@@ -88,7 +88,13 @@ use crate::types::{
 /// - **Notification requirements**: Inform customers before charging (varies by region)
 #[derive(Clone, Debug)]
 pub struct StoredCard {
-    pub credentials: Credentials<StoredCardCredentials>,
+    pub(crate) credentials: Credentials<StoredCardCredentials>,
+}
+
+impl StoredCard {
+    pub fn credentials(&self) -> &Credentials<StoredCardCredentials> {
+        &self.credentials
+    }
 }
 
 /// Tokenizable credentials for StoredCard
@@ -97,12 +103,26 @@ pub struct StoredCard {
 /// Should be tokenized by the gateway rather than stored as plain text.
 #[derive(Clone, Debug)]
 pub struct StoredCardCredentials {
+    pub(crate) number: PrimaryAccountNumber,
+    pub(crate) card_expiry: CardExpiry,
+    pub(crate) holder_name: CardHolderName,
+}
+
+impl StoredCardCredentials {
     /// Primary Account Number (PAN)
-    pub number: PrimaryAccountNumber,
+    pub fn number(&self) -> &PrimaryAccountNumber {
+        &self.number
+    }
+
     /// Card expiration date (month and year)
-    pub card_expiry: CardExpiry,
+    pub fn card_expiry(&self) -> &CardExpiry {
+        &self.card_expiry
+    }
+
     /// Cardholder name as embossed on the card
-    pub holder_name: CardHolderName,
+    pub fn holder_name(&self) -> &CardHolderName {
+        &self.holder_name
+    }
 }
 
 // Marker implementations

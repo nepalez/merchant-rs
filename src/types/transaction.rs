@@ -11,26 +11,40 @@ use crate::types::{
 /// Represents the outcome of a payment operation (charge, authorize, capture, refund, void).
 /// Contains the gateway-assigned transaction ID, idempotence key for duplicate detection,
 /// current transaction status, processed amount, and merchant-initiated transaction type if applicable.
-///
-/// # Fields
-///
-/// * `transaction_id` - Unique identifier assigned by the payment gateway
-/// * `idempotence_key` - Key used to prevent duplicate transaction processing
-/// * `status` - Current transaction status (authorized, captured, failed, etc.)
-/// * `amount` - Transaction amount and currency
-/// * `merchant_initiated_type` - Type of merchant-initiated transaction (for recurring/unscheduled)
 #[derive(Debug, Clone)]
 pub struct Transaction {
+    pub(crate) transaction_id: TransactionId,
+    pub(crate) idempotence_key: TransactionIdempotenceKey,
+    pub(crate) status: TransactionStatus,
+    pub(crate) amount: Money,
+    pub(crate) merchant_initiated_type: Option<MerchantInitiatedType>,
+}
+
+impl Transaction {
     /// The unique transaction ID returned by the payment gateway.
-    pub transaction_id: TransactionId,
+    pub fn transaction_id(&self) -> &TransactionId {
+        &self.transaction_id
+    }
+
     /// The idempotency key.
-    pub idempotence_key: TransactionIdempotenceKey,
+    pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
+        &self.idempotence_key
+    }
+
     /// The canonical status of the transaction.
-    pub status: TransactionStatus,
+    pub fn status(&self) -> &TransactionStatus {
+        &self.status
+    }
+
     /// The amount of the transaction.
-    pub amount: Money,
+    pub fn amount(&self) -> &Money {
+        &self.amount
+    }
+
     /// The MIT (merchant initiated type of the transaction)
-    pub merchant_initiated_type: Option<MerchantInitiatedType>,
+    pub fn merchant_initiated_type(&self) -> &Option<MerchantInitiatedType> {
+        &self.merchant_initiated_type
+    }
 }
 
 impl<'a> TryFrom<Input<'a>> for Transaction {

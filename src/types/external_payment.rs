@@ -15,10 +15,20 @@ use crate::types::{ExternalPaymentData, Transaction};
 /// The client should use `payment_data` to guide the customer through the completion process,
 /// then check transaction status via the `CheckTransaction` trait or handle webhook notifications.
 pub struct ExternalPayment {
+    pub(crate) transaction: Transaction,
+    pub(crate) payment_data: ExternalPaymentData,
+}
+
+impl ExternalPayment {
     /// The transaction to complete.
-    pub transaction: Transaction,
+    pub fn transaction(&self) -> &Transaction {
+        &self.transaction
+    }
+
     /// The data for payment completion.
-    pub payment_data: ExternalPaymentData,
+    pub fn payment_data(&self) -> &ExternalPaymentData {
+        &self.payment_data
+    }
 }
 
 impl<'a> TryFrom<Input<'a>> for ExternalPayment {

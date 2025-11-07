@@ -15,23 +15,44 @@ use crate::types::{Money, SubscriptionId, SubscriptionInterval, SubscriptionStat
 /// All timestamps are Unix timestamps (seconds since epoch).
 #[derive(Debug, Clone)]
 pub struct Subscription {
+    pub(crate) subscription_id: SubscriptionId,
+    pub(crate) status: SubscriptionStatus,
+    pub(crate) interval: SubscriptionInterval,
+    pub(crate) amount: Money,
+    pub(crate) created_at: i64,
+    pub(crate) next_billing_date: Option<i64>,
+}
+
+impl Subscription {
     /// Unique subscription identifier from the payment gateway
-    pub subscription_id: SubscriptionId,
+    pub fn subscription_id(&self) -> &SubscriptionId {
+        &self.subscription_id
+    }
 
     /// Current status of the subscription
-    pub status: SubscriptionStatus,
+    pub fn status(&self) -> &SubscriptionStatus {
+        &self.status
+    }
 
     /// Billing interval (how often the customer is charged)
-    pub interval: SubscriptionInterval,
+    pub fn interval(&self) -> &SubscriptionInterval {
+        &self.interval
+    }
 
     /// Amount charged per billing cycle
-    pub amount: Money,
+    pub fn amount(&self) -> &Money {
+        &self.amount
+    }
 
     /// Subscription creation timestamp (Unix timestamp)
-    pub created_at: i64,
+    pub fn created_at(&self) -> &i64 {
+        &self.created_at
+    }
 
     /// Next scheduled billing date (Unix timestamp, None if subscription is canceled/expired)
-    pub next_billing_date: Option<i64>,
+    pub fn next_billing_date(&self) -> &Option<i64> {
+        &self.next_billing_date
+    }
 }
 
 impl<'a> TryFrom<Input<'a>> for Subscription {

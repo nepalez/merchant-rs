@@ -93,22 +93,56 @@ use crate::types::{
 #[derive(Clone, Debug)]
 #[allow(clippy::upper_case_acronyms)]
 pub struct BNPL {
+    pub(crate) billing_address: Address,
+    pub(crate) email: EmailAddress,
+    pub(crate) full_name: FullName,
+    pub(crate) account_holder_type: AccountHolderType,
+    pub(crate) date_of_birth: Option<BirthDate>,
+    pub(crate) national_id: Option<NationalId>,
+    pub(crate) phone: Option<PhoneNumber>,
+    pub(crate) metadata: Option<Metadata>,
+}
+
+impl BNPL {
     /// User billing address
-    pub billing_address: Address,
+    pub fn billing_address(&self) -> &Address {
+        &self.billing_address
+    }
+
     /// User email address
-    pub email: EmailAddress,
+    pub fn email(&self) -> &EmailAddress {
+        &self.email
+    }
+
     /// User full name
-    pub full_name: FullName,
+    pub fn full_name(&self) -> &FullName {
+        &self.full_name
+    }
+
     /// Type of account holder (individual or company)
-    pub account_holder_type: AccountHolderType,
+    pub fn account_holder_type(&self) -> &AccountHolderType {
+        &self.account_holder_type
+    }
+
     /// User date of birth
-    pub date_of_birth: Option<BirthDate>,
+    pub fn date_of_birth(&self) -> &Option<BirthDate> {
+        &self.date_of_birth
+    }
+
     /// National identification number
-    pub national_id: Option<NationalId>,
+    pub fn national_id(&self) -> &Option<NationalId> {
+        &self.national_id
+    }
+
     /// User phone number
-    pub phone: Option<PhoneNumber>,
+    pub fn phone(&self) -> &Option<PhoneNumber> {
+        &self.phone
+    }
+
     /// Method-specific extensions
-    pub metadata: Option<Metadata>,
+    pub fn metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
 }
 
 // Marker implementations

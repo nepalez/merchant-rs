@@ -108,24 +108,56 @@ use crate::types::{
 /// - **GDPR**: Bank account data is PII, must follow data protection regulations
 #[derive(Clone, Debug)]
 pub struct BankPayment {
+    pub(crate) credentials: Credentials<BankPaymentCredentials>,
+    pub(crate) full_name: FullName,
+    pub(crate) account_type: AccountType,
+    pub(crate) holder_type: AccountHolderType,
+    pub(crate) metadata: Option<Metadata>,
+}
+
+impl BankPayment {
     /// The tokenizable credentials of the account
-    pub credentials: Credentials<BankPaymentCredentials>,
+    pub fn credentials(&self) -> &Credentials<BankPaymentCredentials> {
+        &self.credentials
+    }
+
     /// User full name as registered with the bank account
-    pub full_name: FullName,
+    pub fn full_name(&self) -> &FullName {
+        &self.full_name
+    }
+
     /// Type of bank account (checking or savings)
-    pub account_type: AccountType,
+    pub fn account_type(&self) -> &AccountType {
+        &self.account_type
+    }
+
     /// Type of account holder (individual or company)
-    pub holder_type: AccountHolderType,
+    pub fn holder_type(&self) -> &AccountHolderType {
+        &self.holder_type
+    }
+
     /// Method-specific extensions
-    pub metadata: Option<Metadata>,
+    pub fn metadata(&self) -> &Option<Metadata> {
+        &self.metadata
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct BankPaymentCredentials {
+    pub(crate) account_number: AccountNumber,
+    pub(crate) routing_number: RoutingNumber,
+}
+
+impl BankPaymentCredentials {
     /// The bank account number.
-    pub account_number: AccountNumber,
+    pub fn account_number(&self) -> &AccountNumber {
+        &self.account_number
+    }
+
     /// Bank routing identifier.
-    pub routing_number: RoutingNumber,
+    pub fn routing_number(&self) -> &RoutingNumber {
+        &self.routing_number
+    }
 }
 
 // Marker implementations

@@ -101,8 +101,14 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
 /// - **Sanctions screening**: Check addresses against OFAC and other sanctions lists
 #[derive(Debug, Clone)]
 pub struct CryptoPayment {
+    pub(crate) metadata: Metadata,
+}
+
+impl CryptoPayment {
     /// Crypto-specific extensions (currency, network, wallet address)
-    pub metadata: Metadata,
+    pub fn metadata(&self) -> &Metadata {
+        &self.metadata
+    }
 }
 
 // Marker implementations
