@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::Error;
 use crate::types::{
-    InternalPaymentMethod, Money, RecurrentPayment, Subscription, SubscriptionId,
+    Destinations, InternalPaymentMethod, RecurrentPayment, Subscription, SubscriptionId,
     SubscriptionInterval,
 };
 
@@ -65,7 +65,7 @@ pub trait RecurrentPayments {
     /// # Parameters
     ///
     /// * `subscription_id` - ID of the subscription to update
-    /// * `amount` - New amount (None to keep current)
+    /// * `destinations` - New payment destinations (None to keep current)
     /// * `interval` - New interval (None to keep current, may not be supported)
     ///
     /// # Returns
@@ -78,7 +78,7 @@ pub trait RecurrentPayments {
     async fn update_subscription(
         &self,
         _subscription_id: SubscriptionId,
-        _amount: Option<Money>,
+        _destinations: Option<Destinations>,
         _interval: Option<SubscriptionInterval>,
     ) -> Result<Subscription, Error> {
         Err(Error::NotSupported(

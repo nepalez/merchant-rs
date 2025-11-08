@@ -1,8 +1,7 @@
 use async_trait::async_trait;
-use rust_decimal::Decimal;
 
 use crate::Error;
-use crate::types::{InternalPaymentMethod, Payment, Transaction, TransactionId};
+use crate::types::{Destinations, InternalPaymentMethod, Payment, Transaction, TransactionId};
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -47,13 +46,13 @@ pub trait DeferredPayments {
 
     /// Capture previously authorized funds.
     ///
-    /// Debits funds that were reserved during authorization. Supports partial captures
-    /// by specifying an amount less than the authorized amount.
+    /// Debits funds reserved during authorization. Supports partial captures
+    /// and split payments to multiple recipients.
     ///
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the previously authorized transaction
-    /// * `amount` - Optional amount for partial capture (None captures full authorized amount)
+    /// * `destinations` - Payment destinations (platform or split between recipients)
     ///
     /// # Returns
     ///
@@ -61,6 +60,6 @@ pub trait DeferredPayments {
     async fn capture(
         &self,
         transaction_id: TransactionId,
-        amount: Option<Decimal>,
+        destinations: Destinations,
     ) -> Result<Transaction, Error>;
 }

@@ -1,14 +1,16 @@
 use std::convert::TryFrom;
 
+use iso_currency::Currency;
+
 use crate::Error;
 use crate::inputs::Subscription as Input;
-use crate::types::{Money, SubscriptionId, SubscriptionInterval, SubscriptionStatus};
+use crate::types::{Destinations, SubscriptionId, SubscriptionInterval, SubscriptionStatus};
 
 /// Subscription result returned by recurring payment operations
 ///
 /// Represents the state of a recurring billing subscription.
 /// Contains the subscription ID, current status, billing interval,
-/// amount charged per cycle, and billing schedule information.
+/// currency, payment destinations per billing cycle, and billing schedule information.
 ///
 /// # Timestamps
 ///
@@ -18,7 +20,8 @@ pub struct Subscription {
     pub(crate) subscription_id: SubscriptionId,
     pub(crate) status: SubscriptionStatus,
     pub(crate) interval: SubscriptionInterval,
-    pub(crate) amount: Money,
+    pub(crate) currency: Currency,
+    pub(crate) destinations: Destinations,
     pub(crate) created_at: i64,
     pub(crate) next_billing_date: Option<i64>,
 }
@@ -39,9 +42,14 @@ impl Subscription {
         &self.interval
     }
 
-    /// Amount charged per billing cycle
-    pub fn amount(&self) -> &Money {
-        &self.amount
+    /// Currency of the subscription billing
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
+
+    /// Payment destinations per billing cycle (platform or split between recipients)
+    pub fn destinations(&self) -> &Destinations {
+        &self.destinations
     }
 
     /// Subscription creation timestamp (Unix timestamp)
@@ -63,7 +71,8 @@ impl<'a> TryFrom<Input<'a>> for Subscription {
             subscription_id: input.subscription_id.try_into()?,
             status: input.status,
             interval: input.interval,
-            amount: input.amount,
+            currency: input.currency,
+            destinations: input.destinations.try_into()?,
             created_at: input.created_at,
             next_billing_date: input.next_billing_date,
         })

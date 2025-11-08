@@ -1,4 +1,7 @@
-use crate::types::{Money, SubscriptionInterval, SubscriptionStatus};
+use iso_currency::Currency;
+
+use crate::inputs::Destinations;
+use crate::types::{SubscriptionInterval, SubscriptionStatus};
 
 /// Information to build a subscription in Gateway adapters implementations.
 pub struct Subscription<'a> {
@@ -8,8 +11,10 @@ pub struct Subscription<'a> {
     pub status: SubscriptionStatus,
     /// Billing interval (how often the customer is charged).
     pub interval: SubscriptionInterval,
-    /// Amount charged per billing cycle.
-    pub amount: Money,
+    /// Currency of the subscription billing.
+    pub currency: Currency,
+    /// Payment destinations per billing cycle (platform or split between recipients).
+    pub destinations: Destinations,
     /// Subscription creation timestamp (Unix timestamp).
     pub created_at: i64,
     /// Next scheduled billing date (Unix timestamp, None if subscription is canceled/expired).

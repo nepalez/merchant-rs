@@ -47,7 +47,7 @@ mod tests {
     use super::*;
     use crate::AsUnsafeRef;
     use crate::inputs;
-    use crate::types::{MerchantInitiatedType, Money, TransactionStatus};
+    use crate::types::{MerchantInitiatedType, TransactionStatus};
     use iso_currency::Currency;
     use rust_decimal_macros::dec;
 
@@ -57,10 +57,8 @@ mod tests {
                 transaction_id: " txn_12345678 \n\t",
                 idempotence_key: " idempotence-key-123 \n\t",
                 status: TransactionStatus::Captured,
-                amount: Money {
-                    amount: dec!(100.00),
-                    currency: Currency::USD,
-                },
+                currency: Currency::USD,
+                destinations: inputs::Destinations::Platform(dec!(100.00)),
                 merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
             },
             payment_data: Default::default(),
@@ -85,8 +83,11 @@ mod tests {
                 external_payment.transaction.status,
                 TransactionStatus::Captured
             );
-            assert_eq!(external_payment.transaction.amount.amount, dec!(100.00));
-            assert_eq!(external_payment.transaction.amount.currency, Currency::USD);
+            assert_eq!(external_payment.transaction.currency, Currency::USD);
+            assert_eq!(
+                external_payment.transaction.destinations.total_amount(),
+                dec!(100.00)
+            );
             assert_eq!(
                 external_payment.transaction.merchant_initiated_type,
                 Some(MerchantInitiatedType::Recurring)

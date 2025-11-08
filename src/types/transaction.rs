@@ -1,22 +1,26 @@
 use std::convert::TryFrom;
 
+use iso_currency::Currency;
+
 use crate::Error;
 use crate::inputs::Transaction as Input;
 use crate::types::{
-    MerchantInitiatedType, Money, TransactionId, TransactionIdempotenceKey, TransactionStatus,
+    Destinations, MerchantInitiatedType, TransactionId, TransactionIdempotenceKey,
+    TransactionStatus,
 };
 
 /// Transaction result returned by payment gateway operations.
 ///
 /// Represents the outcome of a payment operation (charge, authorize, capture, refund, void).
 /// Contains the gateway-assigned transaction ID, idempotence key for duplicate detection,
-/// current transaction status, processed amount, and merchant-initiated transaction type if applicable.
+/// current transaction status, currency, payment destinations, and merchant-initiated transaction type if applicable.
 #[derive(Debug, Clone)]
 pub struct Transaction {
     pub(crate) transaction_id: TransactionId,
     pub(crate) idempotence_key: TransactionIdempotenceKey,
     pub(crate) status: TransactionStatus,
-    pub(crate) amount: Money,
+    pub(crate) currency: Currency,
+    pub(crate) destinations: Destinations,
     pub(crate) merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
@@ -36,9 +40,14 @@ impl Transaction {
         &self.status
     }
 
-    /// The amount of the transaction.
-    pub fn amount(&self) -> &Money {
-        &self.amount
+    /// The currency of the transaction.
+    pub fn currency(&self) -> Currency {
+        self.currency
+    }
+
+    /// The payment destinations (platform or split between recipients).
+    pub fn destinations(&self) -> &Destinations {
+        &self.destinations
     }
 
     /// The MIT (merchant initiated type of the transaction)
@@ -55,7 +64,8 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
             transaction_id: input.transaction_id.try_into()?,
             idempotence_key: input.idempotence_key.try_into()?,
             status: input.status,
-            amount: input.amount,
+            currency: input.currency,
+            destinations: input.destinations.try_into()?,
             merchant_initiated_type: input.merchant_initiated_type,
         })
     }
@@ -65,7 +75,7 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
 mod tests {
     use super::*;
     use crate::AsUnsafeRef;
-    use iso_currency::Currency;
+    use crate::inputs;
     use rust_decimal_macros::dec;
 
     fn valid_input() -> Input<'static> {
@@ -73,10 +83,8 @@ mod tests {
             transaction_id: " txn_12345678 \n\t",
             idempotence_key: " idempotence-key-123 \n\t",
             status: TransactionStatus::Captured,
-            amount: Money {
-                amount: dec!(100.00),
-                currency: Currency::USD,
-            },
+            currency: Currency::USD,
+            destinations: inputs::Destinations::Platform(dec!(100.00)),
             merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
         }
     }
@@ -90,8 +98,8 @@ mod tests {
             assert_eq!(transaction.transaction_id.as_ref(), "txn_12345678");
             assert_eq!(transaction.idempotence_key.as_ref(), "idempotence-key-123");
             assert_eq!(transaction.status, TransactionStatus::Captured);
-            assert_eq!(transaction.amount.amount, dec!(100.00));
-            assert_eq!(transaction.amount.currency, Currency::USD);
+            assert_eq!(transaction.currency, Currency::USD);
+            assert_eq!(transaction.destinations.total_amount(), dec!(100.00));
             assert_eq!(
                 transaction.merchant_initiated_type,
                 Some(MerchantInitiatedType::Recurring)
