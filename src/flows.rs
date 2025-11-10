@@ -1,7 +1,7 @@
 //! Declare flows that can be supported by payment gateways.
 
-mod adjust_payments;
 mod cancel_payments;
+pub mod change_authorization;
 mod check_transactions;
 mod deferred_payments;
 mod external_payments;
@@ -13,8 +13,8 @@ mod store_credentials;
 mod three_d_secure;
 mod verify_payment;
 
-pub use adjust_payments::AdjustPayments;
 pub use cancel_payments::CancelPayments;
+pub use change_authorization::{AdjustAuthorization, EditAuthorization};
 pub use check_transactions::CheckTransaction;
 pub use deferred_payments::DeferredPayments;
 pub use external_payments::ExternalPayments;
