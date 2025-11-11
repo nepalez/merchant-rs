@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{InternalPaymentMethod, TransactionId};
 
 /// Optional trait for payment gateways that support payment method verification.
@@ -62,7 +63,7 @@ use crate::types::{InternalPaymentMethod, TransactionId};
 /// * Require special merchant account configuration
 /// * Have different implementation approaches
 #[async_trait]
-pub trait VerifyPayment {
+pub trait VerifyPayment: Gateway {
     #[allow(private_bounds)]
     type Method: InternalPaymentMethod;
 

@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{Transaction, TransactionId};
 
 /// Payment gateway trait for canceling/voiding transactions.
@@ -27,7 +28,7 @@ use crate::types::{Transaction, TransactionId};
 /// * **ACH/Bank**: Before settlement date (1-3 business days)
 /// * **Other**: Varies by payment method and network
 #[async_trait]
-pub trait CancelPayments {
+pub trait CancelPayments: Gateway {
     /// Cancel/void a pending authorization or recent charge.
     ///
     /// Releases reserved funds for pending authorizations or reverses recent charges

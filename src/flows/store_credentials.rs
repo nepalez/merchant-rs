@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{StorablePaymentMethod, Token};
 
 /// Optional trait for payment gateways that support storing payment data in their vault.
@@ -8,7 +9,7 @@ use crate::types::{StorablePaymentMethod, Token};
 ///
 /// This trait can be used to support recurring payments and stored payment methods.
 #[async_trait]
-pub trait StoreCredentials {
+pub trait StoreCredentials: Gateway {
     #[allow(private_bounds)]
     type Method: StorablePaymentMethod;
 

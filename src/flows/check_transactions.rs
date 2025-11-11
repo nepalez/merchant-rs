@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{Transaction, TransactionId};
 
 /// Base mandatory trait for all payment gateway adapters.
@@ -22,7 +23,7 @@ use crate::types::{Transaction, TransactionId};
 /// `DeferredPayments`, etc.) are optional based on gateway capabilities.
 #[allow(private_bounds)]
 #[async_trait]
-pub trait CheckTransaction {
+pub trait CheckTransaction: Gateway {
     /// Retrieve transaction status and details by transaction ID.
     ///
     /// # Parameters

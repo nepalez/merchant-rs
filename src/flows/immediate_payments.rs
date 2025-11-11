@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{InternalPaymentMethod, Payment, Transaction};
 
 /// Payment gateway trait for one-step payment flows.
@@ -19,7 +20,7 @@ use crate::types::{InternalPaymentMethod, Payment, Transaction};
 ///
 /// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
-pub trait ImmediatePayments {
+pub trait ImmediatePayments: Gateway {
     #[allow(private_bounds)]
     type Method: InternalPaymentMethod;
 

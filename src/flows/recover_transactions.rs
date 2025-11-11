@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{Transaction, TransactionIdempotenceKey};
 
 /// Payment gateway trait for disaster recovery via transaction search.
@@ -30,7 +31,7 @@ use crate::types::{Transaction, TransactionIdempotenceKey};
 /// * **Support**: Stripe, Braintree, PayPal
 /// * **No support**: Adyen, crypto processors, voucher systems
 #[async_trait]
-pub trait RecoverTransactions {
+pub trait RecoverTransactions: Gateway {
     /// Async iterator type for paginated transaction results
     type Iterator: TransactionIterator;
 

@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{
     Destinations, InternalPaymentMethod, RecurrentPayment, Subscription, SubscriptionId,
     SubscriptionInterval,
@@ -22,7 +23,7 @@ use crate::types::{
 ///
 /// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
-pub trait RecurrentPayments {
+pub trait RecurrentPayments: Gateway {
     #[allow(private_bounds)]
     type Method: InternalPaymentMethod;
 

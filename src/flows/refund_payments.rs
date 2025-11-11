@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use rust_decimal::Decimal;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{Transaction, TransactionId};
 
 /// Payment gateway trait for refund operations.
@@ -39,7 +40,7 @@ use crate::types::{Transaction, TransactionId};
 /// gateway.refund(transaction_id, Some(Decimal::from(20))).await?;
 /// ```
 #[async_trait]
-pub trait RefundPayments {
+pub trait RefundPayments: Gateway {
     /// Refund a previously captured payment, either fully or partially.
     ///
     /// Returns funds to the customer's original payment method.

@@ -8,3 +8,6 @@ pub mod types;
 
 pub use as_unsafe_ref::AsUnsafeRef;
 pub use error::Error;
+
+/// Root trait for payment gateway adapters.
+pub trait Gateway {}

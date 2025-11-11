@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId};
 
 /// Payment gateway trait for asynchronous external payment flows.
@@ -34,7 +35,7 @@ use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, 
 ///
 /// * `Method` - Payment method type constrained to external methods (vouchers, BNPL, etc.)
 #[async_trait]
-pub trait ExternalPayments {
+pub trait ExternalPayments: Gateway {
     #[allow(private_bounds)]
     type Method: ExternalPaymentMethod;
 

@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 
 use crate::Error;
+use crate::Gateway;
 use crate::flows::change_authorization;
 use crate::types::{Destinations, InternalPaymentMethod, Payment, Transaction, TransactionId};
 
@@ -34,7 +35,7 @@ use crate::types::{Destinations, InternalPaymentMethod, Payment, Transaction, Tr
 ///   - `change_authorization::ChangesByTotal` - implements [`EditAuthorization`] trait
 ///   - `change_authorization::ChangesByDelta` - implements [`AdjustAuthorization`] trait
 #[async_trait]
-pub trait DeferredPayments {
+pub trait DeferredPayments: Gateway {
     #[allow(private_bounds)]
     type PaymentMethod: InternalPaymentMethod;
     #[allow(private_bounds)]
