@@ -28,7 +28,9 @@ pub trait ImmediatePayments: Gateway {
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing method and transaction details
+    /// * `payment` - Payment data containing method and transaction details.
+    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
+    ///   returns Ok before processing.
     ///
     /// # Returns
     ///

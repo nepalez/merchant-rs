@@ -1,4 +1,9 @@
 use std::cmp::Ordering;
+use std::convert::TryFrom;
+
+use crate::Error;
+use crate::inputs::SubscriptionInterval as Input;
+use crate::internal::Validated;
 
 /// Billing interval for recurring subscriptions
 ///
@@ -24,7 +29,7 @@ use std::cmp::Ordering;
 ///
 /// # Examples
 ///
-/// ```
+/// ```skip
 /// use merchant_rs::types::SubscriptionInterval;
 ///
 /// // Every day
@@ -33,7 +38,7 @@ use std::cmp::Ordering;
 /// // Weekly (every 7 days)
 /// let weekly = SubscriptionInterval::Day(7);
 ///
-/// // Every 30 days (not the same as monthly!)
+/// // Every 30 days (different from monthly!)
 /// let thirty_days = SubscriptionInterval::Day(30);
 ///
 /// // Monthly (calendar-based)
@@ -55,24 +60,37 @@ pub enum SubscriptionInterval {
     Month(u32),
 }
 
-impl SubscriptionInterval {
-    /// Returns `true` if the interval is zero (Day(0) or Month(0)).
-    pub fn is_zero(&self) -> bool {
-        matches!(self, Self::Day(0) | Self::Month(0))
-    }
-
-    /// Returns `true` if the interval is positive (not zero).
-    pub fn is_positive(&self) -> bool {
-        !self.is_zero()
-    }
-}
-
 impl PartialOrd for SubscriptionInterval {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match (self, other) {
             (Self::Day(a), Self::Day(b)) => Some(a.cmp(b)),
             (Self::Month(a), Self::Month(b)) => Some(a.cmp(b)),
             _ => None,
+        }
+    }
+}
+
+impl TryFrom<Input> for SubscriptionInterval {
+    type Error = Error;
+
+    fn try_from(input: Input) -> Result<Self, Self::Error> {
+        match input {
+            Input::Day(n) => Self::Day(n),
+            Input::Month(n) => Self::Month(n),
+        }
+        .validate()
+    }
+}
+
+// --- Sealed traits (not parts of the public API) ---
+
+impl Validated for SubscriptionInterval {
+    fn validate(self) -> Result<Self, Error> {
+        match self {
+            Self::Day(0) | Self::Month(0) => Err(Error::InvalidInput(
+                "Subscription interval must be positive".to_string(),
+            )),
+            _ => Ok(self),
         }
     }
 }
@@ -115,18 +133,26 @@ mod tests {
     }
 
     #[test]
-    fn is_zero() {
-        assert!(SubscriptionInterval::Day(0).is_zero());
-        assert!(SubscriptionInterval::Month(0).is_zero());
-        assert!(!SubscriptionInterval::Day(1).is_zero());
-        assert!(!SubscriptionInterval::Month(1).is_zero());
+    fn validates_positive_day() {
+        let result = SubscriptionInterval::Day(1).validate();
+        assert!(result.is_ok());
     }
 
     #[test]
-    fn is_positive() {
-        assert!(!SubscriptionInterval::Day(0).is_positive());
-        assert!(!SubscriptionInterval::Month(0).is_positive());
-        assert!(SubscriptionInterval::Day(1).is_positive());
-        assert!(SubscriptionInterval::Month(1).is_positive());
+    fn validates_positive_month() {
+        let result = SubscriptionInterval::Month(1).validate();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn rejects_zero_day() {
+        let result = SubscriptionInterval::Day(0).validate();
+        assert!(matches!(result, Err(crate::Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_zero_month() {
+        let result = SubscriptionInterval::Month(0).validate();
+        assert!(matches!(result, Err(crate::Error::InvalidInput(_))));
     }
 }

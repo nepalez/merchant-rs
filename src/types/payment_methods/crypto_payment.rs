@@ -106,6 +106,7 @@ pub struct CryptoPayment {
 
 impl CryptoPayment {
     /// Crypto-specific extensions (currency, network, wallet address)
+    #[inline]
     pub fn metadata(&self) -> &Metadata {
         &self.metadata
     }

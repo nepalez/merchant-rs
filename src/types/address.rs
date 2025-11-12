@@ -21,21 +21,25 @@ pub struct Address {
 
 impl Address {
     /// The country-specific code of the region (ISO 3166-2 alpha-2).
+    #[inline]
     pub fn country_code(&self) -> &CountryCode {
         &self.country_code
     }
 
     /// The country-specific postal code of the address.
+    #[inline]
     pub fn postal_code(&self) -> &PostalCode {
         &self.postal_code
     }
 
     /// The name of the city, town, village, or another locality.
+    #[inline]
     pub fn city(&self) -> &City {
         &self.city
     }
 
     /// The street address, P.O. box, company name, c/o, etc.
+    #[inline]
     pub fn line(&self) -> &StreetAddress {
         &self.line
     }

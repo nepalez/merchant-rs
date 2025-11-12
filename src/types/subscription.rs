@@ -4,13 +4,13 @@ use iso_currency::Currency;
 
 use crate::Error;
 use crate::inputs::Subscription as Input;
-use crate::types::{Destinations, SubscriptionId, SubscriptionInterval, SubscriptionStatus};
+use crate::types::{Recipients, SubscriptionId, SubscriptionInterval, SubscriptionStatus};
 
 /// Subscription result returned by recurring payment operations
 ///
 /// Represents the state of a recurring billing subscription.
 /// Contains the subscription ID, current status, billing interval,
-/// currency, payment destinations per billing cycle, and billing schedule information.
+/// currency, payment recipients per billing cycle, and billing schedule information.
 ///
 /// # Timestamps
 ///
@@ -21,45 +21,52 @@ pub struct Subscription {
     pub(crate) status: SubscriptionStatus,
     pub(crate) interval: SubscriptionInterval,
     pub(crate) currency: Currency,
-    pub(crate) destinations: Destinations,
+    pub(crate) recipients: Option<Recipients>,
     pub(crate) created_at: i64,
     pub(crate) next_billing_date: Option<i64>,
 }
 
 impl Subscription {
     /// Unique subscription identifier from the payment gateway
+    #[inline]
     pub fn subscription_id(&self) -> &SubscriptionId {
         &self.subscription_id
     }
 
     /// Current status of the subscription
+    #[inline]
     pub fn status(&self) -> &SubscriptionStatus {
         &self.status
     }
 
     /// Billing interval (how often the customer is charged)
+    #[inline]
     pub fn interval(&self) -> &SubscriptionInterval {
         &self.interval
     }
 
     /// Currency of the subscription billing
+    #[inline]
     pub fn currency(&self) -> Currency {
         self.currency
     }
 
-    /// Payment destinations per billing cycle (platform or split between recipients)
-    pub fn destinations(&self) -> &Destinations {
-        &self.destinations
+    /// Payment recipients per billing cycle (None = platform receives all)
+    #[inline]
+    pub fn recipients(&self) -> Option<&Recipients> {
+        self.recipients.as_ref()
     }
 
     /// Subscription creation timestamp (Unix timestamp)
+    #[inline]
     pub fn created_at(&self) -> &i64 {
         &self.created_at
     }
 
     /// Next scheduled billing date (Unix timestamp, None if subscription is canceled/expired)
-    pub fn next_billing_date(&self) -> &Option<i64> {
-        &self.next_billing_date
+    #[inline]
+    pub fn next_billing_date(&self) -> Option<i64> {
+        self.next_billing_date
     }
 }
 
@@ -70,9 +77,9 @@ impl<'a> TryFrom<Input<'a>> for Subscription {
         Ok(Self {
             subscription_id: input.subscription_id.try_into()?,
             status: input.status,
-            interval: input.interval,
+            interval: input.interval.try_into()?,
             currency: input.currency,
-            destinations: input.destinations.try_into()?,
+            recipients: input.recipients.map(TryFrom::try_from).transpose()?,
             created_at: input.created_at,
             next_billing_date: input.next_billing_date,
         })

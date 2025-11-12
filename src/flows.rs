@@ -20,7 +20,10 @@ pub use deferred_payments::DeferredPayments;
 pub use external_payments::ExternalPayments;
 pub use immediate_payments::ImmediatePayments;
 pub use recover_transactions::{RecoverTransactions, TransactionIterator};
-pub use recurrent_payments::RecurrentPayments;
+pub use recurrent_payments::{
+    EditSubscriptionAmount, EditSubscriptionInterval, EditSubscriptionRecipients,
+    PauseSubscriptions, RecurrentPayments,
+};
 pub use refund_payments::RefundPayments;
 pub use store_credentials::StoreCredentials;
 pub use three_d_secure::ThreeDSecure;

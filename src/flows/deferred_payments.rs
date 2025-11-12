@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use crate::Error;
 use crate::Gateway;
 use crate::flows::change_authorization;
-use crate::types::{Destinations, InternalPaymentMethod, Payment, Transaction, TransactionId};
+use crate::types::{InternalPaymentMethod, Payment, Recipients, Transaction, TransactionId};
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -48,7 +48,9 @@ pub trait DeferredPayments: Gateway {
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing method and transaction details
+    /// * `payment` - Payment data containing method and transaction details.
+    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
+    ///   returns Ok before processing.
     ///
     /// # Returns
     ///
@@ -63,13 +65,15 @@ pub trait DeferredPayments: Gateway {
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the previously authorized transaction
-    /// * `destinations` - Optional payment destinations:
-    ///   - `None`: Capture using the destinations specified during authorization
-    ///   - `Some(destinations)`: Override authorization destinations (partial capture
-    ///     or split modification). Not all gateways support destination override:
+    /// * `recipients` - Optional payment recipients:
+    ///   - `None`: Capture using the recipients specified during authorization
+    ///   - `Some(recipients)`: Override authorization recipients (partial capture
+    ///     or split modification). Not all gateways support recipient override:
     ///     * **Adyen, Checkout.com**: Support full override
     ///     * **Stripe, PayPal, Braintree**: Only amount can be changed (partial capture),
     ///       split configuration remains from authorization
+    ///   Implementations should validate that `recipients.as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
+    ///   returns Ok before processing.
     ///
     /// # Returns
     ///
@@ -77,6 +81,6 @@ pub trait DeferredPayments: Gateway {
     async fn capture(
         &self,
         transaction_id: TransactionId,
-        destinations: Option<Destinations>,
+        recipients: Option<Recipients>,
     ) -> Result<Transaction, Error>;
 }

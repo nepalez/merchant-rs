@@ -101,23 +101,27 @@ pub struct CashVoucher {
 
 impl CashVoucher {
     /// User full name
+    #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
 
     /// User billing address
-    pub fn billing_address(&self) -> &Option<Address> {
-        &self.billing_address
+    #[inline]
+    pub fn billing_address(&self) -> Option<&Address> {
+        self.billing_address.as_ref()
     }
 
     /// National identification number (CPF/CNPJ for Boleto)
-    pub fn national_id(&self) -> &Option<NationalId> {
-        &self.national_id
+    #[inline]
+    pub fn national_id(&self) -> Option<&NationalId> {
+        self.national_id.as_ref()
     }
 
     /// Method-specific extensions
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
+    #[inline]
+    pub fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref()
     }
 }
 

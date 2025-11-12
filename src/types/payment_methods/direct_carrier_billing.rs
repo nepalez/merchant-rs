@@ -100,13 +100,15 @@ pub struct DirectCarrierBilling {
 
 impl DirectCarrierBilling {
     /// User phone number (primary payment identifier)
+    #[inline]
     pub fn phone(&self) -> &PhoneNumber {
         &self.phone
     }
 
     /// Carrier-specific extensions
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
+    #[inline]
+    pub fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref()
     }
 }
 

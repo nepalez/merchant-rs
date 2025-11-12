@@ -117,28 +117,33 @@ pub struct BankPayment {
 
 impl BankPayment {
     /// The tokenizable credentials of the account
+    #[inline]
     pub fn credentials(&self) -> &Credentials<BankPaymentCredentials> {
         &self.credentials
     }
 
     /// User full name as registered with the bank account
+    #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
 
     /// Type of bank account (checking or savings)
+    #[inline]
     pub fn account_type(&self) -> &AccountType {
         &self.account_type
     }
 
     /// Type of account holder (individual or company)
+    #[inline]
     pub fn holder_type(&self) -> &AccountHolderType {
         &self.holder_type
     }
 
     /// Method-specific extensions
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
+    #[inline]
+    pub fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref()
     }
 }
 
@@ -150,11 +155,13 @@ pub struct BankPaymentCredentials {
 
 impl BankPaymentCredentials {
     /// The bank account number.
+    #[inline]
     pub fn account_number(&self) -> &AccountNumber {
         &self.account_number
     }
 
     /// Bank routing identifier.
+    #[inline]
     pub fn routing_number(&self) -> &RoutingNumber {
         &self.routing_number
     }

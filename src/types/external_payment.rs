@@ -21,11 +21,13 @@ pub struct ExternalPayment {
 
 impl ExternalPayment {
     /// The transaction to complete.
+    #[inline]
     pub fn transaction(&self) -> &Transaction {
         &self.transaction
     }
 
     /// The data for payment completion.
+    #[inline]
     pub fn payment_data(&self) -> &ExternalPaymentData {
         &self.payment_data
     }
@@ -49,7 +51,6 @@ mod tests {
     use crate::inputs;
     use crate::types::{MerchantInitiatedType, TransactionStatus};
     use iso_currency::Currency;
-    use rust_decimal_macros::dec;
 
     fn valid_input() -> Input<'static> {
         Input {
@@ -58,7 +59,7 @@ mod tests {
                 idempotence_key: " idempotence-key-123 \n\t",
                 status: TransactionStatus::Captured,
                 currency: Currency::USD,
-                destinations: inputs::Destinations::Platform(dec!(100.00)),
+                recipients: None,
                 merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
             },
             payment_data: Default::default(),
@@ -84,10 +85,7 @@ mod tests {
                 TransactionStatus::Captured
             );
             assert_eq!(external_payment.transaction.currency, Currency::USD);
-            assert_eq!(
-                external_payment.transaction.destinations.total_amount(),
-                dec!(100.00)
-            );
+            assert!(external_payment.transaction.recipients.is_none());
             assert_eq!(
                 external_payment.transaction.merchant_initiated_type,
                 Some(MerchantInitiatedType::Recurring)

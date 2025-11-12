@@ -92,6 +92,7 @@ pub struct StoredCard {
 }
 
 impl StoredCard {
+    #[inline]
     pub fn credentials(&self) -> &Credentials<StoredCardCredentials> {
         &self.credentials
     }
@@ -110,16 +111,19 @@ pub struct StoredCardCredentials {
 
 impl StoredCardCredentials {
     /// Primary Account Number (PAN)
+    #[inline]
     pub fn number(&self) -> &PrimaryAccountNumber {
         &self.number
     }
 
     /// Card expiration date (month and year)
+    #[inline]
     pub fn card_expiry(&self) -> &CardExpiry {
         &self.card_expiry
     }
 
     /// Cardholder name as embossed on the card
+    #[inline]
     pub fn holder_name(&self) -> &CardHolderName {
         &self.holder_name
     }

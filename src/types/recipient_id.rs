@@ -28,7 +28,7 @@ impl<'a> TryFrom<&'a str> for RecipientId {
 
     #[inline]
     fn try_from(input: &'a str) -> Result<Self, Self::Error> {
-        Self::sanitize(input).validate()
+        Self::validate(Self::sanitize(input))
     }
 }
 

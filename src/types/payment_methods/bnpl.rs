@@ -105,43 +105,51 @@ pub struct BNPL {
 
 impl BNPL {
     /// User billing address
+    #[inline]
     pub fn billing_address(&self) -> &Address {
         &self.billing_address
     }
 
     /// User email address
+    #[inline]
     pub fn email(&self) -> &EmailAddress {
         &self.email
     }
 
     /// User full name
+    #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
 
     /// Type of account holder (individual or company)
+    #[inline]
     pub fn account_holder_type(&self) -> &AccountHolderType {
         &self.account_holder_type
     }
 
     /// User date of birth
-    pub fn date_of_birth(&self) -> &Option<BirthDate> {
-        &self.date_of_birth
+    #[inline]
+    pub fn date_of_birth(&self) -> Option<&BirthDate> {
+        self.date_of_birth.as_ref()
     }
 
     /// National identification number
-    pub fn national_id(&self) -> &Option<NationalId> {
-        &self.national_id
+    #[inline]
+    pub fn national_id(&self) -> Option<&NationalId> {
+        self.national_id.as_ref()
     }
 
     /// User phone number
-    pub fn phone(&self) -> &Option<PhoneNumber> {
-        &self.phone
+    #[inline]
+    pub fn phone(&self) -> Option<&PhoneNumber> {
+        self.phone.as_ref()
     }
 
     /// Method-specific extensions
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
+    #[inline]
+    pub fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref()
     }
 }
 

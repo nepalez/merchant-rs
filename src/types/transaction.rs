@@ -5,54 +5,59 @@ use iso_currency::Currency;
 use crate::Error;
 use crate::inputs::Transaction as Input;
 use crate::types::{
-    Destinations, MerchantInitiatedType, TransactionId, TransactionIdempotenceKey,
-    TransactionStatus,
+    MerchantInitiatedType, Recipients, TransactionId, TransactionIdempotenceKey, TransactionStatus,
 };
 
 /// Transaction result returned by payment gateway operations.
 ///
 /// Represents the outcome of a payment operation (charge, authorize, capture, refund, void).
 /// Contains the gateway-assigned transaction ID, idempotence key for duplicate detection,
-/// current transaction status, currency, payment destinations, and merchant-initiated transaction type if applicable.
+/// current transaction status, currency, payment recipients, and merchant-initiated transaction type if applicable.
 #[derive(Debug, Clone)]
 pub struct Transaction {
     pub(crate) transaction_id: TransactionId,
     pub(crate) idempotence_key: TransactionIdempotenceKey,
     pub(crate) status: TransactionStatus,
     pub(crate) currency: Currency,
-    pub(crate) destinations: Destinations,
+    pub(crate) recipients: Option<Recipients>,
     pub(crate) merchant_initiated_type: Option<MerchantInitiatedType>,
 }
 
 impl Transaction {
     /// The unique transaction ID returned by the payment gateway.
+    #[inline]
     pub fn transaction_id(&self) -> &TransactionId {
         &self.transaction_id
     }
 
     /// The idempotency key.
+    #[inline]
     pub fn idempotence_key(&self) -> &TransactionIdempotenceKey {
         &self.idempotence_key
     }
 
     /// The canonical status of the transaction.
+    #[inline]
     pub fn status(&self) -> &TransactionStatus {
         &self.status
     }
 
     /// The currency of the transaction.
+    #[inline]
     pub fn currency(&self) -> Currency {
         self.currency
     }
 
-    /// The payment destinations (platform or split between recipients).
-    pub fn destinations(&self) -> &Destinations {
-        &self.destinations
+    /// The payment recipients (None = platform receives all).
+    #[inline]
+    pub fn recipients(&self) -> Option<&Recipients> {
+        self.recipients.as_ref()
     }
 
     /// The MIT (merchant initiated type of the transaction)
-    pub fn merchant_initiated_type(&self) -> &Option<MerchantInitiatedType> {
-        &self.merchant_initiated_type
+    #[inline]
+    pub fn merchant_initiated_type(&self) -> Option<&MerchantInitiatedType> {
+        self.merchant_initiated_type.as_ref()
     }
 }
 
@@ -65,7 +70,7 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
             idempotence_key: input.idempotence_key.try_into()?,
             status: input.status,
             currency: input.currency,
-            destinations: input.destinations.try_into()?,
+            recipients: input.recipients.map(TryFrom::try_from).transpose()?,
             merchant_initiated_type: input.merchant_initiated_type,
         })
     }
@@ -75,8 +80,6 @@ impl<'a> TryFrom<Input<'a>> for Transaction {
 mod tests {
     use super::*;
     use crate::AsUnsafeRef;
-    use crate::inputs;
-    use rust_decimal_macros::dec;
 
     fn valid_input() -> Input<'static> {
         Input {
@@ -84,7 +87,7 @@ mod tests {
             idempotence_key: " idempotence-key-123 \n\t",
             status: TransactionStatus::Captured,
             currency: Currency::USD,
-            destinations: inputs::Destinations::Platform(dec!(100.00)),
+            recipients: None,
             merchant_initiated_type: Some(MerchantInitiatedType::Recurring),
         }
     }
@@ -99,7 +102,7 @@ mod tests {
             assert_eq!(transaction.idempotence_key.as_ref(), "idempotence-key-123");
             assert_eq!(transaction.status, TransactionStatus::Captured);
             assert_eq!(transaction.currency, Currency::USD);
-            assert_eq!(transaction.destinations.total_amount(), dec!(100.00));
+            assert!(transaction.recipients.is_none());
             assert_eq!(
                 transaction.merchant_initiated_type,
                 Some(MerchantInitiatedType::Recurring)

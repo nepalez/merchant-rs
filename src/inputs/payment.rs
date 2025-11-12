@@ -1,6 +1,7 @@
 use iso_currency::Currency;
+use rust_decimal::Decimal;
 
-use crate::inputs::Destinations;
+use crate::inputs::Recipients;
 use crate::types::{MerchantInitiatedType, StoredCredentialUsage};
 
 /// Insecure structure representing a payment.
@@ -9,8 +10,10 @@ pub struct Payment<'a, Method: 'a> {
     pub method: Method,
     /// The currency for this payment
     pub currency: Currency,
-    /// The payment destinations (platform or split between recipients)
-    pub destinations: Destinations,
+    /// Total payment amount
+    pub total_amount: Decimal,
+    /// Optional payment recipients (None = the platform receives all)
+    pub recipients: Option<Recipients<'a>>,
     /// The idempotency key
     pub idempotence_key: &'a str,
     /// The scope of the payment initiated by the merchant

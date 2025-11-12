@@ -124,21 +124,25 @@ pub struct CreditCard {
 
 impl CreditCard {
     /// Card Verification Value (CVV/CVC/CID)
+    #[inline]
     pub fn cvv(&self) -> &CVV {
         &self.cvv
     }
 
     /// Primary Account Number (PAN)
+    #[inline]
     pub fn number(&self) -> &PrimaryAccountNumber {
         &self.number
     }
 
     /// Card expiration date (month and year)
+    #[inline]
     pub fn card_expiry(&self) -> &CardExpiry {
         &self.card_expiry
     }
 
     /// Cardholder name as embossed on the card
+    #[inline]
     pub fn holder_name(&self) -> &CardHolderName {
         &self.holder_name
     }

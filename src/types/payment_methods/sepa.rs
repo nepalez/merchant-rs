@@ -96,21 +96,25 @@ pub struct SEPA {
 
 impl SEPA {
     /// International Bank Account Number
+    #[inline]
     pub fn credentials(&self) -> &Credentials<SEPACredentials> {
         &self.credentials
     }
 
     /// User billing address (required per PSD2 AML)
+    #[inline]
     pub fn billing_address(&self) -> &Address {
         &self.billing_address
     }
 
     /// User email for transaction notifications
+    #[inline]
     pub fn email(&self) -> &EmailAddress {
         &self.email
     }
 
     /// User full name as registered with bank
+    #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
@@ -124,6 +128,7 @@ pub struct SEPACredentials {
 
 impl SEPACredentials {
     /// International Bank Account Number
+    #[inline]
     pub fn iban(&self) -> &IBAN {
         &self.iban
     }

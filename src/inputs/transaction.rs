@@ -1,6 +1,6 @@
 use iso_currency::Currency;
 
-use crate::inputs::Destinations;
+use crate::inputs::Recipients;
 use crate::types::{MerchantInitiatedType, TransactionStatus};
 
 /// Information to build a transaction in Gateway adapters implementations.
@@ -13,8 +13,8 @@ pub struct Transaction<'a> {
     pub status: TransactionStatus,
     /// The currency of the transaction.
     pub currency: Currency,
-    /// The payment destinations (platform or split between recipients).
-    pub destinations: Destinations,
+    /// The payment recipients.
+    pub recipients: Option<Recipients<'a>>,
     /// The MIT (merchant initiated type of the transaction)
     pub merchant_initiated_type: Option<MerchantInitiatedType>,
 }

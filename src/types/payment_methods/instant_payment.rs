@@ -124,53 +124,63 @@ pub struct InstantAccount {
 
 impl InstantAccount {
     /// User email for transaction notifications
+    #[inline]
     pub fn email(&self) -> &EmailAddress {
         &self.email
     }
 
     /// User full name as registered with a bank
+    #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name
     }
 
     /// Bank account number (CLABE for SPEI)
-    pub fn account_number(&self) -> &Option<AccountNumber> {
-        &self.account_number
+    #[inline]
+    pub fn account_number(&self) -> Option<&AccountNumber> {
+        self.account_number.as_ref()
     }
 
     /// Bank identifier code
-    pub fn bank_code(&self) -> &Option<BankCode> {
-        &self.bank_code
+    #[inline]
+    pub fn bank_code(&self) -> Option<&BankCode> {
+        self.bank_code.as_ref()
     }
 
     /// User billing address
-    pub fn billing_address(&self) -> &Option<Address> {
-        &self.billing_address
+    #[inline]
+    pub fn billing_address(&self) -> Option<&Address> {
+        self.billing_address.as_ref()
     }
 
     /// Type of user (person or organization)
+    #[inline]
     pub fn holder_type(&self) -> &AccountHolderType {
         &self.holder_type
     }
 
     /// National identification number (tax ID)
-    pub fn national_id(&self) -> &Option<NationalId> {
-        &self.national_id
+    #[inline]
+    pub fn national_id(&self) -> Option<&NationalId> {
+        self.national_id.as_ref()
     }
 
     /// User phone number
-    pub fn phone(&self) -> &Option<PhoneNumber> {
-        &self.phone
+    #[inline]
+    pub fn phone(&self) -> Option<&PhoneNumber> {
+        self.phone.as_ref()
     }
 
     /// Virtual Payment Address (UPI)
-    pub fn virtual_payment_address(&self) -> &Option<VirtualPaymentAddress> {
-        &self.virtual_payment_address
+    #[inline]
+    pub fn virtual_payment_address(&self) -> Option<&VirtualPaymentAddress> {
+        self.virtual_payment_address.as_ref()
     }
 
     /// Method-specific extensions
-    pub fn metadata(&self) -> &Option<Metadata> {
-        &self.metadata
+    #[inline]
+    pub fn metadata(&self) -> Option<&Metadata> {
+        self.metadata.as_ref()
     }
 }
 

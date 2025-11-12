@@ -1,9 +1,10 @@
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 
 use crate::Error;
 use crate::Gateway;
 use crate::types::{
-    Destinations, InternalPaymentMethod, RecurrentPayment, Subscription, SubscriptionId,
+    InternalPaymentMethod, Recipients, RecurrentPayment, Subscription, SubscriptionId,
     SubscriptionInterval,
 };
 
@@ -31,7 +32,9 @@ pub trait RecurrentPayments: Gateway {
     ///
     /// # Parameters
     ///
-    /// * `payment` - Recurrent payment data containing method, amount, interval, and idempotence key
+    /// * `payment` - Recurrent payment data containing method, amount, interval, and idempotence key.
+    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
+    ///   returns Ok before processing.
     ///
     /// # Returns
     ///
@@ -53,41 +56,9 @@ pub trait RecurrentPayments: Gateway {
     /// # Returns
     ///
     /// Updated subscription record with a canceled status
-    async fn cancel_subscription(
-        &self,
-        subscription_id: SubscriptionId,
-    ) -> Result<Subscription, Error>;
+    async fn cancel_subscription(&self, subscription_id: SubscriptionId) -> Result<(), Error>;
 
-    /// Update an existing subscription.
-    ///
-    /// Updates subscription parameters. Not all gateways support all updates.
-    /// Interval changes may not be supported by some gateways.
-    ///
-    /// # Parameters
-    ///
-    /// * `subscription_id` - ID of the subscription to update
-    /// * `destinations` - New payment destinations (None to keep current)
-    /// * `interval` - New interval (None to keep current, may not be supported)
-    ///
-    /// # Returns
-    ///
-    /// Updated subscription record
-    ///
-    /// # Default Implementation
-    ///
-    /// Returns `Error::NotSupported` by default. Override if gateway supports updates.
-    async fn update_subscription(
-        &self,
-        _subscription_id: SubscriptionId,
-        _destinations: Option<Destinations>,
-        _interval: Option<SubscriptionInterval>,
-    ) -> Result<Subscription, Error> {
-        Err(Error::NotSupported(
-            "Subscription updates are not supported by this gateway".into(),
-        ))
-    }
-
-    /// Get the current status of a subscription.
+    /// Get the current subscription details.
     ///
     /// # Parameters
     ///
@@ -96,15 +67,29 @@ pub trait RecurrentPayments: Gateway {
     /// # Returns
     ///
     /// Current subscription record
-    async fn subscription_status(
+    async fn get_subscription(
         &self,
         subscription_id: SubscriptionId,
     ) -> Result<Subscription, Error>;
+}
 
+/// Optional trait for gateways that support pausing and resuming subscriptions.
+///
+/// Many payment gateways allow temporarily pausing a subscription without canceling it,
+/// which is useful for customers who want to temporarily suspend service.
+///
+/// # Examples of Supporting Gateways
+///
+/// * Stripe, Razorpay, Square, Xendit, Conekta, Paddle, Chargebee
+///
+/// # Examples of Non-Supporting Gateways
+///
+/// * Authorize.Net (requires cancel + recreate workaround)
+#[async_trait]
+pub trait PauseSubscriptions: RecurrentPayments {
     /// Pause a subscription temporarily.
     ///
     /// Temporarily stops billing without canceling the subscription.
-    /// Not all gateways support this operation.
     ///
     /// # Parameters
     ///
@@ -112,24 +97,12 @@ pub trait RecurrentPayments: Gateway {
     ///
     /// # Returns
     ///
-    /// Updated subscription record with paused status
-    ///
-    /// # Default Implementation
-    ///
-    /// Returns `Error::NotSupported` by default. Override if gateway supports pausing.
-    async fn pause_subscription(
-        &self,
-        _subscription_id: SubscriptionId,
-    ) -> Result<Subscription, Error> {
-        Err(Error::NotSupported(
-            "Pausing subscriptions is not supported by this gateway".into(),
-        ))
-    }
+    /// Returns `Ok(())` on success
+    async fn pause_subscription(&self, subscription_id: SubscriptionId) -> Result<(), Error>;
 
     /// Resume a paused subscription.
     ///
     /// Resumes billing on a previously paused subscription.
-    /// Not all gateways support this operation.
     ///
     /// # Parameters
     ///
@@ -137,17 +110,86 @@ pub trait RecurrentPayments: Gateway {
     ///
     /// # Returns
     ///
-    /// Updated subscription record with active status
+    /// Returns `Ok(())` on success
+    async fn resume_subscription(&self, subscription_id: SubscriptionId) -> Result<(), Error>;
+}
+
+/// Optional trait for gateways that support editing subscription amount.
+///
+/// Most gateways with subscription support allow changing the recurring payment amount.
+///
+/// # Examples of Supporting Gateways
+///
+/// * Stripe, Razorpay, MercadoPago, GoCardless, Braintree, Paddle, Chargebee
+#[async_trait]
+pub trait EditSubscriptionAmount: RecurrentPayments {
+    /// Edit the amount of an existing subscription.
     ///
-    /// # Default Implementation
+    /// # Parameters
     ///
-    /// Returns `Error::NotSupported` by default. Override if gateway supports resuming.
-    async fn resume_subscription(
+    /// * `subscription_id` - ID of the subscription to edit
+    /// * `amount` - New subscription amount
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success
+    async fn edit_subscription_amount(
         &self,
-        _subscription_id: SubscriptionId,
-    ) -> Result<Subscription, Error> {
-        Err(Error::NotSupported(
-            "Resuming subscriptions is not supported by this gateway".into(),
-        ))
-    }
+        subscription_id: SubscriptionId,
+        total_amount: Decimal,
+    ) -> Result<(), Error>;
+}
+
+/// Optional trait for gateways that support editing subscription payment recipients.
+///
+/// Only applicable to gateways with split payment support (Gateway::MAX_ADDITIONAL_RECIPIENTS > 0).
+///
+/// # Examples of Supporting Gateways
+///
+/// * Gateways with split payment capabilities
+#[async_trait]
+pub trait EditSubscriptionRecipients: RecurrentPayments {
+    /// Edit the payment recipients (split configuration) of an existing subscription.
+    ///
+    /// # Parameters
+    ///
+    /// * `subscription_id` - ID of the subscription to edit
+    /// * `recipients` - New payment recipients.
+    ///   Implementations should validate that `recipients.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS)`
+    ///   returns Ok before processing.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success
+    async fn edit_subscription_recipients(
+        &self,
+        subscription_id: SubscriptionId,
+        recipients: Recipients,
+    ) -> Result<(), Error>;
+}
+
+/// Optional trait for gateways that support changing subscription billing interval.
+///
+/// Less commonly supported than amount edits. Check gateway documentation for availability.
+///
+/// # Examples of Supporting Gateways
+///
+/// * Check specific gateway documentation (rare capability)
+#[async_trait]
+pub trait EditSubscriptionInterval: RecurrentPayments {
+    /// Edit the billing interval of an existing subscription.
+    ///
+    /// # Parameters
+    ///
+    /// * `subscription_id` - ID of the subscription to edit
+    /// * `interval` - New billing interval
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` on success
+    async fn edit_subscription_interval(
+        &self,
+        subscription_id: SubscriptionId,
+        interval: SubscriptionInterval,
+    ) -> Result<(), Error>;
 }
