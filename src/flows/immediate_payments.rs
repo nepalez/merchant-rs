@@ -1,8 +1,12 @@
 use async_trait::async_trait;
+use iso_currency::Currency;
+use rust_decimal::Decimal;
 
-use crate::Error;
-use crate::Gateway;
-use crate::types::{InternalPaymentMethod, Payment, Transaction};
+use crate::types::{
+    InternalPaymentMethod, MerchantInitiatedType, Recipients, StoredCredentialUsage, Transaction,
+    TransactionIdempotenceKey,
+};
+use crate::{Error, Gateway};
 
 /// Payment gateway trait for one-step payment flows.
 ///
@@ -20,10 +24,11 @@ use crate::types::{InternalPaymentMethod, Payment, Transaction};
 ///
 /// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
-pub trait ImmediatePayments: Gateway {
-    #[allow(private_bounds)]
-    type Method: InternalPaymentMethod;
-
+#[allow(private_bounds)]
+pub trait ImmediatePayments: Gateway
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Immediately charge the payment (authorization and capture in one step).
     ///
     /// # Parameters
@@ -35,5 +40,14 @@ pub trait ImmediatePayments: Gateway {
     /// # Returns
     ///
     /// Transaction record with status indicating success or failure
-    async fn charge(&self, payment: Payment<Self::Method>) -> Result<Transaction, Error>;
+    async fn charge(
+        &self,
+        payment_method: <Self as Gateway>::PaymentMethod,
+        currency: Currency,
+        total_amount: Decimal,
+        recipients: Option<Recipients>,
+        idempotence_key: TransactionIdempotenceKey,
+        merchant_initiated_type: Option<MerchantInitiatedType>,
+        stored_credential_usage: Option<StoredCredentialUsage>,
+    ) -> Result<Transaction, Error>;
 }

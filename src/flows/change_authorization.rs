@@ -18,9 +18,9 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 
-use crate::Error;
 use crate::flows::DeferredPayments;
-use crate::types::{Transaction, TransactionId};
+use crate::types::{InternalPaymentMethod, Transaction, TransactionId};
+use crate::{Error, Gateway};
 
 /// Sealed trait for authorization change model marker types.
 ///
@@ -91,7 +91,11 @@ impl Sealed for ChangesByDelta {}
 /// * Amount cap: 115-500% of original or fixed limit ($75-500)
 /// * Card networks: Primarily Visa, Mastercard, Amex, Discover
 #[async_trait]
-pub trait EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTotal> {
+#[allow(private_bounds)]
+pub trait EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTotal>
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Edit authorization to a new total amount.
     ///
     /// Changes the authorized amount before capture by specifying the complete
@@ -145,7 +149,11 @@ pub trait EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTo
 /// * Amount cap: 115-500% of original or fixed limit ($75-500)
 /// * Card networks: Primarily Visa, Mastercard, Amex, Discover
 #[async_trait]
-pub trait AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesByDelta> {
+#[allow(private_bounds)]
+pub trait AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesByDelta>
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Increment authorization by adding an amount.
     ///
     /// Increases the authorized amount before capture by specifying how much

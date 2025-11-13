@@ -1,8 +1,9 @@
-use async_trait::async_trait;
-
 use crate::Error;
 use crate::Gateway;
 use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId};
+use async_trait::async_trait;
+use iso_currency::Currency;
+use rust_decimal::Decimal;
 
 /// Payment gateway trait for asynchronous external payment flows.
 ///
@@ -26,7 +27,7 @@ use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, 
 /// # Usage
 ///
 /// The client application should:
-/// * Display `payment_data` to guide customer through completion
+/// * Display `payment_data` to guide the customer through completion
 /// * Poll transaction status using `CheckTransaction::status()`
 /// * Handle webhook notifications for async status updates
 /// * Retrieve payment data again via `payment_data()` if needed for retry
@@ -35,14 +36,20 @@ use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, 
 ///
 /// * `Method` - Payment method type constrained to external methods (vouchers, BNPL, etc.)
 #[async_trait]
-pub trait ExternalPayments: Gateway {
-    #[allow(private_bounds)]
-    type Method: ExternalPaymentMethod;
-
+#[allow(private_bounds)]
+pub trait ExternalPayments: Gateway
+where
+    <Self as Gateway>::PaymentMethod: ExternalPaymentMethod,
+{
     /// Initiate the transaction and receive it along with a `PaymentData`
     /// The payment should be made outside the gateway's flow.
     /// The client should check the status of the transaction later.
-    async fn initiate(&self, method: Self::Method) -> Result<ExternalPayment, Error>;
+    async fn initiate(
+        &self,
+        method: <Self as Gateway>::PaymentMethod,
+        amount: Decimal,
+        currency: Currency,
+    ) -> Result<ExternalPayment, Error>;
 
     /// Retrieve the payment data for a previously initiated transaction by its ID.
     async fn payment_data(

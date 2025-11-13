@@ -1,9 +1,13 @@
 use async_trait::async_trait;
+use iso_currency::Currency;
+use rust_decimal::Decimal;
 
-use crate::Error;
-use crate::Gateway;
 use crate::flows::change_authorization;
-use crate::types::{InternalPaymentMethod, Payment, Recipients, Transaction, TransactionId};
+use crate::types::{
+    InternalPaymentMethod, MerchantInitiatedType, Recipients, StoredCredentialUsage, Transaction,
+    TransactionId, TransactionIdempotenceKey,
+};
+use crate::{Error, Gateway};
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -35,9 +39,11 @@ use crate::types::{InternalPaymentMethod, Payment, Recipients, Transaction, Tran
 ///   - `change_authorization::ChangesByTotal` - implements [`EditAuthorization`] trait
 ///   - `change_authorization::ChangesByDelta` - implements [`AdjustAuthorization`] trait
 #[async_trait]
-pub trait DeferredPayments: Gateway {
-    #[allow(private_bounds)]
-    type PaymentMethod: InternalPaymentMethod;
+#[allow(private_bounds)]
+pub trait DeferredPayments: Gateway
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     #[allow(private_bounds)]
     type AuthorizationChanges: change_authorization::Sealed;
 
@@ -55,7 +61,16 @@ pub trait DeferredPayments: Gateway {
     /// # Returns
     ///
     /// Transaction record with authorization status
-    async fn authorize(&self, payment: Payment<Self::PaymentMethod>) -> Result<Transaction, Error>;
+    async fn authorize(
+        &self,
+        payment_method: <Self as Gateway>::PaymentMethod,
+        currency: Currency,
+        total_amount: Decimal,
+        recipients: Option<Recipients>,
+        idempotence_key: TransactionIdempotenceKey,
+        merchant_initiated_type: Option<MerchantInitiatedType>,
+        stored_credential_usage: Option<StoredCredentialUsage>,
+    ) -> Result<Transaction, Error>;
 
     /// Capture previously authorized funds.
     ///

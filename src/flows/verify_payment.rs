@@ -63,10 +63,11 @@ use crate::types::{InternalPaymentMethod, TransactionId};
 /// * Require special merchant account configuration
 /// * Have different implementation approaches
 #[async_trait]
-pub trait VerifyPayment: Gateway {
-    #[allow(private_bounds)]
-    type Method: InternalPaymentMethod;
-
+#[allow(private_bounds)]
+pub trait VerifyPayment: Gateway
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Verify a payment method without charging or reserving funds.
     ///
     /// Performs a zero-dollar authorization to validate the payment method.
@@ -86,5 +87,8 @@ pub trait VerifyPayment: Gateway {
     /// * The gateway adapter interprets verification response codes (AVS, CVV, etc.)
     /// * The verification transaction typically auto-voids immediately
     /// * Some payment methods may not support verification (e.g., cash vouchers)
-    async fn verify_payment_method(&self, method: Self::Method) -> Result<TransactionId, Error>;
+    async fn verify_payment_method(
+        &self,
+        payment_method: <Self as Gateway>::PaymentMethod,
+    ) -> Result<TransactionId, Error>;
 }

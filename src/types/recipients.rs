@@ -46,7 +46,7 @@ use crate::types::{DistributedValue, RecipientId};
 /// let total = recipients.calculate_total(dec!(200.00)).unwrap();
 /// // Total: 50.00 + (200.00 * 10%) = 50.00 + 20.00 = 70.00
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Recipients(HashMap<RecipientId, DistributedValue>);
 
 impl Recipients {
@@ -110,12 +110,6 @@ impl<'a> TryFrom<Input<'a>> for Recipients {
 
 impl Validated for Recipients {
     fn validate(self) -> Result<Self, Error> {
-        if self.0.is_empty() {
-            return Err(Error::InvalidInput(
-                "At least one recipient is required".to_string(),
-            ));
-        }
-
         let validated_recipients = self
             .0
             .into_iter()
@@ -178,14 +172,6 @@ mod tests {
             "seller_1",
             crate::inputs::DistributedValue::Percent(dec!(150.00)),
         );
-
-        let result = Recipients::try_from(input);
-        assert!(matches!(result, Err(Error::InvalidInput(_))));
-    }
-
-    #[test]
-    fn recipients_rejects_empty() {
-        let input = HashMap::new();
 
         let result = Recipients::try_from(input);
         assert!(matches!(result, Err(Error::InvalidInput(_))));

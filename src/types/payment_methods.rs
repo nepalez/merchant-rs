@@ -30,6 +30,9 @@ pub(crate) trait ExternalPaymentMethod: PaymentMethod {}
 /// Marker trait for payment methods that can be stored in gateway vault (exchanged to tokens).
 pub(crate) trait StorablePaymentMethod: InternalPaymentMethod {}
 
+/// Marker trait for Vault payment methods
+pub(crate) trait VaultPaymentMethod: InternalPaymentMethod {}
+
 // --- Types ---
 
 pub use bank_payment::BankPayment;

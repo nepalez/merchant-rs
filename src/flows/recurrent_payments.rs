@@ -1,12 +1,12 @@
 use async_trait::async_trait;
+use iso_currency::Currency;
 use rust_decimal::Decimal;
 
-use crate::Error;
-use crate::Gateway;
 use crate::types::{
-    InternalPaymentMethod, Recipients, RecurrentPayment, Subscription, SubscriptionId,
-    SubscriptionInterval,
+    InternalPaymentMethod, Recipients, Subscription, SubscriptionId, SubscriptionInterval,
+    TransactionIdempotenceKey,
 };
+use crate::{Error, Gateway};
 
 /// Payment gateway trait for recurrent payment subscriptions.
 ///
@@ -24,10 +24,11 @@ use crate::types::{
 ///
 /// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
-pub trait RecurrentPayments: Gateway {
-    #[allow(private_bounds)]
-    type Method: InternalPaymentMethod;
-
+#[allow(private_bounds)]
+pub trait RecurrentPayments: Gateway
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Create a new recurrent payment subscription.
     ///
     /// # Parameters
@@ -41,7 +42,12 @@ pub trait RecurrentPayments: Gateway {
     /// Subscription record with ID, status, and billing schedule
     async fn create_subscription(
         &self,
-        payment: RecurrentPayment<Self::Method>,
+        payment_method: <Self as Gateway>::PaymentMethod,
+        currency: Currency,
+        total_amount: Decimal,
+        recipients: Option<Recipients>,
+        interval: SubscriptionInterval,
+        idempotence_key: TransactionIdempotenceKey,
     ) -> Result<Subscription, Error>;
 
     /// Cancel an existing subscription.
@@ -86,7 +92,11 @@ pub trait RecurrentPayments: Gateway {
 ///
 /// * Authorize.Net (requires cancel + recreate workaround)
 #[async_trait]
-pub trait PauseSubscriptions: RecurrentPayments {
+#[allow(private_bounds)]
+pub trait PauseSubscriptions: RecurrentPayments
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Pause a subscription temporarily.
     ///
     /// Temporarily stops billing without canceling the subscription.
@@ -122,7 +132,11 @@ pub trait PauseSubscriptions: RecurrentPayments {
 ///
 /// * Stripe, Razorpay, MercadoPago, GoCardless, Braintree, Paddle, Chargebee
 #[async_trait]
-pub trait EditSubscriptionAmount: RecurrentPayments {
+#[allow(private_bounds)]
+pub trait EditSubscriptionAmount: RecurrentPayments
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Edit the amount of an existing subscription.
     ///
     /// # Parameters
@@ -148,7 +162,11 @@ pub trait EditSubscriptionAmount: RecurrentPayments {
 ///
 /// * Gateways with split payment capabilities
 #[async_trait]
-pub trait EditSubscriptionRecipients: RecurrentPayments {
+#[allow(private_bounds)]
+pub trait EditSubscriptionRecipients: RecurrentPayments
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Edit the payment recipients (split configuration) of an existing subscription.
     ///
     /// # Parameters
@@ -176,7 +194,11 @@ pub trait EditSubscriptionRecipients: RecurrentPayments {
 ///
 /// * Check specific gateway documentation (rare capability)
 #[async_trait]
-pub trait EditSubscriptionInterval: RecurrentPayments {
+#[allow(private_bounds)]
+pub trait EditSubscriptionInterval: RecurrentPayments
+where
+    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+{
     /// Edit the billing interval of an existing subscription.
     ///
     /// # Parameters

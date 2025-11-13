@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::types::{InternalPaymentMethod, PaymentMethod, Token};
+use crate::types::{InternalPaymentMethod, PaymentMethod, Token, VaultPaymentMethod};
 
 /// Vault Token Payment Method
 ///
@@ -89,6 +89,7 @@ pub struct Vault {
 
 impl PaymentMethod for Vault {}
 impl InternalPaymentMethod for Vault {}
+impl VaultPaymentMethod for Vault {}
 
 impl<'a> TryFrom<&'a str> for Vault {
     type Error = Error;

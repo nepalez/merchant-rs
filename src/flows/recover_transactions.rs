@@ -53,7 +53,7 @@ pub trait RecoverTransactions: Gateway {
 /// Async iterator for paginated transaction search results.
 #[async_trait]
 pub trait TransactionIterator: Sized {
-    /// Fetch next transaction from search results.
+    /// Fetch the next transaction from search results.
     ///
     /// Returns `None` when no more results are available.
     async fn next(&mut self) -> Option<Result<Transaction, Error>>;

@@ -3,12 +3,13 @@ use rust_decimal::Decimal;
 
 use crate::Error;
 use crate::Gateway;
-use crate::types::{Transaction, TransactionId};
+use crate::types::{Recipients, Transaction, TransactionId};
 
 /// Payment gateway trait for refund operations.
 ///
 /// Supports returning funds to the customer for previously captured/charged transactions.
-/// Refunds can be full (entire transaction amount) or partial (less than original amount).
+/// Refunds can be full (the entire transaction amount)
+/// or partial (less than the original amount).
 ///
 /// # When to Use
 ///
@@ -62,10 +63,11 @@ pub trait RefundPayments: Gateway {
     /// * Partial refund amount must not exceed the remaining refundable balance
     /// * Currency is inherited from the original transaction
     /// * Multiple partial refunds may be performed on the same transaction
-    /// * Total refunded amount cannot exceed original transaction amount
+    /// * Total refunded amount cannot exceed the original transaction amount
     async fn refund(
         &self,
         transaction_id: TransactionId,
-        amount: Option<Decimal>,
+        total_amount: Option<Decimal>,
+        recipients: Option<Recipients>,
     ) -> Result<Transaction, Error>;
 }
