@@ -4,10 +4,21 @@ use rust_decimal::Decimal;
 
 use crate::flows::change_authorization;
 use crate::types::{
-    InternalPaymentMethod, MerchantInitiatedType, Recipients, StoredCredentialUsage, Transaction,
-    TransactionId, TransactionIdempotenceKey,
+    DistributedAmount, InternalPaymentMethod, MerchantInitiatedType, Recipients,
+    RedistributedAmount, StoredCredentialUsage, Transaction, TransactionId,
+    TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway};
+
+trait Amount {}
+impl Amount for Decimal {}
+impl Amount for DistributedAmount {}
+
+trait Redistribution {}
+impl Redistribution for Option<Decimal> {}
+impl Redistribution for Option<Recipients> {}
+impl Redistribution for RedistributedAmount {}
+impl Redistribution for () {}
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -44,7 +55,8 @@ pub trait DeferredPayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
-    #[allow(private_bounds)]
+    type Amount: Amount;
+    type Redistribution: Redistribution;
     type AuthorizationChanges: change_authorization::Sealed;
 
     /// Authorize payment and reserve funds without immediate capture.
@@ -54,9 +66,7 @@ where
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing method and transaction details.
-    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
-    ///   returns Ok before processing.
+    /// * `amount` - Payment amount, either simple Decimal or DistributedAmount with recipients
     ///
     /// # Returns
     ///
@@ -64,9 +74,8 @@ where
     async fn authorize(
         &self,
         payment_method: <Self as Gateway>::PaymentMethod,
+        amount: Self::Amount,
         currency: Currency,
-        total_amount: Decimal,
-        recipients: Option<Recipients>,
         idempotence_key: TransactionIdempotenceKey,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,
@@ -80,15 +89,11 @@ where
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the previously authorized transaction
-    /// * `recipients` - Optional payment recipients:
-    ///   - `None`: Capture using the recipients specified during authorization
-    ///   - `Some(recipients)`: Override authorization recipients (partial capture
-    ///     or split modification). Not all gateways support recipient override:
-    ///     * **Adyen, Checkout.com**: Support full override
-    ///     * **Stripe, PayPal, Braintree**: Only amount can be changed (partial capture),
-    ///       split configuration remains from authorization
-    ///   Implementations should validate that `recipients.as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
-    ///   returns Ok before processing.
+    /// * `redistribution` - Payment redistribution:
+    ///   - `()`: Capture using the distribution specified during authorization
+    ///   - `Option<Decimal>`: Change capture amount only (partial capture)
+    ///   - `Option<Recipients>`: Change recipients only
+    ///   - `RedistributedAmount`: Change both amount and recipients
     ///
     /// # Returns
     ///
@@ -96,6 +101,6 @@ where
     async fn capture(
         &self,
         transaction_id: TransactionId,
-        recipients: Option<Recipients>,
+        redistribution: Self::Redistribution,
     ) -> Result<Transaction, Error>;
 }

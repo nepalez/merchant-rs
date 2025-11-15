@@ -1,9 +1,14 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 
-use crate::Error;
-use crate::Gateway;
-use crate::types::{Recipients, Transaction, TransactionId};
+use crate::types::{Recipients, RedistributedAmount, Transaction, TransactionId};
+use crate::{Error, Gateway};
+
+trait Distribution {}
+impl Distribution for () {}
+impl Distribution for Option<Decimal> {}
+impl Distribution for Option<Recipients> {}
+impl Distribution for RedistributedAmount {}
 
 /// Payment gateway trait for refund operations.
 ///
@@ -41,7 +46,10 @@ use crate::types::{Recipients, Transaction, TransactionId};
 /// gateway.refund(transaction_id, Some(Decimal::from(20))).await?;
 /// ```
 #[async_trait]
+#[allow(private_bounds)]
 pub trait RefundPayments: Gateway {
+    type Distribution: Distribution;
+
     /// Refund a previously captured payment, either fully or partially.
     ///
     /// Returns funds to the customer's original payment method.
@@ -50,9 +58,11 @@ pub trait RefundPayments: Gateway {
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the captured transaction to refund
-    /// * `amount` - Optional refund amount:
-    ///   - `None` - Full refund (entire transaction amount)
-    ///   - `Some(decimal)` - Partial refund for the specified amount
+    /// * `distribution` - Refund distribution:
+    ///   - `()`: Full refund with original distribution
+    ///   - `Option<Decimal>`: Change refund amount only (partial refund)
+    ///   - `Option<Recipients>`: Change recipients only
+    ///   - `RedistributedAmount`: Change both amount and recipients
     ///
     /// # Returns
     ///
@@ -67,7 +77,6 @@ pub trait RefundPayments: Gateway {
     async fn refund(
         &self,
         transaction_id: TransactionId,
-        total_amount: Option<Decimal>,
-        recipients: Option<Recipients>,
+        distribution: Self::Distribution,
     ) -> Result<Transaction, Error>;
 }

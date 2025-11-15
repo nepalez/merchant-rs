@@ -103,3 +103,125 @@ impl Validated for DistributedAmount {
         Ok(self)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rust_decimal_macros::dec;
+    use std::collections::HashMap;
+
+    #[test]
+    fn converts_from_decimal() {
+        let amount = DistributedAmount::from(dec!(100.00));
+        assert_eq!(amount.total(), dec!(100.00));
+        assert_eq!(amount.recipients().len(), 0);
+    }
+
+    #[test]
+    fn validates_positive_total() {
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(100.00),
+            recipients: HashMap::new(),
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn rejects_zero_total() {
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(0.00),
+            recipients: HashMap::new(),
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn rejects_negative_total() {
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(-10.00),
+            recipients: HashMap::new(),
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn accepts_valid_recipients() {
+        let mut recipients = HashMap::new();
+        recipients.insert(
+            "seller_1",
+            crate::inputs::DistributedValue::Amount(dec!(30.00)),
+        );
+
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(100.00),
+            recipients,
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn rejects_recipients_exceeding_total() {
+        let mut recipients = HashMap::new();
+        recipients.insert(
+            "seller_1",
+            crate::inputs::DistributedValue::Amount(dec!(150.00)),
+        );
+
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(100.00),
+            recipients,
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
+
+    #[test]
+    fn accepts_recipients_equal_to_total() {
+        let mut recipients = HashMap::new();
+        recipients.insert(
+            "seller_1",
+            crate::inputs::DistributedValue::Amount(dec!(100.00)),
+        );
+
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(100.00),
+            recipients,
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn accepts_mixed_recipients() {
+        let mut recipients = HashMap::new();
+        recipients.insert(
+            "seller_1",
+            crate::inputs::DistributedValue::Amount(dec!(30.00)),
+        );
+        recipients.insert(
+            "seller_2",
+            crate::inputs::DistributedValue::Percent(dec!(20.00)),
+        );
+
+        let input = crate::inputs::DistributedAmount {
+            total: dec!(100.00),
+            recipients,
+        };
+
+        let result = DistributedAmount::try_from(input);
+        assert!(result.is_ok());
+        let amount = result.unwrap();
+        assert_eq!(amount.total(), dec!(100.00));
+        assert_eq!(amount.recipients().len(), 2);
+    }
+}

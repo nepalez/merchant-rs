@@ -3,10 +3,14 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    InternalPaymentMethod, Recipients, Subscription, SubscriptionId, SubscriptionInterval,
-    TransactionIdempotenceKey,
+    DistributedAmount, InternalPaymentMethod, Recipients, Subscription, SubscriptionId,
+    SubscriptionInterval, TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway};
+
+trait Amount {}
+impl Amount for Decimal {}
+impl Amount for DistributedAmount {}
 
 /// Payment gateway trait for recurrent payment subscriptions.
 ///
@@ -29,13 +33,13 @@ pub trait RecurrentPayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
+    type Amount: Amount;
+
     /// Create a new recurrent payment subscription.
     ///
     /// # Parameters
     ///
-    /// * `payment` - Recurrent payment data containing method, amount, interval, and idempotence key.
-    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
-    ///   returns Ok before processing.
+    /// * `amount` - Subscription amount, either simple Decimal or DistributedAmount with recipients
     ///
     /// # Returns
     ///
@@ -43,9 +47,8 @@ where
     async fn create_subscription(
         &self,
         payment_method: <Self as Gateway>::PaymentMethod,
+        amount: Self::Amount,
         currency: Currency,
-        total_amount: Decimal,
-        recipients: Option<Recipients>,
         interval: SubscriptionInterval,
         idempotence_key: TransactionIdempotenceKey,
     ) -> Result<Subscription, Error>;

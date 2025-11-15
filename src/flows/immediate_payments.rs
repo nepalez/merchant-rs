@@ -3,10 +3,14 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    InternalPaymentMethod, MerchantInitiatedType, Recipients, StoredCredentialUsage, Transaction,
-    TransactionIdempotenceKey,
+    DistributedAmount, InternalPaymentMethod, MerchantInitiatedType, StoredCredentialUsage,
+    Transaction, TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway};
+
+trait Amount {}
+impl Amount for Decimal {}
+impl Amount for DistributedAmount {}
 
 /// Payment gateway trait for one-step payment flows.
 ///
@@ -20,22 +24,22 @@ use crate::{Error, Gateway};
 /// * Payment methods that don't support separate capture (some wallets, vouchers)
 /// * Gateways that only provide combined auth+capture operations
 ///
-/// # Type Parameter
+/// # Type Parameters
 ///
-/// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
+/// * `Amount` - Payment amount type (Decimal or DistributedAmount for split payments)
 #[async_trait]
 #[allow(private_bounds)]
 pub trait ImmediatePayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
+    type Amount: Amount;
+
     /// Immediately charge the payment (authorization and capture in one step).
     ///
     /// # Parameters
     ///
-    /// * `payment` - Payment data containing method and transaction details.
-    ///   Implementations should validate that `payment.recipients().as_ref().map(|r| r.validate_count(Self::MAX_ADDITIONAL_RECIPIENTS))`
-    ///   returns Ok before processing.
+    /// * `amount` - Payment amount, either simple Decimal or DistributedAmount with recipients
     ///
     /// # Returns
     ///
@@ -43,9 +47,8 @@ where
     async fn charge(
         &self,
         payment_method: <Self as Gateway>::PaymentMethod,
+        amount: Self::Amount,
         currency: Currency,
-        total_amount: Decimal,
-        recipients: Option<Recipients>,
         idempotence_key: TransactionIdempotenceKey,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,
