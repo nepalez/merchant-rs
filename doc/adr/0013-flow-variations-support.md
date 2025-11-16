@@ -1,13 +1,16 @@
-# [ADR-0013]: Flow Variations Support via Separate Traits
+# [ADR-0013]: Flow Variations Support via Sealed Traits
 
 ## Context
 
-Payment gateways implement similar functionality through incompatible interfaces. Example: authorization amount changes.
+Payment gateways implement similar functionality through incompatible interfaces.
 
-**Total-based** (Stripe, Adyen, Braintree, PayPal, Square): gateway accepts new complete authorized amount
-**Delta-based** (Checkout.com, Worldpay, Authorize.Net): gateway accepts increment/decrement amounts
+**Split payments:**
+- Simple amount: gateway accepts `Decimal` only
+- Distributed amount: gateway accepts `DistributedAmount` (total + recipients)
 
-Both achieve the same business goal (change authorization before capture) but require different parameters and semantics.
+**Authorization changes:**
+- Total-based (Stripe, Adyen): gateway accepts new complete authorized amount
+- Delta-based (Checkout.com, Worldpay): gateway accepts increment/decrement amounts
 
 **Problem:** If a single trait method accepts parameters that some gateways don't support:
 - Client code cannot be deterministic
@@ -16,27 +19,31 @@ Both achieve the same business goal (change authorization before capture) but re
 
 ## Decision
 
-Use **separate traits for each variation**, enforced by sealed marker types at compile time.
+Use **sealed traits with associated types** to enforce compile-time constraints. Two patterns depending on variation type.
 
-### Architecture
+### Pattern 1: Type Constraint
 
-**Multilayer hierarchy:**
+Private trait constrains allowed parameter types in method signatures.
 
-1. **Gateway level**: chooses which flows to support
-   - Example: implements `DeferredPayments`, `ImmediatePayments`, `ExternalPayments`
+```rust
+trait Amount {}
+impl Amount for Decimal {}
+impl Amount for DistributedAmount {}
 
-2. **Flow level**: declares variations through associated types
-   - Example: `DeferredPayments` has `AuthorizationChanges` variation
-   - Each flow can have independent variations
+#[allow(private_bounds)]
+pub trait ImmediatePayments: Gateway {
+    type Amount: Amount;
+    async fn charge(&self, amount: Self::Amount, ...) -> Result<Transaction, Error>;
+}
+```
 
-3. **Variation level**: constrains which related traits can be implemented
-   - Example: `EditAuthorization`, `AdjustAuthorization`
+Gateway chooses concrete type: `type Amount = Decimal` (no splits) or `type Amount = DistributedAmount` (with splits).
 
-Authorization changes are scoped to `DeferredPayments` flow only (not applicable to immediate or external payments).
+**Used in:** ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure.
 
-### Mechanism
+### Pattern 2: Marker Types
 
-Sealed pattern with marker types prevents incompatible implementations:
+Marker structs determine which additional traits can be implemented.
 
 - Module `change_authorization` defines sealed trait and marker types:
   - `pub(crate) Sealed` trait
@@ -50,6 +57,8 @@ Sealed pattern with marker types prevents incompatible implementations:
 
 Gateway can only set `AuthorizationChanges` to one value → attempting to implement both `EditAuthorization` and `AdjustAuthorization` produces compilation error.
 
+**Used in:** change_authorization (AuthorizationChanges).
+
 ### Design Principles
 
 1. **Interface Determinism**: Gateway implementing a trait MUST fully support ALL methods. No partial implementations, no runtime errors for "unsupported parameter"
@@ -59,6 +68,11 @@ Gateway can only set `AuthorizationChanges` to one value → attempting to imple
 3. **Explicit Migration**: Switching gateways that change capabilities produces compilation errors, forcing explicit code updates
 
 ## Alternatives Rejected
+
+### Separate parameters for split payments
+`fn charge(total_amount: Decimal, recipients: Option<Recipients>)`
+
+**Rejected:** No compile-time guarantee that gateway supports recipients. Client code may pass recipients to gateway that doesn't support splits.
 
 ### Single trait with enum parameter
 Parameter like `ChangeAmount::Total(Decimal) | Delta(Decimal)` in single method.
@@ -75,6 +89,11 @@ Methods like `supports_total_changes()`, `supports_delta_changes()` + both imple
 
 **Rejected:** Runtime checks instead of compile-time safety, gateway must implement unsupported methods (return errors), cannot constrain generic functions.
 
+### Generic method parameters
+`fn charge<A: Into<DistributedAmount>>(amount: A)`
+
+**Rejected:** Loss of object safety, cannot use trait objects.
+
 ## Consequences
 
 **Pros:**
@@ -87,5 +106,8 @@ Methods like `supports_total_changes()`, `supports_delta_changes()` + both imple
 - More traits: similar functionality requires multiple definitions
 - Code duplication: adapters may have similar implementation code
 - Learning curve: developers must understand which variation their gateway implements
+- Explicit conversions: client must call `.into()` when passing parameters
 
-**Status:** Implemented in `src/flows/change_authorization.rs` with `EditAuthorization` and `AdjustAuthorization` traits.
+**Status:**
+- Pattern 1 (Type Constraint): all flow traits (ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure)
+- Pattern 2 (Marker Types): `src/flows/change_authorization.rs` with `EditAuthorization` and `AdjustAuthorization` traits
