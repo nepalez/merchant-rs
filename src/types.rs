@@ -29,6 +29,7 @@ mod external_payment;
 mod external_payment_data;
 mod full_name;
 mod iban;
+mod installment_plan_id;
 mod merchant_initiated_type;
 mod metadata;
 mod national_id;
@@ -57,6 +58,8 @@ mod transaction_status;
 mod virtual_payment_address;
 mod wallet_address;
 
+pub mod installments;
+
 pub use account_holder_type::AccountHolderType;
 pub use account_number::AccountNumber;
 pub use account_type::AccountType;
@@ -78,6 +81,7 @@ pub use external_payment::ExternalPayment;
 pub use external_payment_data::ExternalPaymentData;
 pub use full_name::FullName;
 pub use iban::IBAN;
+pub use installment_plan_id::InstallmentPlanId;
 pub use merchant_initiated_type::MerchantInitiatedType;
 pub use metadata::Metadata;
 pub use national_id::NationalId;

@@ -26,6 +26,8 @@ mod subscription;
 mod subscription_interval;
 mod transaction;
 
+pub mod installments;
+
 pub use address::Address;
 pub use bank_payment::{BankPayment, BankPaymentCredentials};
 pub use birth_date::BirthDate;
