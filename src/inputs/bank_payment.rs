@@ -1,5 +1,4 @@
-use crate::inputs::{Credentials, Metadata};
-use crate::{AccountHolderType, AccountType};
+use crate::{AccountHolderType, AccountType, Credentials, Metadata};
 
 pub struct BankPayment<'a> {
     /// The tokenizable bank payment credentials

@@ -1,4 +1,4 @@
-use crate::inputs::Metadata;
+use crate::Metadata;
 
 pub struct DirectCarrier<'a> {
     /// User phone number (primary payment identifier)

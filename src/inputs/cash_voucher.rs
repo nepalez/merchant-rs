@@ -1,4 +1,4 @@
-use crate::inputs::{Address, Metadata};
+use crate::{Address, Metadata};
 
 pub struct CashVoucher<'a> {
     /// User full name

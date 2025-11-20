@@ -1,5 +1,4 @@
-use crate::AccountHolderType;
-use crate::inputs::{Address, Metadata};
+use crate::{AccountHolderType, Address, Metadata};
 
 pub struct InstantPayment<'a> {
     /// User email for transaction notifications

@@ -4,7 +4,6 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::inputs::Metadata as Input;
 use crate::internal::Masked;
 
 /// Secure container for additional adapter-specific parameters
@@ -25,10 +24,10 @@ use crate::internal::Masked;
 #[derive(Clone, Debug, Default)]
 pub struct Metadata(HashMap<&'static str, MetadataValue>);
 
-impl TryFrom<Input<'_>> for Metadata {
+impl TryFrom<crate::Metadata<'_>> for Metadata {
     type Error = Error;
 
-    fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::Metadata<'_>) -> Result<Self, Self::Error> {
         let mut output = Self::default();
         for (key, value) in input.into_iter() {
             output.0.insert(key, value.try_into()?);

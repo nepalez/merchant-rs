@@ -1,4 +1,4 @@
-use crate::inputs::CardExpiry;
+use crate::CardExpiry;
 
 pub struct CreditCard<'a> {
     /// Card Verification Value (CVV/CVC/CID)

@@ -1,4 +1,4 @@
-use crate::inputs::Metadata;
+use crate::Metadata;
 
 pub struct CryptoPayment<'a> {
     /// Crypto-specific extensions (currency, network, wallet address)

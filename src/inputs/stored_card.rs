@@ -1,4 +1,4 @@
-use crate::inputs::{CardExpiry, Credentials};
+use crate::{CardExpiry, Credentials};
 
 /// Credit or Debit Card stored for MTI (Merchant Initiated Transactions)
 pub struct StoredCard<'a> {

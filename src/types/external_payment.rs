@@ -1,5 +1,4 @@
 use crate::Error;
-use crate::inputs::ExternalPayment as Input;
 use crate::types::{ExternalPaymentData, Transaction};
 
 /// Result from initiating an external payment flow.
@@ -33,10 +32,10 @@ impl ExternalPayment {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for ExternalPayment {
+impl<'a> TryFrom<crate::ExternalPayment<'a>> for ExternalPayment {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::ExternalPayment<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             transaction: input.transaction.try_into()?,
             payment_data: input.payment_data.try_into()?,
@@ -51,8 +50,8 @@ mod tests {
     use crate::{AsUnsafeRef, MerchantInitiatedType, TransactionStatus};
     use iso_currency::Currency;
 
-    fn valid_input() -> Input<'static> {
-        Input {
+    fn valid_input() -> crate::ExternalPayment<'static> {
+        crate::ExternalPayment {
             transaction: inputs::Transaction {
                 transaction_id: " txn_12345678 \n\t",
                 idempotence_key: " idempotence-key-123 \n\t",

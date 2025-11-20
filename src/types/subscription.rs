@@ -1,8 +1,6 @@
+use iso_currency::Currency;
 use std::convert::TryFrom;
 
-use iso_currency::Currency;
-
-use crate::inputs::Subscription as Input;
 use crate::types::{Recipients, SubscriptionId, SubscriptionInterval};
 use crate::{Error, SubscriptionStatus};
 
@@ -70,10 +68,10 @@ impl Subscription {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for Subscription {
+impl<'a> TryFrom<crate::Subscription<'a>> for Subscription {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::Subscription<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             subscription_id: input.subscription_id.try_into()?,
             status: input.status,

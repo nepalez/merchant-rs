@@ -1,8 +1,7 @@
 //! Mexico MSI (Meses Sin Intereses) installment plan.
 
-use crate::Error;
-use crate::inputs::installments::MexicoPlan as Input;
 use crate::types::InstallmentPlanId;
+use crate::{Error, installments};
 
 /// Plan type for Mexico MSI (Meses Sin Intereses) installments.
 ///
@@ -27,18 +26,18 @@ pub enum MexicoPlan {
     Id(InstallmentPlanId),
 }
 
-impl<'a> TryFrom<Input<'a>> for MexicoPlan {
+impl<'a> TryFrom<installments::MexicoPlan<'a>> for MexicoPlan {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: installments::MexicoPlan<'a>) -> Result<Self, Self::Error> {
         Ok(match input {
-            Input::Single => Self::Single,
-            Input::Three => Self::Three,
-            Input::Six => Self::Six,
-            Input::Nine => Self::Nine,
-            Input::Twelve => Self::Twelve,
-            Input::Eighteen => Self::Eighteen,
-            Input::Id(id) => Self::Id(id.try_into()?),
+            installments::MexicoPlan::Single => Self::Single,
+            installments::MexicoPlan::Three => Self::Three,
+            installments::MexicoPlan::Six => Self::Six,
+            installments::MexicoPlan::Nine => Self::Nine,
+            installments::MexicoPlan::Twelve => Self::Twelve,
+            installments::MexicoPlan::Eighteen => Self::Eighteen,
+            installments::MexicoPlan::Id(id) => Self::Id(id.try_into()?),
         })
     }
 }
@@ -55,19 +54,19 @@ mod tests {
 
     #[test]
     fn constructed_from_input() {
-        let plan = MexicoPlan::try_from(Input::Six).unwrap();
+        let plan = MexicoPlan::try_from(installments::MexicoPlan::Six).unwrap();
         assert!(matches!(plan, MexicoPlan::Six));
     }
 
     #[test]
     fn constructed_from_input_id() {
-        let plan = MexicoPlan::try_from(Input::Id("plan_123")).unwrap();
+        let plan = MexicoPlan::try_from(installments::MexicoPlan::Id("plan_123")).unwrap();
         assert!(matches!(plan, MexicoPlan::Id(_)));
     }
 
     #[test]
     fn rejects_empty_id() {
-        let result = MexicoPlan::try_from(Input::Id(""));
+        let result = MexicoPlan::try_from(installments::MexicoPlan::Id(""));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 }

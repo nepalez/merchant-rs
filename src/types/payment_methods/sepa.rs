@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::{SEPA as Input, SEPACredentials as CredentialsInput};
 use crate::types::{
     Address, Credentials, EmailAddress, FullName, IBAN, InternalPaymentMethod, PaymentMethod,
     StorablePaymentMethod,
@@ -140,10 +139,10 @@ impl PaymentMethod for SEPA {}
 impl InternalPaymentMethod for SEPA {}
 impl StorablePaymentMethod for SEPA {}
 
-impl<'a> TryFrom<Input<'a>> for SEPA {
+impl<'a> TryFrom<crate::SEPA<'a>> for SEPA {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::SEPA<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             credentials: input.credentials.try_into()?,
             email: input.email.try_into()?,
@@ -153,10 +152,10 @@ impl<'a> TryFrom<Input<'a>> for SEPA {
     }
 }
 
-impl<'a> TryFrom<CredentialsInput<'a>> for SEPACredentials {
+impl<'a> TryFrom<crate::SEPACredentials<'a>> for SEPACredentials {
     type Error = Error;
 
-    fn try_from(input: CredentialsInput<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::SEPACredentials<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             iban: input.iban.try_into()?,
         })
@@ -169,7 +168,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input_plain() -> Input<'static> {
+    fn valid_input_plain() -> crate::SEPA<'static> {
         inputs::SEPA {
             credentials: inputs::Credentials::Plain(inputs::SEPACredentials {
                 iban: " DE89370400440532013000 \n\t",
@@ -185,7 +184,7 @@ mod tests {
         }
     }
 
-    fn valid_input_tokenized() -> Input<'static> {
+    fn valid_input_tokenized() -> crate::SEPA<'static> {
         inputs::SEPA {
             credentials: inputs::Credentials::Tokenized("tok_sepa1234567890"),
             email: " user@example.com \n\t",

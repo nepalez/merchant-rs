@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use crate::inputs::{BankPayment as Input, BankPaymentCredentials as CredentialsInput};
 use crate::types::{
     AccountNumber, Credentials, FullName, InternalPaymentMethod, Metadata, PaymentMethod,
     RoutingNumber, StorablePaymentMethod,
@@ -173,10 +172,10 @@ impl PaymentMethod for BankPayment {}
 impl InternalPaymentMethod for BankPayment {}
 impl StorablePaymentMethod for BankPayment {}
 
-impl<'a> TryFrom<CredentialsInput<'a>> for BankPaymentCredentials {
+impl<'a> TryFrom<crate::BankPaymentCredentials<'a>> for BankPaymentCredentials {
     type Error = Error;
 
-    fn try_from(input: CredentialsInput<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::BankPaymentCredentials<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             account_number: input.account_number.try_into()?,
             routing_number: input.routing_number.try_into()?,
@@ -184,10 +183,10 @@ impl<'a> TryFrom<CredentialsInput<'a>> for BankPaymentCredentials {
     }
 }
 
-impl TryFrom<Input<'_>> for BankPayment {
+impl TryFrom<crate::BankPayment<'_>> for BankPayment {
     type Error = Error;
 
-    fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::BankPayment<'_>) -> Result<Self, Self::Error> {
         Ok(Self {
             credentials: input.credentials.try_into()?,
             full_name: input.full_name.try_into()?,
@@ -204,7 +203,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input_plain() -> Input<'static> {
+    fn valid_input_plain() -> crate::BankPayment<'static> {
         inputs::BankPayment {
             credentials: inputs::Credentials::Plain(inputs::BankPaymentCredentials {
                 account_number: " 1234567890 \n\t",
@@ -217,7 +216,7 @@ mod tests {
         }
     }
 
-    fn valid_input_tokenized() -> Input<'static> {
+    fn valid_input_tokenized() -> crate::BankPayment<'static> {
         inputs::BankPayment {
             credentials: inputs::Credentials::Tokenized("tok_bank1234567890"),
             full_name: " john doe \n\t",

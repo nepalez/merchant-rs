@@ -3,13 +3,15 @@ mod error;
 mod internal;
 
 mod enums;
+mod inputs;
+
 pub mod flows;
-pub mod inputs;
 pub mod types;
 
 pub use as_unsafe_ref::AsUnsafeRef;
 pub use enums::*;
 pub use error::Error;
+pub use inputs::*;
 
 /// Root trait for payment gateway adapters.
 #[allow(private_bounds)]

@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::CreditCard as Input;
 use crate::types::{
     CVV, CardExpiry, CardHolderName, InternalPaymentMethod, PaymentMethod, PrimaryAccountNumber,
 };
@@ -153,10 +152,10 @@ impl CreditCard {
 impl PaymentMethod for CreditCard {}
 impl InternalPaymentMethod for CreditCard {}
 
-impl<'a> TryFrom<Input<'a>> for CreditCard {
+impl<'a> TryFrom<crate::CreditCard<'a>> for CreditCard {
     type Error = Error;
 
-    fn try_from(value: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::CreditCard<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             cvv: value.cvv.try_into()?,
             number: value.number.try_into()?,
@@ -172,7 +171,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::CreditCard<'static> {
         inputs::CreditCard {
             cvv: " 123 \n\t",
             number: " 4532-0151-1283-0366 \n\t",

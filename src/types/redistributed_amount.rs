@@ -2,7 +2,6 @@ use rust_decimal::Decimal;
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::RedistributedAmount as Input;
 use crate::internal::Validated;
 use crate::types::Recipients;
 
@@ -97,10 +96,10 @@ impl From<()> for RedistributedAmount {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for RedistributedAmount {
+impl<'a> TryFrom<crate::RedistributedAmount<'a>> for RedistributedAmount {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::RedistributedAmount<'a>) -> Result<Self, Self::Error> {
         Self {
             total: input.total,
             recipients: input.recipients.map(TryFrom::try_from).transpose()?,

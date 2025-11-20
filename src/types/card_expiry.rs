@@ -3,7 +3,6 @@ use std::convert::TryFrom;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::inputs::CardExpiry as Input;
 use crate::internal::Validated;
 
 /// Card expiration (month and year).
@@ -53,10 +52,10 @@ impl CardExpiry {
     }
 }
 
-impl TryFrom<Input> for CardExpiry {
+impl TryFrom<crate::CardExpiry> for CardExpiry {
     type Error = Error;
 
-    fn try_from(input: Input) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::CardExpiry) -> Result<Self, Self::Error> {
         Self {
             month: input.month,
             year: input.year,
@@ -105,7 +104,7 @@ mod tests {
             let inputs = [(1, 1950), (12, 1950), (6, 2025), (12, 2050)];
 
             for (month, year) in inputs {
-                let input = Input { month, year };
+                let input = crate::CardExpiry { month, year };
                 let result = CardExpiry::try_from(input);
                 assert!(result.is_ok(), "({month}, {year}) failed validation");
             }
@@ -113,7 +112,7 @@ mod tests {
 
         #[test]
         fn rejects_invalid_month_zero() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 0,
                 year: 2025,
             };
@@ -123,7 +122,7 @@ mod tests {
 
         #[test]
         fn rejects_invalid_month_thirteen() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 13,
                 year: 2025,
             };
@@ -133,7 +132,7 @@ mod tests {
 
         #[test]
         fn rejects_year_too_old() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 6,
                 year: 1949,
             };
@@ -143,7 +142,7 @@ mod tests {
 
         #[test]
         fn rejects_year_too_far() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 6,
                 year: 2051,
             };
@@ -157,7 +156,7 @@ mod tests {
 
         #[test]
         fn exposes_debug() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 12,
                 year: 2030,
             };
@@ -170,7 +169,7 @@ mod tests {
 
         #[test]
         fn getters_are_unsafe() {
-            let input = Input {
+            let input = crate::CardExpiry {
                 month: 12,
                 year: 2030,
             };
@@ -188,7 +187,7 @@ mod tests {
             let year_ptr: *const u16;
 
             {
-                let expiry = CardExpiry::try_from(Input {
+                let expiry = CardExpiry::try_from(crate::CardExpiry {
                     month: 12,
                     year: 2030,
                 })
@@ -212,12 +211,12 @@ mod tests {
 
         #[test]
         fn compares_by_year_then_month() {
-            let earlier = CardExpiry::try_from(Input {
+            let earlier = CardExpiry::try_from(crate::CardExpiry {
                 month: 6,
                 year: 2025,
             })
             .unwrap();
-            let later = CardExpiry::try_from(Input {
+            let later = CardExpiry::try_from(crate::CardExpiry {
                 month: 12,
                 year: 2025,
             })
@@ -228,12 +227,12 @@ mod tests {
 
         #[test]
         fn equal_dates_are_equal() {
-            let first = CardExpiry::try_from(Input {
+            let first = CardExpiry::try_from(crate::CardExpiry {
                 month: 6,
                 year: 2025,
             })
             .unwrap();
-            let second = CardExpiry::try_from(Input {
+            let second = CardExpiry::try_from(crate::CardExpiry {
                 month: 6,
                 year: 2025,
             })

@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::Address as Input;
 use crate::types::{City, CountryCode, PostalCode, StreetAddress};
 
 /// The address stored securely.
@@ -45,10 +44,10 @@ impl Address {
     }
 }
 
-impl TryFrom<Input<'_>> for Address {
+impl TryFrom<crate::Address<'_>> for Address {
     type Error = Error;
 
-    fn try_from(input: Input<'_>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::Address<'_>) -> Result<Self, Self::Error> {
         Ok(Self {
             country_code: input.country_code.try_into()?,
             postal_code: input.postal_code.try_into()?,
@@ -63,8 +62,8 @@ mod tests {
     use super::*;
     use crate::AsUnsafeRef;
 
-    fn valid_input() -> Input<'static> {
-        Input {
+    fn valid_input() -> crate::Address<'static> {
+        crate::Address {
             country_code: " PT-11 \n\t",
             postal_code: " 1200-109 \n\t",
             city: " Lisbon \n\t",

@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::CryptoPayment as Input;
 use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
 
 /// Cryptocurrency Payment via Blockchain Transfer
@@ -117,10 +116,10 @@ impl CryptoPayment {
 impl PaymentMethod for CryptoPayment {}
 impl ExternalPaymentMethod for CryptoPayment {}
 
-impl<'a> TryFrom<Input<'a>> for CryptoPayment {
+impl<'a> TryFrom<crate::CryptoPayment<'a>> for CryptoPayment {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::CryptoPayment<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             metadata: input.metadata.try_into()?,
         })
@@ -133,7 +132,7 @@ mod tests {
     use crate::inputs;
     use std::collections::HashMap;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::CryptoPayment<'static> {
         let mut meta = HashMap::new();
         meta.insert("currency", "BTC");
         meta.insert("network", "mainnet");

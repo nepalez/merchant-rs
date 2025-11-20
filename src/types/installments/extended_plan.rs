@@ -1,9 +1,8 @@
 //! Japan extended installment plan.
 
-use crate::Error;
-use crate::inputs::installments::ExtendedPlan as Input;
 use crate::internal::Validated;
 use crate::types::InstallmentPlanId;
+use crate::{Error, installments};
 
 /// Plan type for Japan extended installments.
 ///
@@ -35,16 +34,16 @@ impl Validated for ExtendedPlan {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for ExtendedPlan {
+impl<'a> TryFrom<installments::ExtendedPlan<'a>> for ExtendedPlan {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: installments::ExtendedPlan<'a>) -> Result<Self, Self::Error> {
         match input {
-            Input::Single => Ok(Self::Single),
-            Input::Regular(n) => Self::Regular(n).validate(),
-            Input::Revolving => Ok(Self::Revolving),
-            Input::Bonus => Ok(Self::Bonus),
-            Input::Id(id) => Ok(Self::Id(id.try_into()?)),
+            installments::ExtendedPlan::Single => Ok(Self::Single),
+            installments::ExtendedPlan::Regular(n) => Self::Regular(n).validate(),
+            installments::ExtendedPlan::Revolving => Ok(Self::Revolving),
+            installments::ExtendedPlan::Bonus => Ok(Self::Bonus),
+            installments::ExtendedPlan::Id(id) => Ok(Self::Id(id.try_into()?)),
         }
     }
 }
@@ -61,43 +60,43 @@ mod tests {
 
     #[test]
     fn constructed_from_input_single() {
-        let plan = ExtendedPlan::try_from(Input::Single).unwrap();
+        let plan = ExtendedPlan::try_from(installments::ExtendedPlan::Single).unwrap();
         assert!(matches!(plan, ExtendedPlan::Single));
     }
 
     #[test]
     fn constructed_from_input_regular() {
-        let plan = ExtendedPlan::try_from(Input::Regular(6)).unwrap();
+        let plan = ExtendedPlan::try_from(installments::ExtendedPlan::Regular(6)).unwrap();
         assert!(matches!(plan, ExtendedPlan::Regular(6)));
     }
 
     #[test]
     fn constructed_from_input_revolving() {
-        let plan = ExtendedPlan::try_from(Input::Revolving).unwrap();
+        let plan = ExtendedPlan::try_from(installments::ExtendedPlan::Revolving).unwrap();
         assert!(matches!(plan, ExtendedPlan::Revolving));
     }
 
     #[test]
     fn constructed_from_input_bonus() {
-        let plan = ExtendedPlan::try_from(Input::Bonus).unwrap();
+        let plan = ExtendedPlan::try_from(installments::ExtendedPlan::Bonus).unwrap();
         assert!(matches!(plan, ExtendedPlan::Bonus));
     }
 
     #[test]
     fn rejects_regular_zero() {
-        let result = ExtendedPlan::try_from(Input::Regular(0));
+        let result = ExtendedPlan::try_from(installments::ExtendedPlan::Regular(0));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 
     #[test]
     fn rejects_regular_one() {
-        let result = ExtendedPlan::try_from(Input::Regular(1));
+        let result = ExtendedPlan::try_from(installments::ExtendedPlan::Regular(1));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 
     #[test]
     fn rejects_empty_id() {
-        let result = ExtendedPlan::try_from(Input::Id(""));
+        let result = ExtendedPlan::try_from(installments::ExtendedPlan::Id(""));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 }

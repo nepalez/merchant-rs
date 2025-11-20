@@ -2,7 +2,6 @@ use rust_decimal::Decimal;
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::DistributedValue as Input;
 use crate::internal::Validated;
 
 /// Value distributed to a recipient in split payments
@@ -48,13 +47,13 @@ pub enum DistributedValue {
     Percent(Decimal),
 }
 
-impl TryFrom<Input> for DistributedValue {
+impl TryFrom<crate::DistributedValue> for DistributedValue {
     type Error = Error;
 
-    fn try_from(input: Input) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::DistributedValue) -> Result<Self, Self::Error> {
         let value = match input {
-            Input::Amount(amount) => DistributedValue::Amount(amount),
-            Input::Percent(percent) => DistributedValue::Percent(percent),
+            crate::DistributedValue::Amount(amount) => DistributedValue::Amount(amount),
+            crate::DistributedValue::Percent(percent) => DistributedValue::Percent(percent),
         };
         value.validate()
     }
@@ -95,7 +94,7 @@ mod tests {
         #[test]
         fn accepts_valid_amounts() {
             for amount in [dec!(0.01), dec!(1.00), dec!(100.00), dec!(9999.99)] {
-                let input = Input::Amount(amount);
+                let input = crate::DistributedValue::Amount(amount);
                 let result = DistributedValue::try_from(input);
                 assert!(result.is_ok(), "Amount {amount} failed validation");
             }
@@ -104,7 +103,7 @@ mod tests {
         #[test]
         fn accepts_valid_percents() {
             for percent in [dec!(0.01), dec!(1.00), dec!(50.00), dec!(99.99)] {
-                let input = Input::Percent(percent);
+                let input = crate::DistributedValue::Percent(percent);
                 let result = DistributedValue::try_from(input);
                 assert!(result.is_ok(), "Percent {percent} failed validation");
             }
@@ -112,42 +111,42 @@ mod tests {
 
         #[test]
         fn rejects_zero_amount() {
-            let input = Input::Amount(dec!(0.00));
+            let input = crate::DistributedValue::Amount(dec!(0.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_negative_amount() {
-            let input = Input::Amount(dec!(-10.00));
+            let input = crate::DistributedValue::Amount(dec!(-10.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_zero_percent() {
-            let input = Input::Percent(dec!(0.00));
+            let input = crate::DistributedValue::Percent(dec!(0.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_negative_percent() {
-            let input = Input::Percent(dec!(-5.00));
+            let input = crate::DistributedValue::Percent(dec!(-5.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_hundred_percent() {
-            let input = Input::Percent(dec!(100.00));
+            let input = crate::DistributedValue::Percent(dec!(100.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }
 
         #[test]
         fn rejects_over_hundred_percent() {
-            let input = Input::Percent(dec!(150.00));
+            let input = crate::DistributedValue::Percent(dec!(150.00));
             let result = DistributedValue::try_from(input);
             assert!(matches!(result, Err(Error::InvalidInput(_))));
         }

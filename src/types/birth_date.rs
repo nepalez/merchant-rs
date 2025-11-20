@@ -4,7 +4,6 @@ use std::fmt;
 use zeroize_derive::ZeroizeOnDrop;
 
 use crate::Error;
-use crate::inputs::BirthDate as Input;
 use crate::internal::{Masked, Validated};
 
 /// Birthdate of a payer
@@ -69,10 +68,10 @@ impl BirthDate {
     }
 }
 
-impl TryFrom<Input> for BirthDate {
+impl TryFrom<crate::BirthDate> for BirthDate {
     type Error = Error;
 
-    fn try_from(input: Input) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::BirthDate) -> Result<Self, Self::Error> {
         Self {
             day: input.day,
             month: input.month,
@@ -142,7 +141,7 @@ mod tests {
             ];
 
             for (day, month, year) in inputs {
-                let input = Input { day, month, year };
+                let input = crate::BirthDate { day, month, year };
                 let result = BirthDate::try_from(input);
                 assert!(result.is_ok(), "({day}, {month}, {year}) failed validation");
             }
@@ -150,7 +149,7 @@ mod tests {
 
         #[test]
         fn rejects_year_too_old() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1908,
@@ -161,7 +160,7 @@ mod tests {
 
         #[test]
         fn rejects_year_too_far() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 2051,
@@ -172,7 +171,7 @@ mod tests {
 
         #[test]
         fn rejects_invalid_day_zero() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 0,
                 month: 8,
                 year: 1990,
@@ -183,7 +182,7 @@ mod tests {
 
         #[test]
         fn rejects_invalid_day_for_month() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 31,
                 month: 4, // April has 30 days
                 year: 1990,
@@ -194,7 +193,7 @@ mod tests {
 
         #[test]
         fn rejects_invalid_leap_day() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 29,
                 month: 2,
                 year: 1999, // Not a leap year
@@ -209,7 +208,7 @@ mod tests {
 
         #[test]
         fn masks_debug() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1990,
@@ -227,7 +226,7 @@ mod tests {
 
         #[test]
         fn getters_are_unsafe() {
-            let input = Input {
+            let input = crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1990,
@@ -248,7 +247,7 @@ mod tests {
             let year_ptr: *const u16;
 
             {
-                let birth_date = BirthDate::try_from(Input {
+                let birth_date = BirthDate::try_from(crate::BirthDate {
                     day: 15,
                     month: 8,
                     year: 1990,
@@ -275,13 +274,13 @@ mod tests {
 
         #[test]
         fn compares_by_year_month_day() {
-            let earlier = BirthDate::try_from(Input {
+            let earlier = BirthDate::try_from(crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1990,
             })
             .unwrap();
-            let later = BirthDate::try_from(Input {
+            let later = BirthDate::try_from(crate::BirthDate {
                 day: 20,
                 month: 8,
                 year: 1990,
@@ -293,13 +292,13 @@ mod tests {
 
         #[test]
         fn equal_dates_are_equal() {
-            let first = BirthDate::try_from(Input {
+            let first = BirthDate::try_from(crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1990,
             })
             .unwrap();
-            let second = BirthDate::try_from(Input {
+            let second = BirthDate::try_from(crate::BirthDate {
                 day: 15,
                 month: 8,
                 year: 1990,

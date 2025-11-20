@@ -1,4 +1,4 @@
-use crate::inputs::{ExternalPaymentData, Transaction};
+use crate::{ExternalPaymentData, Transaction};
 
 /// The data for completing an external payment along with the transaction.
 pub struct ExternalPayment<'a> {

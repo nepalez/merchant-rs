@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::error::Error;
-use crate::inputs::DirectCarrier as Input;
 use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
 
 /// Mobile Carrier Billing Payment
@@ -117,10 +116,10 @@ impl DirectCarrierBilling {
 impl PaymentMethod for DirectCarrierBilling {}
 impl ExternalPaymentMethod for DirectCarrierBilling {}
 
-impl<'a> TryFrom<Input<'a>> for DirectCarrierBilling {
+impl<'a> TryFrom<crate::DirectCarrier<'a>> for DirectCarrierBilling {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::DirectCarrier<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             phone: input.phone.try_into()?,
             metadata: input.metadata.map(TryFrom::try_from).transpose()?,
@@ -134,7 +133,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::DirectCarrier<'static> {
         inputs::DirectCarrier {
             phone: " +1234567890 \n\t",
             metadata: None,

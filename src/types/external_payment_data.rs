@@ -1,5 +1,4 @@
 use crate::Error;
-use crate::inputs::ExternalPaymentData as Input;
 
 /// Payment completion data for external payment flows.
 ///
@@ -14,10 +13,10 @@ use crate::inputs::ExternalPaymentData as Input;
 #[derive(Clone, Debug)]
 pub struct ExternalPaymentData {}
 
-impl<'a> TryFrom<Input<'a>> for ExternalPaymentData {
+impl<'a> TryFrom<crate::ExternalPaymentData<'a>> for ExternalPaymentData {
     type Error = Error;
 
-    fn try_from(_input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(_input: crate::ExternalPaymentData<'a>) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }

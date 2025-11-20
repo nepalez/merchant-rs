@@ -2,7 +2,6 @@ use std::cmp::Ordering;
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::SubscriptionInterval as Input;
 use crate::internal::Validated;
 
 /// Billing interval for recurring subscriptions
@@ -70,13 +69,13 @@ impl PartialOrd for SubscriptionInterval {
     }
 }
 
-impl TryFrom<Input> for SubscriptionInterval {
+impl TryFrom<crate::SubscriptionInterval> for SubscriptionInterval {
     type Error = Error;
 
-    fn try_from(input: Input) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::SubscriptionInterval) -> Result<Self, Self::Error> {
         match input {
-            Input::Day(n) => Self::Day(n),
-            Input::Month(n) => Self::Month(n),
+            crate::SubscriptionInterval::Day(n) => Self::Day(n),
+            crate::SubscriptionInterval::Month(n) => Self::Month(n),
         }
         .validate()
     }

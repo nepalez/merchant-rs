@@ -2,7 +2,6 @@ use std::convert::TryFrom;
 
 use super::{ExternalPaymentMethod, PaymentMethod};
 use crate::Error;
-use crate::inputs::CashVoucher as Input;
 use crate::types::{Address, FullName, Metadata, NationalId};
 
 /// Cash-Based Voucher
@@ -130,10 +129,10 @@ impl CashVoucher {
 impl PaymentMethod for CashVoucher {}
 impl ExternalPaymentMethod for CashVoucher {}
 
-impl<'a> TryFrom<Input<'a>> for CashVoucher {
+impl<'a> TryFrom<crate::CashVoucher<'a>> for CashVoucher {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::CashVoucher<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             full_name: input.full_name.try_into()?,
             billing_address: input.billing_address.map(TryFrom::try_from).transpose()?,
@@ -149,7 +148,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::CashVoucher<'static> {
         inputs::CashVoucher {
             full_name: " john doe \n\t",
             billing_address: Some(inputs::Address {

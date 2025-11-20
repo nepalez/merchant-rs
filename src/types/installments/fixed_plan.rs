@@ -1,9 +1,8 @@
 //! Fixed the installment plan for universal use.
 
-use crate::Error;
-use crate::inputs::installments::FixedPlan as Input;
 use crate::internal::Validated;
 use crate::types::InstallmentPlanId;
+use crate::{Error, installments};
 
 /// Plan type for fixed installments.
 ///
@@ -30,14 +29,14 @@ impl Validated for FixedPlan {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for FixedPlan {
+impl<'a> TryFrom<installments::FixedPlan<'a>> for FixedPlan {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: installments::FixedPlan<'a>) -> Result<Self, Self::Error> {
         match input {
-            Input::Single => Ok(Self::Single),
-            Input::Count(n) => Self::Count(n).validate(),
-            Input::Id(id) => Ok(Self::Id(id.try_into()?)),
+            installments::FixedPlan::Single => Ok(Self::Single),
+            installments::FixedPlan::Count(n) => Self::Count(n).validate(),
+            installments::FixedPlan::Id(id) => Ok(Self::Id(id.try_into()?)),
         }
     }
 }
@@ -54,37 +53,37 @@ mod tests {
 
     #[test]
     fn constructed_from_input_single() {
-        let plan = FixedPlan::try_from(Input::Single).unwrap();
+        let plan = FixedPlan::try_from(installments::FixedPlan::Single).unwrap();
         assert!(matches!(plan, FixedPlan::Single));
     }
 
     #[test]
     fn constructed_from_input_count() {
-        let plan = FixedPlan::try_from(Input::Count(6)).unwrap();
+        let plan = FixedPlan::try_from(installments::FixedPlan::Count(6)).unwrap();
         assert!(matches!(plan, FixedPlan::Count(6)));
     }
 
     #[test]
     fn constructed_from_input_id() {
-        let plan = FixedPlan::try_from(Input::Id("INS54434")).unwrap();
+        let plan = FixedPlan::try_from(installments::FixedPlan::Id("INS54434")).unwrap();
         assert!(matches!(plan, FixedPlan::Id(_)));
     }
 
     #[test]
     fn rejects_count_zero() {
-        let result = FixedPlan::try_from(Input::Count(0));
+        let result = FixedPlan::try_from(installments::FixedPlan::Count(0));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 
     #[test]
     fn rejects_count_one() {
-        let result = FixedPlan::try_from(Input::Count(1));
+        let result = FixedPlan::try_from(installments::FixedPlan::Count(1));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 
     #[test]
     fn rejects_empty_id() {
-        let result = FixedPlan::try_from(Input::Id(""));
+        let result = FixedPlan::try_from(installments::FixedPlan::Id(""));
         assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 }

@@ -1,4 +1,4 @@
-use crate::inputs::{Address, Credentials};
+use crate::{Address, Credentials};
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct SEPACredentials<'a> {

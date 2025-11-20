@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use crate::inputs::BNPL as Input;
 use crate::types::{
     Address, BirthDate, EmailAddress, ExternalPaymentMethod, FullName, Metadata, NationalId,
     PaymentMethod, PhoneNumber,
@@ -158,10 +157,10 @@ impl BNPL {
 impl PaymentMethod for BNPL {}
 impl ExternalPaymentMethod for BNPL {}
 
-impl<'a> TryFrom<Input<'a>> for BNPL {
+impl<'a> TryFrom<crate::BNPL<'a>> for BNPL {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::BNPL<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             billing_address: input.billing_address.try_into()?,
             email: input.email.try_into()?,
@@ -181,7 +180,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::BNPL<'static> {
         inputs::BNPL {
             billing_address: inputs::Address {
                 country_code: " US \n\t",

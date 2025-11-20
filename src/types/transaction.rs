@@ -1,7 +1,6 @@
 use iso_currency::Currency;
 use std::convert::TryFrom;
 
-use crate::inputs::Transaction as Input;
 use crate::types::{Recipients, TransactionId, TransactionIdempotenceKey};
 use crate::{Error, MerchantInitiatedType, TransactionStatus};
 
@@ -58,10 +57,10 @@ impl Transaction {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for Transaction {
+impl<'a> TryFrom<crate::Transaction<'a>> for Transaction {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::Transaction<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             transaction_id: input.transaction_id.try_into()?,
             idempotence_key: input.idempotence_key.try_into()?,
@@ -78,8 +77,8 @@ mod tests {
     use super::*;
     use crate::AsUnsafeRef;
 
-    fn valid_input() -> Input<'static> {
-        Input {
+    fn valid_input() -> crate::Transaction<'static> {
+        crate::Transaction {
             transaction_id: " txn_12345678 \n\t",
             idempotence_key: " idempotence-key-123 \n\t",
             status: TransactionStatus::Captured,

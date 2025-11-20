@@ -2,27 +2,26 @@ use rust_decimal::Decimal;
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::DistributedAmount as Input;
 use crate::internal::Validated;
 use crate::types::Recipients;
 
 /// Payment amount with optional distribution to recipients.
 ///
 /// Represents a payment amount that can be split among multiple recipients.
-/// The total amount is always required, while recipients list can be empty
+/// The total amount is always required, while the recipient list can be empty
 /// (indicating all funds go to the platform).
 ///
 /// # Distribution Model
 ///
 /// The portion of `total` not allocated to recipients goes to the platform.
-/// * Empty recipients: entire amount goes to the platform
-/// * Partial allocation: platform receives `total - sum(recipients)`
-/// * Full allocation: platform receives nothing (all distributed to recipients)
+/// * Empty recipients: the entire amount goes to the platform
+/// * Partial allocation: a platform receives `total - sum(recipients)`
+/// * Full allocation: a platform receives nothing (all distributed to recipients)
 ///
 /// # Validation
 ///
 /// * Total amount must be positive (> 0)
-/// * Sum of recipient allocations must not exceed total amount
+/// * Sum of recipient allocations must not exceed the total amount
 /// * Individual recipients are validated according to their rules
 ///
 /// # Examples
@@ -72,10 +71,10 @@ impl From<Decimal> for DistributedAmount {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for DistributedAmount {
+impl<'a> TryFrom<crate::DistributedAmount<'a>> for DistributedAmount {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::DistributedAmount<'a>) -> Result<Self, Self::Error> {
         Self {
             total: input.total,
             recipients: Recipients::try_from(input.recipients)?,

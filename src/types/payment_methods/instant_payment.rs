@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 
-use crate::inputs::InstantPayment as Input;
 use crate::types::{
     AccountNumber, Address, BankCode, EmailAddress, ExternalPaymentMethod, FullName, Metadata,
     NationalId, PaymentMethod, PhoneNumber, VirtualPaymentAddress,
@@ -189,10 +188,10 @@ impl InstantAccount {
 impl PaymentMethod for InstantAccount {}
 impl ExternalPaymentMethod for InstantAccount {}
 
-impl<'a> TryFrom<Input<'a>> for InstantAccount {
+impl<'a> TryFrom<crate::InstantPayment<'a>> for InstantAccount {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::InstantPayment<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             email: input.email.try_into()?,
             full_name: input.full_name.try_into()?,
@@ -217,7 +216,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input() -> Input<'static> {
+    fn valid_input() -> crate::InstantPayment<'static> {
         inputs::InstantPayment {
             email: " user@example.com \n\t",
             full_name: " john doe \n\t",

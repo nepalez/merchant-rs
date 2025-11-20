@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::Recipients as Input;
 use crate::internal::Validated;
 use crate::types::{DistributedValue, RecipientId};
 
@@ -89,10 +88,10 @@ impl Recipients {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for Recipients {
+impl<'a> TryFrom<crate::Recipients<'a>> for Recipients {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::Recipients<'a>) -> Result<Self, Self::Error> {
         let recipients = input
             .into_iter()
             .map(|(id, part)| {

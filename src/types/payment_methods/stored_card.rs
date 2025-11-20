@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::inputs::{StoredCard as Input, StoredCardCredentials as CredentialsInput};
 use crate::types::{
     CardExpiry, CardHolderName, Credentials, CreditCard, InternalPaymentMethod, PaymentMethod,
     PrimaryAccountNumber, StorablePaymentMethod,
@@ -135,10 +134,10 @@ impl PaymentMethod for StoredCard {}
 impl InternalPaymentMethod for StoredCard {}
 impl StorablePaymentMethod for StoredCard {}
 
-impl<'a> TryFrom<CredentialsInput<'a>> for StoredCardCredentials {
+impl<'a> TryFrom<crate::StoredCardCredentials<'a>> for StoredCardCredentials {
     type Error = Error;
 
-    fn try_from(value: CredentialsInput<'a>) -> Result<Self, Self::Error> {
+    fn try_from(value: crate::StoredCardCredentials<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             number: value.number.try_into()?,
             card_expiry: value.card_expiry.try_into()?,
@@ -147,10 +146,10 @@ impl<'a> TryFrom<CredentialsInput<'a>> for StoredCardCredentials {
     }
 }
 
-impl<'a> TryFrom<Input<'a>> for StoredCard {
+impl<'a> TryFrom<crate::StoredCard<'a>> for StoredCard {
     type Error = Error;
 
-    fn try_from(input: Input<'a>) -> Result<Self, Self::Error> {
+    fn try_from(input: crate::StoredCard<'a>) -> Result<Self, Self::Error> {
         Ok(Self {
             credentials: input.credentials.try_into()?,
         })
@@ -175,7 +174,7 @@ mod tests {
     use crate::AsUnsafeRef;
     use crate::inputs;
 
-    fn valid_input_plain() -> Input<'static> {
+    fn valid_input_plain() -> crate::StoredCard<'static> {
         inputs::StoredCard {
             credentials: inputs::Credentials::Plain(inputs::StoredCardCredentials {
                 number: " 4532-0151-1283-0366 \n\t",
@@ -188,7 +187,7 @@ mod tests {
         }
     }
 
-    fn valid_input_tokenized() -> Input<'static> {
+    fn valid_input_tokenized() -> crate::StoredCard<'static> {
         inputs::StoredCard {
             credentials: inputs::Credentials::Tokenized("tok_abcdef1234567890"),
         }
