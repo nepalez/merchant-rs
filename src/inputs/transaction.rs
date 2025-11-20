@@ -1,7 +1,7 @@
 use iso_currency::Currency;
 
 use crate::inputs::Recipients;
-use crate::types::{MerchantInitiatedType, TransactionStatus};
+use crate::{MerchantInitiatedType, TransactionStatus};
 
 /// Information to build a transaction in Gateway adapters implementations.
 pub struct Transaction<'a> {

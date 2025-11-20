@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use strum_macros::{AsRefStr, Display};
 
 /// Categories of account holders for bank accounts and payment methods.
 ///
@@ -9,17 +9,10 @@ use std::fmt::Display;
 ///
 /// * `Individual` - Personal account held by a natural person
 /// * `Company` - Business account held by a legal entity (corporation, LLC, partnership, etc.)
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+#[derive(AsRefStr, Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub enum AccountHolderType {
     /// Personal account held by an individual consumer
     Individual,
     /// Business account held by a company or organization
     Company,
-}
-
-impl Display for AccountHolderType {
-    #[inline]
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }

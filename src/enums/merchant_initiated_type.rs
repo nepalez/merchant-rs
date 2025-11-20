@@ -1,8 +1,10 @@
+use strum_macros::{AsRefStr, Display};
+
 /// Merchant-Initiated Transaction type
 ///
 /// Categorizes transactions initiated by merchant without active customer participation.
 /// Required for Visa/Mastercard COF (Credential-on-File) mandate compliance.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(AsRefStr, Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub enum MerchantInitiatedType {
     /// Interval recurring payments (subscriptions, memberships)
     Recurring,

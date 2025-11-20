@@ -4,11 +4,10 @@ use rust_decimal::Decimal;
 
 use crate::flows::change_authorization;
 use crate::types::{
-    DistributedAmount, InternalPaymentMethod, MerchantInitiatedType, Recipients,
-    RedistributedAmount, StoredCredentialUsage, Transaction, TransactionId,
-    TransactionIdempotenceKey,
+    DistributedAmount, InternalPaymentMethod, Recipients, RedistributedAmount,
+    StoredCredentialUsage, Transaction, TransactionId, TransactionIdempotenceKey,
 };
-use crate::{Error, Gateway};
+use crate::{Error, Gateway, MerchantInitiatedType};
 
 trait Amount {}
 impl Amount for Decimal {}

@@ -1,7 +1,7 @@
 use iso_currency::Currency;
 
+use crate::SubscriptionStatus;
 use crate::inputs::{Recipients, SubscriptionInterval};
-use crate::types::SubscriptionStatus;
 
 /// Information to build a subscription in Gateway adapters implementations.
 pub struct Subscription<'a> {

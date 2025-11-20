@@ -6,7 +6,7 @@ use strum_macros::{AsRefStr, Display};
 /// This is a commonly used classifier requiring no security protection.
 ///
 /// Consequently, both `Debug` and `Display` are implemented without masking.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+#[derive(AsRefStr, Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub enum TransactionStatus {
     Authorized,
     Captured,

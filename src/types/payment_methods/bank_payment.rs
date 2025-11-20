@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 
-use crate::Error;
 use crate::inputs::{BankPayment as Input, BankPaymentCredentials as CredentialsInput};
 use crate::types::{
-    AccountHolderType, AccountNumber, AccountType, Credentials, FullName, InternalPaymentMethod,
-    Metadata, PaymentMethod, RoutingNumber, StorablePaymentMethod,
+    AccountNumber, Credentials, FullName, InternalPaymentMethod, Metadata, PaymentMethod,
+    RoutingNumber, StorablePaymentMethod,
 };
+use crate::{AccountHolderType, AccountType, Error};
 
 /// Direct Bank Account
 ///

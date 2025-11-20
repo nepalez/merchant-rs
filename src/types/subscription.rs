@@ -2,9 +2,9 @@ use std::convert::TryFrom;
 
 use iso_currency::Currency;
 
-use crate::Error;
 use crate::inputs::Subscription as Input;
-use crate::types::{Recipients, SubscriptionId, SubscriptionInterval, SubscriptionStatus};
+use crate::types::{Recipients, SubscriptionId, SubscriptionInterval};
+use crate::{Error, SubscriptionStatus};
 
 /// Subscription result returned by recurring payment operations
 ///

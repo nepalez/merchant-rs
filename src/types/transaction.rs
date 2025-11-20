@@ -1,12 +1,9 @@
+use iso_currency::Currency;
 use std::convert::TryFrom;
 
-use iso_currency::Currency;
-
-use crate::Error;
 use crate::inputs::Transaction as Input;
-use crate::types::{
-    MerchantInitiatedType, Recipients, TransactionId, TransactionIdempotenceKey, TransactionStatus,
-};
+use crate::types::{Recipients, TransactionId, TransactionIdempotenceKey};
+use crate::{Error, MerchantInitiatedType, TransactionStatus};
 
 /// Transaction result returned by payment gateway operations.
 ///

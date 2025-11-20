@@ -47,9 +47,8 @@ impl<'a> TryFrom<Input<'a>> for ExternalPayment {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::AsUnsafeRef;
     use crate::inputs;
-    use crate::types::{MerchantInitiatedType, TransactionStatus};
+    use crate::{AsUnsafeRef, MerchantInitiatedType, TransactionStatus};
     use iso_currency::Currency;
 
     fn valid_input() -> Input<'static> {

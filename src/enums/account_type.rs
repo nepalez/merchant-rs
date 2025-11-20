@@ -1,3 +1,5 @@
+use strum_macros::{AsRefStr, Display};
+
 /// Type of the bank account
 ///
 /// # Data Protection
@@ -5,7 +7,7 @@
 /// Bank account types are standardized classifiers requiring no security protection.
 ///
 /// Consequently, both `Debug` and `AsRef` are implemented without masking.
-#[derive(Clone, Copy, Debug)]
+#[derive(AsRefStr, Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub enum AccountType {
     Checking,
     Savings,

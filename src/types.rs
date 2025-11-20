@@ -8,9 +8,7 @@
 //! By making these structures canonical, the core decouples the business logic
 //! from the specific data formats required by external Payment Gateways (PAGs),
 //! upholding the core's role as a stable abstraction layer.
-mod account_holder_type;
 mod account_number;
-mod account_type;
 mod address;
 mod authorization_code;
 mod bank_code;
@@ -30,7 +28,6 @@ mod external_payment_data;
 mod full_name;
 mod iban;
 mod installment_plan_id;
-mod merchant_initiated_type;
 mod metadata;
 mod national_id;
 mod not_changed;
@@ -49,20 +46,16 @@ mod street_address;
 mod subscription;
 mod subscription_id;
 mod subscription_interval;
-mod subscription_status;
 mod token;
 mod transaction;
 mod transaction_id;
 mod transaction_idempotence_key;
-mod transaction_status;
 mod virtual_payment_address;
 mod wallet_address;
 
 pub mod installments;
 
-pub use account_holder_type::AccountHolderType;
 pub use account_number::AccountNumber;
-pub use account_type::AccountType;
 pub use address::Address;
 pub use authorization_code::AuthorizationCode;
 pub use bank_code::BankCode;
@@ -82,7 +75,6 @@ pub use external_payment_data::ExternalPaymentData;
 pub use full_name::FullName;
 pub use iban::IBAN;
 pub use installment_plan_id::InstallmentPlanId;
-pub use merchant_initiated_type::MerchantInitiatedType;
 pub use metadata::Metadata;
 pub use national_id::NationalId;
 pub use not_changed::NotChanged;
@@ -101,11 +93,9 @@ pub use street_address::StreetAddress;
 pub use subscription::Subscription;
 pub use subscription_id::SubscriptionId;
 pub use subscription_interval::SubscriptionInterval;
-pub use subscription_status::SubscriptionStatus;
 pub use token::Token;
 pub use transaction::Transaction;
 pub use transaction_id::TransactionId;
 pub use transaction_idempotence_key::TransactionIdempotenceKey;
-pub use transaction_status::TransactionStatus;
 pub use virtual_payment_address::VirtualPaymentAddress;
 pub use wallet_address::WalletAddress;

@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 
-use crate::Error;
 use crate::inputs::InstantPayment as Input;
 use crate::types::{
-    AccountHolderType, AccountNumber, Address, BankCode, EmailAddress, ExternalPaymentMethod,
-    FullName, Metadata, NationalId, PaymentMethod, PhoneNumber, VirtualPaymentAddress,
+    AccountNumber, Address, BankCode, EmailAddress, ExternalPaymentMethod, FullName, Metadata,
+    NationalId, PaymentMethod, PhoneNumber, VirtualPaymentAddress,
 };
+use crate::{AccountHolderType, Error};
 
 /// Instant payment systems
 ///

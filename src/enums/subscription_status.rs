@@ -1,7 +1,7 @@
 use strum_macros::{AsRefStr, Display};
 
 /// Status of a recurring payment subscription
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, AsRefStr)]
+#[derive(AsRefStr, Clone, Copy, Debug, Display, Eq, Hash, PartialEq)]
 pub enum SubscriptionStatus {
     Active,
     Paused,

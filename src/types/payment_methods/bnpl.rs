@@ -1,11 +1,11 @@
 use std::convert::TryFrom;
 
-use crate::Error;
 use crate::inputs::BNPL as Input;
 use crate::types::{
-    AccountHolderType, Address, BirthDate, EmailAddress, ExternalPaymentMethod, FullName, Metadata,
-    NationalId, PaymentMethod, PhoneNumber,
+    Address, BirthDate, EmailAddress, ExternalPaymentMethod, FullName, Metadata, NationalId,
+    PaymentMethod, PhoneNumber,
 };
+use crate::{AccountHolderType, Error};
 
 /// Buy Now Pay Later
 ///

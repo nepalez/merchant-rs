@@ -1,5 +1,5 @@
+use crate::AccountHolderType;
 use crate::inputs::{Address, BirthDate, Metadata};
-use crate::types::AccountHolderType;
 
 #[allow(clippy::upper_case_acronyms)]
 pub struct BNPL<'a> {

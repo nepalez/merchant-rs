@@ -3,10 +3,10 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    DistributedAmount, InternalPaymentMethod, MerchantInitiatedType, StoredCredentialUsage,
-    Transaction, TransactionIdempotenceKey,
+    DistributedAmount, InternalPaymentMethod, StoredCredentialUsage, Transaction,
+    TransactionIdempotenceKey,
 };
-use crate::{Error, Gateway};
+use crate::{Error, Gateway, MerchantInitiatedType};
 
 trait Amount {}
 impl Amount for Decimal {}
