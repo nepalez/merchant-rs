@@ -103,7 +103,7 @@ use crate::types::{
 /// - ❌ Do not write to files
 /// - ❌ Do not include in error messages
 /// - ✅ Pass directly to the gateway
-/// - ✅ Protected by ZeroizeOnDrop (automatic memory zeroization)
+/// - ✅ Protected by `ZeroizeOnDrop` (automatic memory zeroization)
 /// - ✅ Memory zeroed immediately after use
 ///
 /// ### Fraud Prevention

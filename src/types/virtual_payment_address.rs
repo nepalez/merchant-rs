@@ -83,7 +83,7 @@ impl Validated for VirtualPaymentAddress {
 /// for the other PIX identifiers (CPF, CNPJ, Phone, UUID):
 /// 1. Neither causes out-of-bounds access to potentially INVALID (empty) data,
 ///    due to fallbacks to the empty strings,
-/// 2. Nor leaks the real data due to hiding the real length of the email address.
+/// 2. Nor leaks the real data due to hiding the real length of the email address
 ///    neither exposes the essential part of CPF (11 chars), CNPJ (14 chars), Phone (10 chars),
 ///    random UUID (36 chars).
 ///

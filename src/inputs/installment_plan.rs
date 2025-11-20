@@ -6,11 +6,11 @@
 /// let id = FixedPlan::Id("INS54434");
 /// ```
 #[derive(Debug, Clone)]
-pub enum FixedPlan<'a> {
+pub enum InstallmentPlan<'a> {
     /// Single payment (no installments).
     Single,
-    /// Installments with specified count (2-99).
-    Count(u8),
+    /// Installments with a specified count (2-99).
+    Regular(u8),
     /// Gateway-specific plan ID from installments API.
     Id(&'a str),
 }

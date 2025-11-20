@@ -40,7 +40,7 @@ use crate::types::{
 /// 1. **Merchant initiates**: Uses stored token without customer interaction
 /// 2. **No CVV required**: MIT transactions don't require CVV
 /// 3. **Network tokens**: May use EMV tokens (Visa Token Service, Mastercard MDES)
-/// 4. **Transaction indicators**: MIT indicator flags inform issuer of transaction type
+/// 4. **Transaction indicators**: MIT indicator flags inform the issuer of a transaction type
 ///
 /// ## Differences from CreditCard
 ///
@@ -189,7 +189,7 @@ mod tests {
 
     fn valid_input_tokenized() -> crate::StoredCard<'static> {
         inputs::StoredCard {
-            credentials: inputs::Credentials::Tokenized("tok_abcdef1234567890"),
+            credentials: inputs::Credentials::Tokenized("tok_ebadf1234567890"),
         }
     }
 
@@ -230,7 +230,7 @@ mod tests {
 
         match stored_card.credentials {
             Credentials::Tokenized(token) => unsafe {
-                assert_eq!(token.as_ref(), "tok_abcdef1234567890");
+                assert_eq!(token.as_ref(), "tok_ebadf1234567890");
             },
             Credentials::Plain(_) => panic!("Expected Tokenized credentials"),
         }

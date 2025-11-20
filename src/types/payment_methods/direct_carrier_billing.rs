@@ -28,7 +28,7 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
 ///
 /// ### SMS Authentication Flow Steps
 ///
-/// 1. **Merchant initiates**: Calls `authorize()` with customer's phone number
+/// 1. **Merchant initiates**: Calls `authorize()` with the customer's phone number
 /// 2. **Gateway routes to carrier**: Identifies carrier from phone number, initiates DCB request
 /// 3. **Carrier sends PIN**: Customer receives SMS with a one-time PIN code
 /// 4. **Customer enters PIN**: Types PIN into merchant's checkout or responds to SMS

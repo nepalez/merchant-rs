@@ -29,18 +29,18 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
 /// ### Payment Flow Steps
 ///
 /// 1. **Merchant initiates**: Calls `authorize()` with crypto payment request
-/// 2. **Gateway generates address**: Creates unique deposit address for the transaction
+/// 2. **Gateway generates address**: Creates a unique deposit address for the transaction
 /// 3. **Customer receives address**: Via QR code, direct address, or payment link
 /// 4. **Customer initiates transfer**: Sends crypto from any wallet to the deposit address
 /// 5. **Blockchain confirmation**: Transaction propagates through network, miners/validators confirm
 /// 6. **Gateway monitors blockchain**: Watches for incoming transactions to the deposit address
-/// 7. **Webhook notification**: Gateway notifies merchant after sufficient confirmations (async, minutes to hours)
-/// 8. **Settlement complete**: Funds available to merchant (may be converted to fiat automatically)
+/// 7. **Webhook notification**: Gateway notifies the merchant after sufficient confirmations (async, minutes to hours)
+/// 8. **Settlement completion**: Funds available to merchant (it can be converted to fiat automatically)
 ///
 /// ### Authorization Request Content
 ///
 /// The authorization request contains **only metadata for currency/network selection**,
-/// not authentication credentials. Authentication is inherent in blockchain — only the holder
+/// not authentication credentials. Authentication is inherent in the blockchain — only the holder
 /// of private keys can sign valid transactions.
 ///
 /// ## Standards
@@ -59,7 +59,7 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
 /// - **Coinbase Commerce**: BTC, ETH, LTC, BCH, USDC; merchant-hosted checkout
 /// - **NOWPayments**: 200+ cryptocurrencies, auto-conversion, recurring payments
 /// - **CoinGate**: 70+ cryptocurrencies, Lightning Network, fiat settlement
-/// - **BTCPay Server**: Self-hosted, non-custodial, supports BTC and Lightning
+/// - **BTCPay Server**: Self-hosted, noncustodial, supports BTC and Lightning
 ///
 /// ### Supported Networks
 /// - **Bitcoin (BTC)**: Most established, 10-60 minute confirmation
@@ -79,7 +79,7 @@ use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
 /// - Use HD (Hierarchical Deterministic) wallets for address generation
 /// - Each transaction should use a unique deposit address
 /// - Never reuse addresses to prevent transaction correlation
-/// - Validate address format before displaying to customer
+/// - Validate an address format before displaying to the customer
 ///
 /// ### Confirmation Requirements
 /// - Higher value transactions require more confirmations

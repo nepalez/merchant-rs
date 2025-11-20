@@ -134,7 +134,7 @@ mod tests {
 
         #[test]
         fn as_ref_returns_original_value() {
-            // ReasonForRefund does NOT sanitize, so it returns original value
+            // ReasonForRefund does NOT sanitize, so it returns the original value
             let input = "Customer requested refund";
             let reason = ReasonForRefund::try_from(input).unwrap();
             let exposed = unsafe { reason.as_ref() };

@@ -72,7 +72,7 @@ use crate::{AccountHolderType, Error};
 ///
 /// ### Credit Assessment Data
 /// - Date of birth required for age verification and credit checks
-/// - National identifier is required by some providers (SSN in the US, CPF in Brazil, NRIC in Singapore)
+/// - some providers require National identifier (SSN in the US, CPF in Brazil, NRIC in Singapore)
 /// - Shipping address compared with billing for fraud detection
 /// - Phone number used for identity verification
 ///

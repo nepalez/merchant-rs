@@ -151,7 +151,8 @@ mod tests {
 
             // Empty input becomes "+" which has length 1, less than 6
             if let Err(Error::InvalidInput(msg)) = result {
-                // PhoneNumber will mask as "+***" since last_chars returns empty string for length 1
+                // PhoneNumber will mask as "+***"
+                // since last_chars returns an empty string for length 1
                 assert!(msg.contains("PhoneNumber"));
             } else {
                 panic!("Expected InvalidInput error, got {result:?}");

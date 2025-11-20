@@ -22,7 +22,7 @@ use crate::types::Recipients;
 /// # Validation
 ///
 /// * If total is specified, it must be positive (> 0)
-/// * If both total and recipients are specified, recipients total must not exceed payment total
+/// * If both total and recipients are specified, recipient total must not exceed payment total
 /// * Individual recipients are validated according to their rules
 ///
 /// # Examples
@@ -75,18 +75,22 @@ impl From<Decimal> for RedistributedAmount {
     }
 }
 
-impl From<Option<Recipients>> for RedistributedAmount {
-    fn from(recipients: Option<Recipients>) -> Self {
-        Self {
+impl<'a> TryFrom<Option<crate::Recipients<'a>>> for RedistributedAmount {
+    type Error = Error;
+
+    fn try_from(recipients: Option<crate::Recipients<'a>>) -> Result<Self, Self::Error> {
+        Ok(Self {
             total: None,
-            recipients,
-        }
+            recipients: recipients.map(TryFrom::try_from).transpose()?,
+        })
     }
 }
 
-impl From<Recipients> for RedistributedAmount {
-    fn from(recipients: Recipients) -> Self {
-        Some(recipients).into()
+impl<'a> TryFrom<crate::Recipients<'a>> for RedistributedAmount {
+    type Error = Error;
+
+    fn try_from(recipients: crate::Recipients<'a>) -> Result<Self, Self::Error> {
+        Some(recipients).try_into()
     }
 }
 
@@ -107,6 +111,8 @@ impl<'a> TryFrom<crate::RedistributedAmount<'a>> for RedistributedAmount {
         .validate()
     }
 }
+
+// --- Sealed traits (not a part of the public API) ---
 
 impl Validated for RedistributedAmount {
     fn validate(self) -> Result<Self, Error> {
@@ -177,27 +183,26 @@ mod tests {
             "seller_1",
             crate::inputs::DistributedValue::Amount(dec!(30.00)),
         );
-        let recipients = crate::types::Recipients::try_from(recipients_input).unwrap();
 
-        let amount = RedistributedAmount::from(recipients);
+        let amount = RedistributedAmount::try_from(recipients_input).expect("Valid recipients");
         assert!(amount.total().is_none());
         assert!(amount.recipients().is_some());
     }
 
     #[test]
     fn converts_from_option_recipients() {
-        let mut recipients_input = HashMap::new();
-        recipients_input.insert(
+        let mut input = HashMap::new();
+        input.insert(
             "seller_1",
             crate::inputs::DistributedValue::Amount(dec!(30.00)),
         );
-        let recipients = crate::types::Recipients::try_from(recipients_input).unwrap();
 
-        let amount = RedistributedAmount::from(Some(recipients));
+        let amount = RedistributedAmount::try_from(Some(input)).expect("Valid recipients");
         assert!(amount.total().is_none());
         assert!(amount.recipients().is_some());
 
-        let amount = RedistributedAmount::from(None::<crate::types::Recipients>);
+        let amount =
+            RedistributedAmount::try_from(None::<crate::Recipients>).expect("Valid recipients");
         assert!(amount.total().is_none());
         assert!(amount.recipients().is_none());
     }

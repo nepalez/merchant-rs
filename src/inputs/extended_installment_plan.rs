@@ -6,10 +6,10 @@
 /// let revolving = ExtendedPlan::Revolving;
 /// ```
 #[derive(Debug, Clone)]
-pub enum ExtendedPlan<'a> {
+pub enum ExtendedInstallmentPlan<'a> {
     /// Single payment (no installments).
     Single,
-    /// Regular installments with specified count (2-99).
+    /// Regular installments with a specified count (2-99).
     Regular(u8),
     /// Revolving credit plan.
     Revolving,

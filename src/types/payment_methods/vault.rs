@@ -108,10 +108,10 @@ mod tests {
 
     #[test]
     fn constructed_from_valid_input() {
-        let vault = Vault::try_from("tok_1234567890abcdef").unwrap();
+        let vault = Vault::try_from("tok_1234567890ebadf").unwrap();
 
         unsafe {
-            assert_eq!(vault.token.as_ref(), "tok_1234567890abcdef");
+            assert_eq!(vault.token.as_ref(), "tok_1234567890ebadf");
         }
     }
 

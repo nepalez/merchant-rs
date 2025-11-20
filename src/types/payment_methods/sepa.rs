@@ -112,7 +112,7 @@ impl SEPA {
         &self.email
     }
 
-    /// User full name as registered with bank
+    /// User full name as registered with a bank
     #[inline]
     pub fn full_name(&self) -> &FullName {
         &self.full_name

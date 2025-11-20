@@ -9,7 +9,7 @@ use crate::internal::Validated;
 /// Represents the frequency at which a customer is charged.
 /// Supports both duration-based and calendar-based semantics.
 ///
-/// # Duration-based vs Calendar-based
+/// # Duration-based vs. Calendar-based
 ///
 /// * `Day(n)`: Duration-based, counted from subscription start date
 ///   - `Day(7)` = exactly 7 * 24 hours from start (weekly)
@@ -24,7 +24,7 @@ use crate::internal::Validated;
 /// # Ordering
 ///
 /// `Day` and `Month` intervals cannot be compared as they represent
-/// fundamentally different concepts (duration vs calendar).
+/// fundamentally different concepts (duration vs. calendar).
 ///
 /// # Examples
 ///
@@ -146,12 +146,12 @@ mod tests {
     #[test]
     fn rejects_zero_day() {
         let result = SubscriptionInterval::Day(0).validate();
-        assert!(matches!(result, Err(crate::Error::InvalidInput(_))));
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 
     #[test]
     fn rejects_zero_month() {
         let result = SubscriptionInterval::Month(0).validate();
-        assert!(matches!(result, Err(crate::Error::InvalidInput(_))));
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
     }
 }
