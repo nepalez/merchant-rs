@@ -66,16 +66,19 @@ where
     /// # Parameters
     ///
     /// * `amount` - Payment amount, either simple Decimal or DistributedAmount with recipients
+    /// * `installments` - Installment payment options
     ///
     /// # Returns
     ///
     /// Transaction record with authorization status
+    #[allow(clippy::too_many_arguments)]
     async fn authorize(
         &self,
         payment_method: <Self as Gateway>::PaymentMethod,
         amount: Self::Amount,
         currency: Currency,
         idempotence_key: TransactionIdempotenceKey,
+        installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,
     ) -> Result<Transaction, Error>;

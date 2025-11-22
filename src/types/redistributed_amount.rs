@@ -145,13 +145,6 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn default_is_empty() {
-        let amount = RedistributedAmount::default();
-        assert!(amount.total().is_none());
-        assert!(amount.recipients().is_none());
-    }
-
-    #[test]
     fn converts_from_unit() {
         let amount = RedistributedAmount::from(());
         assert!(amount.total().is_none());

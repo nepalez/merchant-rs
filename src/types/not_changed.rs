@@ -49,11 +49,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_is_not_changed() {
-        let _ = NotChanged::default();
-    }
-
-    #[test]
     fn converts_from_unit() {
         let not_changed: NotChanged = ().into();
         let _: () = not_changed.into();

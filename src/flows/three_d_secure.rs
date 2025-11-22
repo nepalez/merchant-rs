@@ -21,12 +21,14 @@ where
 {
     type Amount: Amount;
 
+    #[allow(clippy::too_many_arguments)]
     async fn authenticate(
         &self,
         payment_method: <Self as Gateway>::PaymentMethod,
         amount: Self::Amount,
         currency: Currency,
         idempotence_key: TransactionIdempotenceKey,
+        installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,
     ) -> Result<PaymentToken<<Self as Gateway>::PaymentMethod>, Error>;
