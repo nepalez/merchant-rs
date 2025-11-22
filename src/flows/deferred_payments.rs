@@ -1,13 +1,12 @@
 use async_trait::async_trait;
-use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::flows::change_authorization;
 use crate::types::{
     CaptureAuthorized, InternalPaymentMethod, Recipients, StoredCredentialUsage, Transaction,
-    TransactionId, TransactionIdempotenceKey,
+    TransactionId,
 };
-use crate::{Error, Gateway, MerchantInitiatedType};
+use crate::{Error, Gateway, MerchantInitiatedType, PaymentMarker};
 
 trait CapturedAmount {}
 impl CapturedAmount for CaptureAuthorized {}
@@ -44,38 +43,17 @@ impl CapturedDistribution for Option<Recipients> {}
 #[allow(private_bounds)]
 pub trait DeferredPayments: Gateway
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     type AuthorizationChanges: change_authorization::Sealed;
     type CapturedAmount: CapturedAmount;
     type CapturedDistribution: CapturedDistribution;
 
     /// Authorize payment and reserve funds without immediate capture.
-    ///
-    /// Validates the payment method and reserves the specified amount on the customer's account.
-    /// Funds remain reserved but not debited until `capture()` is called.
-    ///
-    /// # Parameters
-    ///
-    /// * `total_amount` - Total payment amount
-    /// * `base_amount` - Amount going to the platform
-    /// * `recipients` - Amount distribution to recipients (None if no distribution)
-    /// * `installments` - Installment payment options
-    ///
-    /// # Returns
-    ///
-    /// Transaction record with authorization status
-    #[allow(clippy::too_many_arguments)]
+    #[allow(private_interfaces)]
     async fn authorize(
         &self,
-
-        payment_method: <Self as Gateway>::PaymentMethod,
-        currency: Currency,
-        total_amount: Decimal,
-        base_amount: Decimal,
-        distribution: <Self as Gateway>::AmountDistribution,
-        idempotence_key: TransactionIdempotenceKey,
-
+        payment: <Self as Gateway>::Payment,
         installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,

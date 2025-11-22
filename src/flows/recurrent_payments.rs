@@ -1,12 +1,10 @@
 use async_trait::async_trait;
-use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
     InternalPaymentMethod, Recipients, Subscription, SubscriptionId, SubscriptionInterval,
-    TransactionIdempotenceKey,
 };
-use crate::{Error, Gateway};
+use crate::{Error, Gateway, PaymentMarker};
 
 /// Payment gateway trait for recurrent payment subscriptions.
 ///
@@ -24,30 +22,13 @@ use crate::{Error, Gateway};
 #[allow(private_bounds)]
 pub trait RecurrentPayments: Gateway
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Create a new recurrent payment subscription.
-    ///
-    /// # Parameters
-    ///
-    /// * `total_amount` - Total subscription amount
-    /// * `base_amount` - Amount going to the platform
-    /// * `recipients` - Amount distribution to recipients (None if no distribution)
-    ///
-    /// # Returns
-    ///
-    /// Subscription record with ID, status, and billing schedule
-    #[allow(clippy::too_many_arguments)]
+    #[allow(private_interfaces)]
     async fn create_subscription(
         &self,
-
-        payment_method: <Self as Gateway>::PaymentMethod,
-        currency: Currency,
-        total_amount: Decimal,
-        base_amount: Decimal,
-        distribution: <Self as Gateway>::AmountDistribution,
-        idempotence_key: TransactionIdempotenceKey,
-
+        payment: <Self as Gateway>::Payment,
         interval: SubscriptionInterval,
     ) -> Result<Subscription, Error>;
 
@@ -96,7 +77,7 @@ where
 #[allow(private_bounds)]
 pub trait PauseSubscriptions: RecurrentPayments
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Pause a subscription temporarily.
     ///
@@ -136,7 +117,7 @@ where
 #[allow(private_bounds)]
 pub trait EditSubscriptionAmount: RecurrentPayments
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Edit the amount of an existing subscription.
     ///
@@ -166,7 +147,7 @@ where
 #[allow(private_bounds)]
 pub trait EditSubscriptionRecipients: RecurrentPayments
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Edit the payment recipients (split configuration) of an existing subscription.
     ///
@@ -198,7 +179,7 @@ where
 #[allow(private_bounds)]
 pub trait EditSubscriptionInterval: RecurrentPayments
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Edit the billing interval of an existing subscription.
     ///

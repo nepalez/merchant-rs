@@ -1,12 +1,7 @@
 use async_trait::async_trait;
-use iso_currency::Currency;
-use rust_decimal::Decimal;
 
-use crate::types::{
-    ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId,
-    TransactionIdempotenceKey,
-};
-use crate::{Error, Gateway};
+use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId};
+use crate::{Error, Gateway, PaymentMarker};
 
 /// Payment gateway trait for asynchronous external payment flows.
 ///
@@ -39,21 +34,14 @@ use crate::{Error, Gateway};
 #[allow(private_bounds)]
 pub trait ExternalPayments: Gateway
 where
-    <Self as Gateway>::PaymentMethod: ExternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: ExternalPaymentMethod,
 {
     /// Initiate the transaction and receive it along with a `PaymentData`
     /// The payment should be made outside the gateway's flow.
     /// The client should check the status of the transaction later.
-    async fn initiate(
-        &self,
-
-        payment_method: <Self as Gateway>::PaymentMethod,
-        currency: Currency,
-        total_amount: Decimal,
-        base_amount: Decimal,
-        distribution: <Self as Gateway>::AmountDistribution,
-        idempotence_key: TransactionIdempotenceKey,
-    ) -> Result<ExternalPayment, Error>;
+    #[allow(private_interfaces)]
+    async fn initiate(&self, payment: <Self as Gateway>::Payment)
+    -> Result<ExternalPayment, Error>;
 
     /// Retrieve the payment data for a previously initiated transaction by its ID.
     async fn payment_data(

@@ -20,7 +20,7 @@ use rust_decimal::Decimal;
 
 use crate::flows::DeferredPayments;
 use crate::types::{InternalPaymentMethod, Transaction, TransactionId};
-use crate::{Error, Gateway};
+use crate::{Error, Gateway, PaymentMarker};
 
 /// Sealed trait for authorization change model marker types.
 ///
@@ -94,7 +94,7 @@ impl Sealed for ChangesByDelta {}
 #[allow(private_bounds)]
 pub trait EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTotal>
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Edit authorization to a new total amount.
     ///
@@ -152,7 +152,7 @@ where
 #[allow(private_bounds)]
 pub trait AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesByDelta>
 where
-    <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
+    <<Self as Gateway>::Payment as PaymentMarker>::PaymentMethod: InternalPaymentMethod,
 {
     /// Increment authorization by adding an amount.
     ///
