@@ -2,7 +2,9 @@ use async_trait::async_trait;
 use iso_currency::Currency;
 use rust_decimal::Decimal;
 
-use crate::types::{InternalPaymentMethod, PaymentToken, StoredCredentialUsage};
+use crate::types::{
+    InternalPaymentMethod, PaymentToken, StoredCredentialUsage, TransactionIdempotenceKey,
+};
 use crate::{Error, Gateway, MerchantInitiatedType};
 
 /// Trait representing the 3D Secure authentication flow.
@@ -21,6 +23,7 @@ where
         total_amount: Decimal,
         base_amount: Decimal,
         distribution: <Self as Gateway>::AmountDistribution,
+        idempotence_key: TransactionIdempotenceKey,
 
         installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,

@@ -5,12 +5,22 @@
 Payment gateways implement similar functionality through incompatible interfaces.
 
 **Split payments:**
-- Simple amount: gateway accepts `Decimal` only
-- Distributed amount: gateway accepts `DistributedAmount` (total + recipients)
+- No splits: gateway accepts base amount only
+- With splits: gateway accepts distribution via `Option<Recipients>`
+
+**Installment payments:**
+- Not supported: gateway doesn't support installments
+- Basic: gateway supports fixed/stored plans
+- Regional: gateway supports region-specific features (Brazil fee, India offer_id, Japan revolving/bonus, GCC shariah compliance)
 
 **Authorization changes:**
 - Total-based (Stripe, Adyen): gateway accepts new complete authorized amount
 - Delta-based (Checkout.com, Worldpay): gateway accepts increment/decrement amounts
+
+**Capture variations:**
+- Full capture only: gateway captures entire authorized amount
+- Partial capture: gateway accepts specific amount to capture
+- Redistributed capture: gateway allows changing recipient distribution during capture
 
 **Problem:** If a single trait method accepts parameters that some gateways don't support:
 - Client code cannot be deterministic
@@ -21,43 +31,134 @@ Payment gateways implement similar functionality through incompatible interfaces
 
 Use **sealed traits with associated types** to enforce compile-time constraints. Two patterns depending on variation type.
 
-### Pattern 1: Type Constraint
+### Pattern 1: Gateway-Level Type Constraint
 
-Private trait constrains allowed parameter types in method signatures.
+Private trait constrains allowed types in the root `Gateway` trait. Flow traits access these types via associated type projections.
 
 ```rust
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
+// In lib.rs
+trait DistributionMarker {}
+impl DistributionMarker for NoDistribution {}
+impl DistributionMarker for Option<Recipients> {}
+
+trait InstallmentsMarker {}
+impl InstallmentsMarker for NoInstallments {}
+impl InstallmentsMarker for Installments {}
+impl InstallmentsMarker for InstallmentsBR {}
+// ... other regional variants
 
 #[allow(private_bounds)]
+pub trait Gateway: Send + Sync {
+    type PaymentMethod: PaymentMethod;
+    type AmountDistribution: DistributionMarker;
+    type Installments: InstallmentsMarker;
+}
+
+// In flow traits
 pub trait ImmediatePayments: Gateway {
-    type Amount: Amount;
-    async fn charge(&self, amount: Self::Amount, ...) -> Result<Transaction, Error>;
+    async fn charge(
+        &self,
+        distribution: <Self as Gateway>::AmountDistribution,
+        installments: <Self as Gateway>::Installments,
+        ...
+    ) -> Result<Transaction, Error>;
 }
 ```
 
-Gateway chooses concrete type: `type Amount = Decimal` (no splits) or `type Amount = DistributedAmount` (with splits).
+Gateway chooses concrete types once:
+- `type AmountDistribution = NoDistribution` or `Option<Recipients>`
+- `type Installments = NoInstallments`, `Installments`, `InstallmentsBR`, etc.
 
-**Used in:** ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure.
+All flow traits reuse these declarations.
 
-### Pattern 2: Marker Types
+**Used in:**
+- **AmountDistribution**: ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure
+- **Installments**: ImmediatePayments, DeferredPayments, RecurrentPayments
 
-Marker structs determine which additional traits can be implemented.
+### Pattern 2: Flow-Level Type Constraint
 
-- Module `change_authorization` defines sealed trait and marker types:
-  - `pub(crate) Sealed` trait
-  - `ChangesNotSupported`, `ChangesByTotal`, `ChangesByDelta` (pub structs implementing the `Sealed`)
+Private trait constrains allowed types in a specific flow trait, not in Gateway. Used when variation applies to a single flow.
 
-- `DeferredPayments` declares: `type AuthorizationChanges: change_authorization::Sealed`
+```rust
+// In flows/deferred_payments.rs
+trait CapturedAmount {}
+impl CapturedAmount for CaptureAuthorized {}  // Full capture
+impl CapturedAmount for Option<Decimal> {}    // Partial capture
 
-- Variation traits require a specific marker:
-  - `EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTotal>`
-  - `AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesByDelta>`
+trait CapturedDistribution {}
+impl CapturedDistribution for CaptureAuthorized {}    // Keep original
+impl CapturedDistribution for Option<Recipients> {}  // Redistribute
+
+pub trait DeferredPayments: Gateway {
+    type CapturedAmount: CapturedAmount;
+    type CapturedDistribution: CapturedDistribution;
+
+    async fn capture(
+        &self,
+        transaction_id: TransactionId,
+        captured_amount: Self::CapturedAmount,
+        captured_distribution: Self::CapturedDistribution,
+    ) -> Result<Transaction, Error>;
+}
+```
+
+Gateway chooses capture semantics:
+- `CapturedAmount = CaptureAuthorized` (full) or `Option<Decimal>` (partial)
+- `CapturedDistribution = CaptureAuthorized` (keep) or `Option<Recipients>` (redistribute)
+
+**Used in:** DeferredPayments (CapturedAmount, CapturedDistribution)
+
+### Pattern 3: Marker Types for Mutual Exclusion
+
+Marker structs determine which additional traits can be implemented, enforcing mutual exclusion.
+
+```rust
+// In flows/change_authorization.rs
+pub(crate) trait Sealed {}
+
+pub struct ChangesNotSupported;
+pub struct ChangesByTotal;
+pub struct ChangesByDelta;
+
+impl Sealed for ChangesNotSupported {}
+impl Sealed for ChangesByTotal {}
+impl Sealed for ChangesByDelta {}
+
+// In flows/deferred_payments.rs
+pub trait DeferredPayments: Gateway {
+    type AuthorizationChanges: change_authorization::Sealed;
+}
+
+// Variation traits require specific marker
+pub trait EditAuthorization: DeferredPayments<AuthorizationChanges = ChangesByTotal> {
+    async fn edit_authorization(...) -> Result<...>;
+}
+
+pub trait AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesByDelta> {
+    async fn adjust_authorization(...) -> Result<...>;
+}
+```
 
 Gateway can only set `AuthorizationChanges` to one value → attempting to implement both `EditAuthorization` and `AdjustAuthorization` produces compilation error.
 
-**Used in:** change_authorization (AuthorizationChanges).
+**Used in:** change_authorization (AuthorizationChanges)
+
+### Pattern Selection Guide
+
+**Use Pattern 1 (Gateway-Level)** when:
+- Variation applies across multiple flow traits
+- Gateway capability is fundamental (split payments, installments)
+- All flows need consistent semantics
+
+**Use Pattern 2 (Flow-Level)** when:
+- Variation applies to a single flow trait
+- Multiple independent choices within the flow
+- Gateway can vary behavior per method
+
+**Use Pattern 3 (Mutual Exclusion)** when:
+- Gateway must choose between incompatible approaches
+- Implementing both variations would be contradictory
+- Need compile-time enforcement of "either A or B, not both"
 
 ### Design Principles
 
@@ -67,32 +168,34 @@ Gateway can only set `AuthorizationChanges` to one value → attempting to imple
 
 3. **Explicit Migration**: Switching gateways that change capabilities produces compilation errors, forcing explicit code updates
 
+4. **Centralized vs Localized**: Gateway-level types (Pattern 1) centralize decisions, flow-level types (Pattern 2) localize them. Choose based on scope of variation
+
 ## Alternatives Rejected
 
-### Separate parameters for split payments
-`fn charge(total_amount: Decimal, recipients: Option<Recipients>)`
+### Separate optional parameters
+`fn charge(total_amount: Decimal, recipients: Option<Recipients>, installments: Option<Installments>)`
 
-**Rejected:** No compile-time guarantee that gateway supports recipients. Client code may pass recipients to gateway that doesn't support splits.
+**Rejected:** No compile-time guarantee that gateway supports features. Client code may pass options to gateway that doesn't support them. Runtime validation required.
 
 ### Single trait with enum parameter
-Parameter like `ChangeAmount::Total(Decimal) | Delta(Decimal)` in single method.
+Parameter like `Installments::None | Basic(u8) | Brazil { count: u8, fee: Decimal }`.
 
-**Rejected:** Gateway may not support both variants → runtime errors, no compile-time constraints for client code, adapter must convert models.
+**Rejected:** Gateway may not support all variants → runtime errors, no compile-time constraints for client code, adapter must validate and convert.
 
-### Optional parameters with runtime validation
-Single method with `new_total: Option<Decimal>`, `increment: Option<Decimal>`, `decrement: Option<Decimal>`.
+### Feature flags
+Using Cargo features to conditionally compile support: `features = ["splits", "installments"]`.
 
-**Rejected:** Unclear which combinations are valid, runtime validation overhead, type system provides no safety.
+**Rejected:** Features are additive and transitive. Dependencies can enable features unexpectedly. No per-gateway granularity (one crate may need multiple gateway types).
 
 ### Runtime capability checking
-Methods like `supports_total_changes()`, `supports_delta_changes()` + both implementation methods.
+Methods like `supports_installments()`, `supports_splits()` + both implementation methods.
 
 **Rejected:** Runtime checks instead of compile-time safety, gateway must implement unsupported methods (return errors), cannot constrain generic functions.
 
 ### Generic method parameters
-`fn charge<A: Into<DistributedAmount>>(amount: A)`
+`fn charge<I: Into<Installments>>(installments: I)`
 
-**Rejected:** Loss of object safety, cannot use trait objects.
+**Rejected:** Loss of object safety, cannot use trait objects. Generic pollution across entire API.
 
 ## Consequences
 
@@ -103,11 +206,17 @@ Methods like `supports_total_changes()`, `supports_delta_changes()` + both imple
 - Clear contracts: trait signature describes exactly what's supported
 
 **Cons:**
-- More traits: similar functionality requires multiple definitions
-- Code duplication: adapters may have similar implementation code
-- Learning curve: developers must understand which variation their gateway implements
-- Explicit conversions: client must call `.into()` when passing parameters
+- More associated types: gateway must declare multiple type parameters
+- Boilerplate: sealed trait definitions for each variation point
+- Learning curve: developers must understand pattern selection and usage
+- Verbose syntax: `<Self as Gateway>::Installments` instead of simple type
 
-**Status:**
-- Pattern 1 (Type Constraint): all flow traits (ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure)
-- Pattern 2 (Marker Types): `src/flows/change_authorization.rs` with `EditAuthorization` and `AdjustAuthorization` traits
+**Implementation Status:**
+
+| Feature | Pattern | Location | Variants |
+|---------|---------|----------|----------|
+| AmountDistribution | Gateway-Level (1) | `lib.rs` | `NoDistribution`, `Option<Recipients>` |
+| Installments | Gateway-Level (1) | `lib.rs` | `NoInstallments`, `Installments`, `InstallmentsBR/IN/JP/GCC` |
+| CapturedAmount | Flow-Level (2) | `flows/deferred_payments.rs` | `CaptureAuthorized`, `Option<Decimal>` |
+| CapturedDistribution | Flow-Level (2) | `flows/deferred_payments.rs` | `CaptureAuthorized`, `Option<Recipients>` |
+| AuthorizationChanges | Mutual Exclusion (3) | `flows/change_authorization.rs` | `ChangesNotSupported`, `ChangesByTotal`, `ChangesByDelta` |

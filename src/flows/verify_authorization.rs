@@ -64,7 +64,7 @@ use crate::types::{InternalPaymentMethod, TransactionId};
 /// * Have different implementation approaches
 #[async_trait]
 #[allow(private_bounds)]
-pub trait VerifyPayment: Gateway
+pub trait VerifyAuthorization: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {

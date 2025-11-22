@@ -11,7 +11,7 @@ mod recurrent_payments;
 mod refund_payments;
 mod store_credentials;
 mod three_d_secure;
-mod verify_payment;
+mod verify_authorization;
 
 pub use cancel_payments::CancelPayments;
 pub use change_authorization::{AdjustAuthorization, EditAuthorization};
@@ -27,4 +27,4 @@ pub use recurrent_payments::{
 pub use refund_payments::RefundPayments;
 pub use store_credentials::StoreCredentials;
 pub use three_d_secure::ThreeDSecure;
-pub use verify_payment::VerifyPayment;
+pub use verify_authorization::VerifyAuthorization;
