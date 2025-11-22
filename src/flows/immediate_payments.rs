@@ -3,14 +3,9 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    DistributedAmount, InternalPaymentMethod, StoredCredentialUsage, Transaction,
-    TransactionIdempotenceKey,
+    InternalPaymentMethod, StoredCredentialUsage, Transaction, TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway, MerchantInitiatedType};
-
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
 
 /// Payment gateway trait for one-step payment flows.
 ///
@@ -24,22 +19,19 @@ impl Amount for DistributedAmount {}
 /// * Payment methods that don't support separate capture (some wallets, vouchers)
 /// * Gateways that only provide combined auth+capture operations
 ///
-/// # Type Parameters
-///
-/// * `Amount` - Payment amount type (Decimal or DistributedAmount for split payments)
 #[async_trait]
 #[allow(private_bounds)]
 pub trait ImmediatePayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
-    type Amount: Amount;
-
     /// Immediately charge the payment (authorization and capture in one step).
     ///
     /// # Parameters
     ///
-    /// * `amount` - Payment amount, either simple Decimal or DistributedAmount with recipients
+    /// * `total_amount` - Total payment amount
+    /// * `base_amount` - Amount going to the platform
+    /// * `recipients` - Amount distribution to recipients (None if no distribution)
     /// * `installments` - Installment payment options
     ///
     /// # Returns
@@ -48,10 +40,14 @@ where
     #[allow(clippy::too_many_arguments)]
     async fn charge(
         &self,
+
         payment_method: <Self as Gateway>::PaymentMethod,
-        amount: Self::Amount,
         currency: Currency,
+        total_amount: Decimal,
+        base_amount: Decimal,
+        distribution: <Self as Gateway>::AmountDistribution,
         idempotence_key: TransactionIdempotenceKey,
+
         installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,

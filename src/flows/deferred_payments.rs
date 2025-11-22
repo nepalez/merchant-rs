@@ -4,20 +4,18 @@ use rust_decimal::Decimal;
 
 use crate::flows::change_authorization;
 use crate::types::{
-    DistributedAmount, InternalPaymentMethod, Recipients, RedistributedAmount,
-    StoredCredentialUsage, Transaction, TransactionId, TransactionIdempotenceKey,
+    CaptureAuthorized, InternalPaymentMethod, Recipients, StoredCredentialUsage, Transaction,
+    TransactionId, TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway, MerchantInitiatedType};
 
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
+trait CapturedAmount {}
+impl CapturedAmount for CaptureAuthorized {}
+impl CapturedAmount for Option<Decimal> {}
 
-trait Redistribution {}
-impl Redistribution for Option<Decimal> {}
-impl Redistribution for Option<Recipients> {}
-impl Redistribution for RedistributedAmount {}
-impl Redistribution for () {}
+trait CapturedDistribution {}
+impl CapturedDistribution for CaptureAuthorized {}
+impl CapturedDistribution for Option<Recipients> {}
 
 /// Payment gateway trait for two-step payment flows.
 ///
@@ -42,21 +40,15 @@ impl Redistribution for () {}
 ///
 /// * `PaymentMethod` - Payment method type constrained to internal methods (cards, tokens, etc.).
 ///   Determines which payment instruments can be used with this gateway for deferred payments.
-///
-/// * `AuthorizationChanges` - Marker type indicating which authorization change model
-///   the gateway supports. Gateway implementations should set this to:
-///   - `change_authorization::ChangesNotSupported` (default) - no authorization changes supported
-///   - `change_authorization::ChangesByTotal` - implements [`EditAuthorization`] trait
-///   - `change_authorization::ChangesByDelta` - implements [`AdjustAuthorization`] trait
 #[async_trait]
 #[allow(private_bounds)]
 pub trait DeferredPayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
-    type Amount: Amount;
-    type Redistribution: Redistribution;
     type AuthorizationChanges: change_authorization::Sealed;
+    type CapturedAmount: CapturedAmount;
+    type CapturedDistribution: CapturedDistribution;
 
     /// Authorize payment and reserve funds without immediate capture.
     ///
@@ -65,7 +57,9 @@ where
     ///
     /// # Parameters
     ///
-    /// * `amount` - Payment amount, either simple Decimal or DistributedAmount with recipients
+    /// * `total_amount` - Total payment amount
+    /// * `base_amount` - Amount going to the platform
+    /// * `recipients` - Amount distribution to recipients (None if no distribution)
     /// * `installments` - Installment payment options
     ///
     /// # Returns
@@ -74,10 +68,14 @@ where
     #[allow(clippy::too_many_arguments)]
     async fn authorize(
         &self,
+
         payment_method: <Self as Gateway>::PaymentMethod,
-        amount: Self::Amount,
         currency: Currency,
+        total_amount: Decimal,
+        base_amount: Decimal,
+        distribution: <Self as Gateway>::AmountDistribution,
         idempotence_key: TransactionIdempotenceKey,
+
         installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,
@@ -91,11 +89,8 @@ where
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the previously authorized transaction
-    /// * `redistribution` - Payment redistribution:
-    ///   - `()`: Capture using the distribution specified during authorization
-    ///   - `Option<Decimal>`: Change capture amount only (partial capture)
-    ///   - `Option<Recipients>`: Change recipients only
-    ///   - `RedistributedAmount`: Change both amount and recipients
+    /// * `amount` - Capture amount (None for full capture, Some for partial)
+    /// * `recipients` - Distribution changes (None to keep original, Some for custom)
     ///
     /// # Returns
     ///
@@ -103,6 +98,7 @@ where
     async fn capture(
         &self,
         transaction_id: TransactionId,
-        redistribution: Self::Redistribution,
+        captured_amount: Self::CapturedAmount,
+        captured_distribution: Self::CapturedDistribution,
     ) -> Result<Transaction, Error>;
 }

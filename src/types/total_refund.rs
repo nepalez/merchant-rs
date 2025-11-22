@@ -16,30 +16,30 @@ use crate::types::Recipients;
 /// gateway.refund(transaction_id, NotChanged).await?;
 /// ```
 #[derive(Debug, Clone, Copy, Default)]
-pub struct NotChanged;
+pub struct TotalRefund;
 
 // Conversions between NotChanged and () for API uniformity
 
-impl From<()> for NotChanged {
+impl From<()> for TotalRefund {
     fn from(_: ()) -> Self {
-        NotChanged
+        TotalRefund
     }
 }
 
-impl From<NotChanged> for () {
-    fn from(_: NotChanged) -> Self {}
+impl From<TotalRefund> for () {
+    fn from(_: TotalRefund) -> Self {}
 }
 
 // Conversions from NotChanged to Option types for API uniformity
 
-impl From<NotChanged> for Option<Decimal> {
-    fn from(_: NotChanged) -> Self {
+impl From<TotalRefund> for Option<Decimal> {
+    fn from(_: TotalRefund) -> Self {
         None
     }
 }
 
-impl From<NotChanged> for Option<Recipients> {
-    fn from(_: NotChanged) -> Self {
+impl From<TotalRefund> for Option<Recipients> {
+    fn from(_: TotalRefund) -> Self {
         None
     }
 }
@@ -50,20 +50,20 @@ mod tests {
 
     #[test]
     fn converts_from_unit() {
-        let not_changed: NotChanged = ().into();
+        let not_changed: TotalRefund = ().into();
         let _: () = not_changed.into();
     }
 
     #[test]
     fn converts_to_option_decimal() {
-        let not_changed = NotChanged;
+        let not_changed = TotalRefund;
         let option: Option<Decimal> = not_changed.into();
         assert!(option.is_none());
     }
 
     #[test]
     fn converts_to_option_recipients() {
-        let not_changed = NotChanged;
+        let not_changed = TotalRefund;
         let option: Option<Recipients> = not_changed.into();
         assert!(option.is_none());
     }

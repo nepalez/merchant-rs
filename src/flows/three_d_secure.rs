@@ -2,15 +2,8 @@ use async_trait::async_trait;
 use iso_currency::Currency;
 use rust_decimal::Decimal;
 
-use crate::types::{
-    DistributedAmount, InternalPaymentMethod, PaymentToken, StoredCredentialUsage,
-    TransactionIdempotenceKey,
-};
+use crate::types::{InternalPaymentMethod, PaymentToken, StoredCredentialUsage};
 use crate::{Error, Gateway, MerchantInitiatedType};
-
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
 
 /// Trait representing the 3D Secure authentication flow.
 #[async_trait]
@@ -19,15 +12,16 @@ pub trait ThreeDSecure: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
-    type Amount: Amount;
-
     #[allow(clippy::too_many_arguments)]
     async fn authenticate(
         &self,
+
         payment_method: <Self as Gateway>::PaymentMethod,
-        amount: Self::Amount,
         currency: Currency,
-        idempotence_key: TransactionIdempotenceKey,
+        total_amount: Decimal,
+        base_amount: Decimal,
+        distribution: <Self as Gateway>::AmountDistribution,
+
         installments: <Self as Gateway>::Installments,
         merchant_initiated_type: Option<MerchantInitiatedType>,
         stored_credential_usage: Option<StoredCredentialUsage>,

@@ -1,14 +1,16 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 
-use crate::types::{Recipients, RedistributedAmount, Transaction, TransactionId};
+use crate::types::{Recipients, TotalRefund, Transaction, TransactionId};
 use crate::{Error, Gateway};
 
-trait Distribution {}
-impl Distribution for () {}
-impl Distribution for Option<Decimal> {}
-impl Distribution for Option<Recipients> {}
-impl Distribution for RedistributedAmount {}
+trait RefundAmount {}
+impl RefundAmount for TotalRefund {}
+impl RefundAmount for Option<Decimal> {}
+
+trait RefundDistribution {}
+impl RefundDistribution for TotalRefund {}
+impl RefundDistribution for Option<Recipients> {}
 
 /// Payment gateway trait for refund operations.
 ///
@@ -39,16 +41,17 @@ impl Distribution for RedistributedAmount {}
 ///
 /// ```skip
 /// // Full refund
-/// gateway.refund(transaction_id, None).await?;
+/// gateway.refund(transaction_id, None, None).await?;
 ///
 /// // Partial refund - return $20 from $100 transaction
 /// use rust_decimal::Decimal;
-/// gateway.refund(transaction_id, Some(Decimal::from(20))).await?;
+/// gateway.refund(transaction_id, Some(Decimal::from(20)), None).await?;
 /// ```
 #[async_trait]
 #[allow(private_bounds)]
 pub trait RefundPayments: Gateway {
-    type Distribution: Distribution;
+    type RefundAmount: RefundAmount;
+    type RefundDistribution: RefundDistribution;
 
     /// Refund a previously captured payment, either fully or partially.
     ///
@@ -58,11 +61,8 @@ pub trait RefundPayments: Gateway {
     /// # Parameters
     ///
     /// * `transaction_id` - ID of the captured transaction to refund
-    /// * `distribution` - Refund distribution:
-    ///   - `()`: Full refund with original distribution
-    ///   - `Option<Decimal>`: Change refund amount only (partial refund)
-    ///   - `Option<Recipients>`: Change recipients only
-    ///   - `RedistributedAmount`: Change both amount and recipients
+    /// * `amount` - Refund amount (None for full refund, Some for partial)
+    /// * `recipients` - Distribution changes (None to keep original, Some for custom)
     ///
     /// # Returns
     ///
@@ -77,6 +77,7 @@ pub trait RefundPayments: Gateway {
     async fn refund(
         &self,
         transaction_id: TransactionId,
-        distribution: Self::Distribution,
+        refund_amount: Self::RefundAmount,
+        refund_distribution: Self::RefundDistribution,
     ) -> Result<Transaction, Error>;
 }

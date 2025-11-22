@@ -3,13 +3,10 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    DistributedAmount, ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId,
+    ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId,
+    TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway};
-
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
 
 /// Payment gateway trait for asynchronous external payment flows.
 ///
@@ -38,25 +35,24 @@ impl Amount for DistributedAmount {}
 /// * Handle webhook notifications for async status updates
 /// * Retrieve payment data again via `payment_data()` if needed for retry
 ///
-/// # Type Parameter
-///
-/// * `Method` - Payment method type constrained to external methods (vouchers, BNPL, etc.)
 #[async_trait]
 #[allow(private_bounds)]
 pub trait ExternalPayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: ExternalPaymentMethod,
 {
-    type Amount: Amount;
-
     /// Initiate the transaction and receive it along with a `PaymentData`
     /// The payment should be made outside the gateway's flow.
     /// The client should check the status of the transaction later.
     async fn initiate(
         &self,
-        method: <Self as Gateway>::PaymentMethod,
-        amount: Self::Amount,
+
+        payment_method: <Self as Gateway>::PaymentMethod,
         currency: Currency,
+        total_amount: Decimal,
+        base_amount: Decimal,
+        distribution: <Self as Gateway>::AmountDistribution,
+        idempotence_key: TransactionIdempotenceKey,
     ) -> Result<ExternalPayment, Error>;
 
     /// Retrieve the payment data for a previously initiated transaction by its ID.

@@ -3,14 +3,10 @@ use iso_currency::Currency;
 use rust_decimal::Decimal;
 
 use crate::types::{
-    DistributedAmount, InternalPaymentMethod, Recipients, Subscription, SubscriptionId,
-    SubscriptionInterval, TransactionIdempotenceKey,
+    InternalPaymentMethod, Recipients, Subscription, SubscriptionId, SubscriptionInterval,
+    TransactionIdempotenceKey,
 };
 use crate::{Error, Gateway};
-
-trait Amount {}
-impl Amount for Decimal {}
-impl Amount for DistributedAmount {}
 
 /// Payment gateway trait for recurrent payment subscriptions.
 ///
@@ -24,33 +20,35 @@ impl Amount for DistributedAmount {}
 /// * Installment payments
 /// * Auto-renewal services
 ///
-/// # Type Parameter
-///
-/// * `Method` - Payment method type constrained to internal methods (cards, tokens, etc.)
 #[async_trait]
 #[allow(private_bounds)]
 pub trait RecurrentPayments: Gateway
 where
     <Self as Gateway>::PaymentMethod: InternalPaymentMethod,
 {
-    type Amount: Amount;
-
     /// Create a new recurrent payment subscription.
     ///
     /// # Parameters
     ///
-    /// * `amount` - Subscription amount, either simple Decimal or DistributedAmount with recipients
+    /// * `total_amount` - Total subscription amount
+    /// * `base_amount` - Amount going to the platform
+    /// * `recipients` - Amount distribution to recipients (None if no distribution)
     ///
     /// # Returns
     ///
     /// Subscription record with ID, status, and billing schedule
+    #[allow(clippy::too_many_arguments)]
     async fn create_subscription(
         &self,
+
         payment_method: <Self as Gateway>::PaymentMethod,
-        amount: Self::Amount,
         currency: Currency,
-        interval: SubscriptionInterval,
+        total_amount: Decimal,
+        base_amount: Decimal,
+        distribution: <Self as Gateway>::AmountDistribution,
         idempotence_key: TransactionIdempotenceKey,
+
+        interval: SubscriptionInterval,
     ) -> Result<Subscription, Error>;
 
     /// Cancel an existing subscription.
