@@ -98,25 +98,40 @@ All sensitive data types implement automatic memory zeroization and masked debug
 
 ## Usage Example
 
-This demonstrates how a downstream application uses the flow traits to remain gateway-agnostic:
+This demonstrates how a downstream application uses the flow traits to remain
+gateway-agnostic:
 
 ```rust
 use merchant_rs::flows::ImmediatePayments;
-use merchant_rs::types::{CreditCard, Payment, Transaction, Money};
-use merchant_rs::Error;
-use std::sync::Arc;
+use merchant_rs::{Payment, CreditCard, CardExpiry};  // Inputs from root
+use merchant_rs::types;                               // Types namespace
+use merchant_rs::{Error, Gateway};
+use iso_currency::Currency;
+use rust_decimal::Decimal;
 
-// In a typical web service, you would inject the specific implementation
-// wrapped in a dynamic trait object.
-async fn process_payment<G>(
-    gateway: Arc<G>,
-    payment: Payment<G::Method>
-) -> Result<Transaction, Error>
+async fn process_payment<G>(gateway: &G) -> Result<types::Transaction, Error>
 where
     G: ImmediatePayments + Send + Sync,
 {
-    // The trait method is called using .await
-    gateway.charge(payment).await
+    // Client constructs input with borrowed data
+    let payment_input = Payment {
+        payment_method: CreditCard {
+            cvv: "123",
+            number: "4532015112830366",
+            card_expiry: CardExpiry { month: 12, year: 2030 },
+            holder_name: "John Doe",
+        },
+        currency: Currency::USD,
+        total_amount: Decimal::new(10000, 2),
+        base_amount: Decimal::new(10000, 2),
+        idempotence_key: "payment-123",
+    };
+
+    // Gateway converts input to its required type
+    let payment: <G as Gateway>::Payment = payment_input.try_into()?;
+
+    // Call gateway method (simplified - actual signature includes installments, etc.)
+    gateway.charge(payment, Default::default(), None, None).await
 }
 ```
 

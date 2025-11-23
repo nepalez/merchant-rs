@@ -1,3 +1,4 @@
+use crate::Error;
 use crate::types::TransactionId;
 
 /// Indicates whether this payment uses stored credentials for the first time or subsequently.
@@ -94,4 +95,51 @@ pub enum StoredCredentialUsage {
     /// A later use of stored credentials (Merchant Initiated Transaction)
     /// Contains reference to the original Initial transaction
     Subsequent(TransactionId),
+}
+
+impl TryFrom<crate::StoredCredentialUsage<'_>> for StoredCredentialUsage {
+    type Error = Error;
+
+    fn try_from(input: crate::StoredCredentialUsage<'_>) -> Result<Self, Self::Error> {
+        Ok(match input {
+            crate::StoredCredentialUsage::Initial => Self::Initial,
+            crate::StoredCredentialUsage::Subsequent(id) => Self::Subsequent(id.try_into()?),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AsUnsafeRef;
+    use crate::inputs;
+
+    #[test]
+    fn converts_initial() {
+        let input = inputs::StoredCredentialUsage::Initial;
+        let result = StoredCredentialUsage::try_from(input).unwrap();
+
+        assert_eq!(result, StoredCredentialUsage::Initial);
+    }
+
+    #[test]
+    fn converts_subsequent_with_valid_id() {
+        let input = inputs::StoredCredentialUsage::Subsequent(" txn_12345 \n\t");
+        let result = StoredCredentialUsage::try_from(input).unwrap();
+
+        match result {
+            StoredCredentialUsage::Subsequent(id) => unsafe {
+                assert_eq!(id.as_ref(), "txn_12345");
+            },
+            _ => panic!("Expected Subsequent variant"),
+        }
+    }
+
+    #[test]
+    fn rejects_subsequent_with_invalid_id() {
+        let input = inputs::StoredCredentialUsage::Subsequent("ab");
+        let result = StoredCredentialUsage::try_from(input);
+
+        assert!(matches!(result, Err(Error::InvalidInput(_))));
+    }
 }
