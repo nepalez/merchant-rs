@@ -4,9 +4,9 @@
 
 Payment gateways implement similar functionality through incompatible interfaces.
 
-**Split payments:**
-- No splits: gateway accepts base amount only
-- With splits: gateway accepts distribution via `Option<Recipients>`
+**Payment models:**
+- Simple payments: gateway accepts payment without split distribution
+- Split payments: gateway accepts payment with distribution to multiple recipients
 
 **Installment payments:**
 - Not supported: gateway doesn't support installments
@@ -14,13 +14,19 @@ Payment gateways implement similar functionality through incompatible interfaces
 - Regional: gateway supports region-specific features (Brazil fee, India offer_id, Japan revolving/bonus, GCC shariah compliance)
 
 **Authorization changes:**
+- Not supported: gateway doesn't allow changing authorization amounts
 - Total-based (Stripe, Adyen): gateway accepts new complete authorized amount
 - Delta-based (Checkout.com, Worldpay): gateway accepts increment/decrement amounts
 
 **Capture variations:**
-- Full capture only: gateway captures entire authorized amount
-- Partial capture: gateway accepts specific amount to capture
-- Redistributed capture: gateway allows changing recipient distribution during capture
+- Full capture only: gateway captures entire authorized amount without modifications
+- Partial amount: gateway accepts specific amount to capture
+- Redistributed recipients: gateway allows changing recipient distribution during capture
+
+**Refund variations:**
+- Full refund only: gateway refunds entire transaction amount without modifications
+- Partial amount: gateway accepts specific amount to refund
+- Redistributed recipients: gateway allows changing recipient distribution during refund
 
 **Problem:** If a single trait method accepts parameters that some gateways don't support:
 - Client code cannot be deterministic
@@ -29,28 +35,40 @@ Payment gateways implement similar functionality through incompatible interfaces
 
 ## Decision
 
-Use **sealed traits with associated types** to enforce compile-time constraints. Two patterns depending on variation type.
+Use **sealed traits with associated types** to enforce compile-time constraints. Three patterns depending on variation type and scope.
 
 ### Pattern 1: Gateway-Level Type Constraint
 
 Private trait constrains allowed types in the root `Gateway` trait. Flow traits access these types via associated type projections.
 
 ```rust
-// In lib.rs
-trait DistributionMarker {}
-impl DistributionMarker for NoDistribution {}
-impl DistributionMarker for Option<Recipients> {}
+// In types/payments.rs
+pub(crate) trait PaymentMarker {
+    type PaymentMethod: PaymentMethod;
+}
 
-trait InstallmentsMarker {}
+impl<P: PaymentMethod> PaymentMarker for Payment<P> {
+    type PaymentMethod = P;
+}
+
+impl<P: PaymentMethod> PaymentMarker for SplitPayment<P> {
+    type PaymentMethod = P;
+}
+
+// In types/installments.rs
+pub(crate) trait InstallmentsMarker {}
+
 impl InstallmentsMarker for NoInstallments {}
 impl InstallmentsMarker for Installments {}
 impl InstallmentsMarker for InstallmentsBR {}
-// ... other regional variants
+impl InstallmentsMarker for InstallmentsIN {}
+impl InstallmentsMarker for InstallmentsJP {}
+impl InstallmentsMarker for InstallmentsGCC {}
 
+// In lib.rs
 #[allow(private_bounds)]
 pub trait Gateway: Send + Sync {
-    type PaymentMethod: PaymentMethod;
-    type AmountDistribution: DistributionMarker;
+    type Payment: PaymentMarker;
     type Installments: InstallmentsMarker;
 }
 
@@ -58,7 +76,7 @@ pub trait Gateway: Send + Sync {
 pub trait ImmediatePayments: Gateway {
     async fn charge(
         &self,
-        distribution: <Self as Gateway>::AmountDistribution,
+        payment: <Self as Gateway>::Payment,
         installments: <Self as Gateway>::Installments,
         ...
     ) -> Result<Transaction, Error>;
@@ -66,13 +84,18 @@ pub trait ImmediatePayments: Gateway {
 ```
 
 Gateway chooses concrete types once:
-- `type AmountDistribution = NoDistribution` or `Option<Recipients>`
-- `type Installments = NoInstallments`, `Installments`, `InstallmentsBR`, etc.
+- `type Payment = Payment<P>` or `SplitPayment<P>` where P is the payment method
+- `type Installments = NoInstallments`, `Installments`, `InstallmentsBR`, `InstallmentsIN`, `InstallmentsJP`, or `InstallmentsGCC`
 
-All flow traits reuse these declarations.
+All flow traits reuse these declarations through associated type projections.
+
+**Type organization:** Alternative types for gateway-level variations are organized in dedicated modules:
+- `src/types/payments/` contains `Payment`, `SplitPayment` and their marker trait `PaymentMarker`
+- `src/types/installments/` contains `NoInstallments`, `Installments`, regional variants, and marker trait `InstallmentsMarker`
+- `src/types/payment_methods/` contains all payment method types and marker traits
 
 **Used in:**
-- **AmountDistribution**: ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, RefundPayments, ThreeDSecure
+- **Payment**: ImmediatePayments, DeferredPayments, RecurrentPayments, ExternalPayments, ThreeDSecure
 - **Installments**: ImmediatePayments, DeferredPayments, RecurrentPayments
 
 ### Pattern 2: Flow-Level Type Constraint
@@ -104,9 +127,41 @@ pub trait DeferredPayments: Gateway {
 
 Gateway chooses capture semantics:
 - `CapturedAmount = CaptureAuthorized` (full) or `Option<Decimal>` (partial)
-- `CapturedDistribution = CaptureAuthorized` (keep) or `Option<Recipients>` (redistribute)
+- `CapturedDistribution = CaptureAuthorized` (keep original) or `Option<Recipients>` (redistribute)
 
-**Used in:** DeferredPayments (CapturedAmount, CapturedDistribution)
+Similarly for refunds:
+```rust
+// In flows/refund_payments.rs
+trait RefundAmount {}
+impl RefundAmount for TotalRefund {}         // Full refund
+impl RefundAmount for Option<Decimal> {}     // Partial refund
+
+trait RefundDistribution {}
+impl RefundDistribution for TotalRefund {}          // Keep original
+impl RefundDistribution for Option<Recipients> {}   // Redistribute
+
+pub trait RefundPayments: Gateway {
+    type RefundAmount: RefundAmount;
+    type RefundDistribution: RefundDistribution;
+
+    async fn refund(
+        &self,
+        transaction_id: TransactionId,
+        refund_amount: Self::RefundAmount,
+        refund_distribution: Self::RefundDistribution,
+    ) -> Result<Transaction, Error>;
+}
+```
+
+Gateway chooses refund semantics:
+- `RefundAmount = TotalRefund` (full) or `Option<Decimal>` (partial)
+- `RefundDistribution = TotalRefund` (keep original) or `Option<Recipients>` (redistribute)
+
+**Type organization:** Marker types for flow-level variations are defined alongside their flow traits, not in separate modules. They represent operation-specific semantics rather than reusable type families.
+
+**Used in:**
+- **DeferredPayments**: CapturedAmount, CapturedDistribution (defined in `flows/deferred_payments.rs`)
+- **RefundPayments**: RefundAmount, RefundDistribution (defined in `flows/refund_payments.rs`)
 
 ### Pattern 3: Marker Types for Mutual Exclusion
 
@@ -141,24 +196,50 @@ pub trait AdjustAuthorization: DeferredPayments<AuthorizationChanges = ChangesBy
 
 Gateway can only set `AuthorizationChanges` to one value → attempting to implement both `EditAuthorization` and `AdjustAuthorization` produces compilation error.
 
-**Used in:** change_authorization (AuthorizationChanges)
+**Type organization:** Marker types for mutual exclusion are defined in dedicated flow modules where they establish the constraint. They serve as compile-time switches between incompatible operation semantics.
+
+**Used in:** change_authorization (ChangesNotSupported, ChangesByTotal, ChangesByDelta - defined in `flows/change_authorization.rs`)
 
 ### Pattern Selection Guide
 
 **Use Pattern 1 (Gateway-Level)** when:
 - Variation applies across multiple flow traits
-- Gateway capability is fundamental (split payments, installments)
+- Gateway capability is fundamental (payment models, installments)
 - All flows need consistent semantics
+- Types form a reusable family with multiple alternatives
+- **Organization:** Create `src/types/{feature}/` module with alternative types and marker trait
 
 **Use Pattern 2 (Flow-Level)** when:
 - Variation applies to a single flow trait
 - Multiple independent choices within the flow
 - Gateway can vary behavior per method
+- Types represent operation-specific semantics, not reusable abstractions
+- **Organization:** Define sealed traits directly in the flow module alongside the trait
 
 **Use Pattern 3 (Mutual Exclusion)** when:
 - Gateway must choose between incompatible approaches
 - Implementing both variations would be contradictory
 - Need compile-time enforcement of "either A or B, not both"
+- Additional traits depend on specific marker value
+- **Organization:** Define marker types in dedicated flow module, use in associated type constraints
+
+### Type Organization Principles
+
+1. **Gateway-Level Types (Pattern 1)**: Organized in `src/types/{feature}/` subdirectories
+   - Multiple alternative types with shared semantics
+   - Marker trait defining the type family
+   - Used across multiple flows
+   - Examples: `payments/`, `installments/`, `payment_methods/`
+
+2. **Flow-Level Types (Pattern 2)**: Co-located with flow trait definition
+   - Operation-specific sealed traits
+   - Marker types defined in same file or `src/types/` (e.g., `CaptureAuthorized`, `TotalRefund`)
+   - Not extracted to separate modules unless they form a reusable family
+
+3. **Mutual Exclusion Types (Pattern 3)**: Defined in flow module
+   - Pure marker structs with no data
+   - Enable/disable additional trait implementations
+   - Live where they enforce the constraint
 
 ### Design Principles
 
@@ -168,7 +249,7 @@ Gateway can only set `AuthorizationChanges` to one value → attempting to imple
 
 3. **Explicit Migration**: Switching gateways that change capabilities produces compilation errors, forcing explicit code updates
 
-4. **Centralized vs Localized**: Gateway-level types (Pattern 1) centralize decisions, flow-level types (Pattern 2) localize them. Choose based on scope of variation
+4. **Centralized vs Localized**: Gateway-level types (Pattern 1) centralize decisions with reusable type families, flow-level types (Pattern 2) localize operation-specific semantics
 
 ## Alternatives Rejected
 
@@ -213,10 +294,13 @@ Methods like `supports_installments()`, `supports_splits()` + both implementatio
 
 **Implementation Status:**
 
-| Feature | Pattern | Location | Variants |
-|---------|---------|----------|----------|
-| AmountDistribution | Gateway-Level (1) | `lib.rs` | `NoDistribution`, `Option<Recipients>` |
-| Installments | Gateway-Level (1) | `lib.rs` | `NoInstallments`, `Installments`, `InstallmentsBR/IN/JP/GCC` |
-| CapturedAmount | Flow-Level (2) | `flows/deferred_payments.rs` | `CaptureAuthorized`, `Option<Decimal>` |
-| CapturedDistribution | Flow-Level (2) | `flows/deferred_payments.rs` | `CaptureAuthorized`, `Option<Recipients>` |
-| AuthorizationChanges | Mutual Exclusion (3) | `flows/change_authorization.rs` | `ChangesNotSupported`, `ChangesByTotal`, `ChangesByDelta` |
+| Feature | Pattern | Marker Trait Location | Type Definitions | Variants |
+|---------|---------|----------------------|------------------|----------|
+| Payment | Gateway-Level (1) | `types/payments.rs` | `types/payments/{payment,split_payment}.rs` | `Payment<P>`, `SplitPayment<P>` |
+| Installments | Gateway-Level (1) | `types/installments.rs` | `types/installments/*.rs` | `NoInstallments`, `Installments`, `InstallmentsBR`, `InstallmentsIN`, `InstallmentsJP`, `InstallmentsGCC` |
+| PaymentMethod | Gateway-Level (1) | `types/payment_methods.rs` | `types/payment_methods/*.rs` | `CreditCard`, `BankPayment`, `BNPL`, `CashVoucher`, `CryptoPayment`, `DirectCarrierBilling`, `InstantAccount`, `SEPA`, `StoredCard`, `Vault` |
+| CapturedAmount | Flow-Level (2) | `flows/deferred_payments.rs` | `types/charge_authorized.rs` | `CaptureAuthorized`, `Option<Decimal>` |
+| CapturedDistribution | Flow-Level (2) | `flows/deferred_payments.rs` | `types/charge_authorized.rs`, stdlib | `CaptureAuthorized`, `Option<Recipients>` |
+| RefundAmount | Flow-Level (2) | `flows/refund_payments.rs` | `types/total_refund.rs` | `TotalRefund`, `Option<Decimal>` |
+| RefundDistribution | Flow-Level (2) | `flows/refund_payments.rs` | `types/total_refund.rs`, stdlib | `TotalRefund`, `Option<Recipients>` |
+| AuthorizationChanges | Mutual Exclusion (3) | `flows/change_authorization.rs` | `flows/change_authorization.rs` | `ChangesNotSupported`, `ChangesByTotal`, `ChangesByDelta` |
