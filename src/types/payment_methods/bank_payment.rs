@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
 use crate::types::{
-    AccountNumber, Credentials, FullName, InternalPaymentMethod, Metadata, PaymentMethod,
-    RoutingNumber, StorablePaymentMethod,
+    AccountNumber, Credentials, FullName, InternalPaymentMethod, Metadata, RoutingNumber,
+    StorablePaymentMethod,
 };
 use crate::{AccountHolderType, AccountType, Error};
 
@@ -168,7 +168,6 @@ impl BankPaymentCredentials {
 
 // Marker implementations
 
-impl PaymentMethod for BankPayment {}
 impl InternalPaymentMethod for BankPayment {}
 impl StorablePaymentMethod for BankPayment {}
 

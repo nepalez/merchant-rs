@@ -1,8 +1,8 @@
 use async_trait::async_trait;
 
-use crate::Gateway;
+use crate::types::payments::PaymentMarker;
 use crate::types::{InternalPaymentMethod, TransactionId};
-use crate::{Error, PaymentMarker};
+use crate::{Error, Gateway};
 
 /// Optional trait for payment gateways that support payment method verification.
 ///
@@ -36,15 +36,15 @@ use crate::{Error, PaymentMarker};
 /// }
 /// ```
 ///
-/// ### Validating Stored Card
+/// ### Validating Vault Token
 /// ```skip
-/// // Check if stored card is still valid
-/// let stored_card = get_stored_card_from_db();
-/// let verification = gateway.verify_payment_method(stored_card).await?;
+/// // Check if vault token is still valid
+/// let vault = Vault::try_from(token_from_db)?;
+/// let verification = gateway.verify_payment_method(vault).await?;
 ///
 /// if !verification.verified {
-///     // Card expired or invalid, ask customer to update
-///     notify_customer_to_update_card();
+///     // Token invalid, ask customer to re-authenticate
+///     notify_customer_to_update_payment_method();
 /// }
 /// ```
 ///

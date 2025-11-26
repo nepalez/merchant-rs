@@ -298,7 +298,7 @@ Methods like `supports_installments()`, `supports_splits()` + both implementatio
 |---------|---------|----------------------|------------------|----------|
 | Payment | Gateway-Level (1) | `types/payments.rs` | `types/payments/{payment,split_payment}.rs` | `Payment<P>`, `SplitPayment<P>` |
 | Installments | Gateway-Level (1) | `types/installments.rs` | `types/installments/*.rs` | `NoInstallments`, `Installments`, `InstallmentsBR`, `InstallmentsIN`, `InstallmentsJP`, `InstallmentsGCC` |
-| PaymentMethod | Gateway-Level (1) | `types/payment_methods.rs` | `types/payment_methods/*.rs` | `CreditCard`, `BankPayment`, `BNPL`, `CashVoucher`, `CryptoPayment`, `DirectCarrierBilling`, `InstantAccount`, `SEPA`, `StoredCard`, `Vault` |
+| PaymentMethod | Gateway-Level (1) | `types/payment_methods.rs` | `types/payment_methods/*.rs` | `CreditCard`, `BankPayment`, `BNPL`, `CashVoucher`, `CryptoPayment`, `DirectCarrierBilling`, `InstantAccount`, `SEPA`, `StoredCredential`, `Vault` |
 | CapturedAmount | Flow-Level (2) | `flows/deferred_payments.rs` | `types/charge_authorized.rs` | `CaptureAuthorized`, `Option<Decimal>` |
 | CapturedDistribution | Flow-Level (2) | `flows/deferred_payments.rs` | `types/charge_authorized.rs`, stdlib | `CaptureAuthorized`, `Option<Recipients>` |
 | RefundAmount | Flow-Level (2) | `flows/refund_payments.rs` | `types/total_refund.rs` | `TotalRefund`, `Option<Decimal>` |

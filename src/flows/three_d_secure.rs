@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
+use crate::types::payments::PaymentMarker;
 use crate::types::{InternalPaymentMethod, PaymentToken, StoredCredentialUsage};
-use crate::{Error, Gateway, MerchantInitiatedType, PaymentMarker};
+use crate::{Error, Gateway, MerchantInitiatedType};
 
 /// Trait representing the 3D Secure authentication flow.
 #[async_trait]

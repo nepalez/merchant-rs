@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod};
+use crate::types::{ExternalPaymentMethod, Metadata};
 
 /// Cryptocurrency Payment via Blockchain Transfer
 ///
@@ -113,7 +113,6 @@ impl CryptoPayment {
 
 // Marker implementations
 
-impl PaymentMethod for CryptoPayment {}
 impl ExternalPaymentMethod for CryptoPayment {}
 
 impl<'a> TryFrom<crate::CryptoPayment<'a>> for CryptoPayment {

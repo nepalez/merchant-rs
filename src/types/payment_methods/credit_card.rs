@@ -1,9 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::types::{
-    CVV, CardExpiry, CardHolderName, InternalPaymentMethod, PaymentMethod, PrimaryAccountNumber,
-};
+use crate::types::{CVV, CardExpiry, CardHolderName, InternalPaymentMethod, PrimaryAccountNumber};
 
 /// Credit or Debit Card
 ///
@@ -149,7 +147,6 @@ impl CreditCard {
 
 // Marker implementations
 
-impl PaymentMethod for CreditCard {}
 impl InternalPaymentMethod for CreditCard {}
 
 impl<'a> TryFrom<crate::CreditCard<'a>> for CreditCard {

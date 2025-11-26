@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
+use crate::types::payments::PaymentMarker;
 use crate::types::{StorablePaymentMethod, VaultPaymentMethod};
-use crate::{Error, Gateway, PaymentMarker};
+use crate::{Error, Gateway};
 
 /// Optional trait for payment gateways that support storing payment data in their vault.
 /// The received token can be used later to either charge or authorize the payment.

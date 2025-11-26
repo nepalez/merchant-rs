@@ -1,16 +1,16 @@
 use std::convert::TryFrom;
 
 use crate::Error;
-use crate::types::{InternalPaymentMethod, PaymentMethod, Token, VaultPaymentMethod};
+use crate::types::{InternalPaymentMethod, Token, VaultPaymentMethod};
 
 /// Vault Token Payment Method
 ///
 /// ## Overview
 ///
 /// Vault is a self-contained payment method that uses pre-stored tokenized credentials
-/// from a secure vault service. Unlike tokenization within a specific payment method
-/// (e.g., `StoredCard` with tokenized credentials), Vault represents a payment method
-/// where the token itself is the entire payment instrument.
+/// from a secure vault service. Unlike `StoredCredential`, which represents a gateway-specific
+/// stored credential, Vault represents a payment method where the token itself is
+/// the entire payment instrument from a third-party vault provider.
 ///
 /// The token returned from a vault service encapsulates all necessary payment information,
 /// eliminating the need to know the underlying payment method type. This abstraction
@@ -87,7 +87,6 @@ pub struct Vault {
 
 // Marker implementations
 
-impl PaymentMethod for Vault {}
 impl InternalPaymentMethod for Vault {}
 impl VaultPaymentMethod for Vault {}
 

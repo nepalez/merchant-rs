@@ -79,7 +79,7 @@ use crate::types::TransactionId;
 /// let original_transaction_id = get_saved_transaction_id();
 ///
 /// let payment = Payment {
-///     method: stored_card, // Previously tokenized
+///     method: stored_credential, // Previously obtained from CIT
 ///     amount: money,
 ///     idempotence_key: key,
 ///     merchant_initiated_type: Some(MerchantInitiatedType::Recurring),

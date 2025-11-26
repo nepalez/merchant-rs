@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
+use crate::types::payments::PaymentMarker;
 use crate::types::{ExternalPayment, ExternalPaymentData, ExternalPaymentMethod, TransactionId};
-use crate::{Error, Gateway, PaymentMarker};
+use crate::{Error, Gateway};
 
 /// Payment gateway trait for asynchronous external payment flows.
 ///

@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::types::{
     Address, BirthDate, EmailAddress, ExternalPaymentMethod, FullName, Metadata, NationalId,
-    PaymentMethod, PhoneNumber,
+    PhoneNumber,
 };
 use crate::{AccountHolderType, Error};
 
@@ -152,9 +152,6 @@ impl BNPL {
     }
 }
 
-// Marker implementations
-
-impl PaymentMethod for BNPL {}
 impl ExternalPaymentMethod for BNPL {}
 
 impl<'a> TryFrom<crate::BNPL<'a>> for BNPL {

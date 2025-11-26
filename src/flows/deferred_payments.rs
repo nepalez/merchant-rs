@@ -2,11 +2,12 @@ use async_trait::async_trait;
 use rust_decimal::Decimal;
 
 use crate::flows::change_authorization;
+use crate::types::payments::PaymentMarker;
 use crate::types::{
     CaptureAuthorized, InternalPaymentMethod, Recipients, StoredCredentialUsage, Transaction,
     TransactionId,
 };
-use crate::{Error, Gateway, MerchantInitiatedType, PaymentMarker};
+use crate::{Error, Gateway, MerchantInitiatedType};
 
 trait CapturedAmount {}
 impl CapturedAmount for CaptureAuthorized {}

@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::types::{
     AccountNumber, Address, BankCode, EmailAddress, ExternalPaymentMethod, FullName, Metadata,
-    NationalId, PaymentMethod, PhoneNumber, VirtualPaymentAddress,
+    NationalId, PhoneNumber, VirtualPaymentAddress,
 };
 use crate::{AccountHolderType, Error};
 
@@ -185,7 +185,6 @@ impl InstantAccount {
 
 // Marker implementations
 
-impl PaymentMethod for InstantAccount {}
 impl ExternalPaymentMethod for InstantAccount {}
 
 impl<'a> TryFrom<crate::InstantPayment<'a>> for InstantAccount {

@@ -1,10 +1,11 @@
 use async_trait::async_trait;
 use rust_decimal::Decimal;
 
+use crate::types::payments::PaymentMarker;
 use crate::types::{
     InternalPaymentMethod, Recipients, Subscription, SubscriptionId, SubscriptionInterval,
 };
-use crate::{Error, Gateway, PaymentMarker};
+use crate::{Error, Gateway};
 
 /// Payment gateway trait for recurrent payment subscriptions.
 ///

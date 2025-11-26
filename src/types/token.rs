@@ -53,14 +53,8 @@ impl Validated for Token {
     #[inline]
     fn validate(self) -> Result<Self, Error> {
         self._validate_length(&self.0, 16, 4096)?;
-
-        if self.0.trim() == self.0 {
-            Ok(self)
-        } else {
-            Err(Error::InvalidInput(format!(
-                "{self:?} contains trailing whitespaces"
-            )))
-        }
+        self._validate_no_trailing_spaces(&self.0)?;
+        Ok(self)
     }
 }
 

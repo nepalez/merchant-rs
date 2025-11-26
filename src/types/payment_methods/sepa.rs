@@ -2,7 +2,7 @@ use std::convert::TryFrom;
 
 use crate::Error;
 use crate::types::{
-    Address, Credentials, EmailAddress, FullName, IBAN, InternalPaymentMethod, PaymentMethod,
+    Address, Credentials, EmailAddress, FullName, IBAN, InternalPaymentMethod,
     StorablePaymentMethod,
 };
 
@@ -135,7 +135,6 @@ impl SEPACredentials {
 
 // Marker implementations
 
-impl PaymentMethod for SEPA {}
 impl InternalPaymentMethod for SEPA {}
 impl StorablePaymentMethod for SEPA {}
 

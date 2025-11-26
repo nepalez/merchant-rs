@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use super::{ExternalPaymentMethod, PaymentMethod};
+use super::ExternalPaymentMethod;
 use crate::Error;
 use crate::types::{Address, FullName, Metadata, NationalId};
 
@@ -126,7 +126,6 @@ impl CashVoucher {
 
 // Marker implementations
 
-impl PaymentMethod for CashVoucher {}
 impl ExternalPaymentMethod for CashVoucher {}
 
 impl<'a> TryFrom<crate::CashVoucher<'a>> for CashVoucher {

@@ -96,6 +96,16 @@ pub(crate) trait Validated: Sized + Debug {
             Ok(())
         }
     }
+
+    fn _validate_no_trailing_spaces(&self, input: &str) -> Result<(), Error> {
+        if input.trim() == input {
+            Ok(())
+        } else {
+            Err(Error::InvalidInput(format!(
+                "{self:?} contains trailing whitespaces"
+            )))
+        }
+    }
 }
 
 #[inline]

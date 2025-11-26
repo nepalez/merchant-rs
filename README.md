@@ -14,7 +14,7 @@ This crate contains zero network logic, ensuring it is lightweight and highly fo
 
 **Financial Precision**: Strictly enforces type safety using `rust_decimal::Decimal` and `iso_currency::Currency` for all monetary amounts, eliminating floating-point errors.
 
-**Type-Safe Payment Methods**: Provides comprehensive payment method types (`CreditCard`, `StoredCard`, `BNPL`, `CashVoucher`, `InstantAccount`, `SEPA`, `BankPayment`, `CryptoPayment`, `DirectCarrierBilling`) with marker traits to control which methods work with which flows.
+**Type-Safe Payment Methods**: Provides comprehensive payment method types (`CreditCard`, `StoredCredential`, `BNPL`, `CashVoucher`, `InstantAccount`, `SEPA`, `BankPayment`, `CryptoPayment`, `DirectCarrierBilling`, `Vault`) with marker traits to control which methods work with which flows.
 
 **Data Security**: Implements graduated protection for sensitive data (PCI DSS compliant). All sensitive types (PAN, CVV, account numbers) are wrapped in secure newtypes with memory zeroization on drop and masked debug output. Sealed traits prevent accidental exposure while maintaining compile-time safety guarantees.
 
@@ -62,7 +62,7 @@ The library organizes payment operations into specialized traits, allowing payme
 
 * **`CreditCard`** — Credit/debit card with PAN, CVV, expiry, and cardholder name (supports all major card schemes).
 
-* **`StoredCard`** — Tokenized card credentials for recurring/merchant-initiated transactions.
+* **`StoredCredential`** — Stored payment credential for recurring/merchant-initiated transactions (tokens, mandates, setup intents).
 
 * **`BNPL`** — Buy Now Pay Later services (Klarna, Afterpay, etc.).
 

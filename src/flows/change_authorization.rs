@@ -19,8 +19,9 @@ use async_trait::async_trait;
 use rust_decimal::Decimal;
 
 use crate::flows::DeferredPayments;
+use crate::types::payments::PaymentMarker;
 use crate::types::{InternalPaymentMethod, Transaction, TransactionId};
-use crate::{Error, Gateway, PaymentMarker};
+use crate::{Error, Gateway};
 
 /// Sealed trait for authorization change model marker types.
 ///

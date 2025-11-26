@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
 use crate::error::Error;
-use crate::types::{ExternalPaymentMethod, Metadata, PaymentMethod, PhoneNumber};
+use crate::types::{ExternalPaymentMethod, Metadata, PhoneNumber};
 
 /// Mobile Carrier Billing Payment
 ///
@@ -113,7 +113,6 @@ impl DirectCarrierBilling {
 
 // Marker implementations
 
-impl PaymentMethod for DirectCarrierBilling {}
 impl ExternalPaymentMethod for DirectCarrierBilling {}
 
 impl<'a> TryFrom<crate::DirectCarrier<'a>> for DirectCarrierBilling {

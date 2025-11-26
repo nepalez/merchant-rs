@@ -1,7 +1,8 @@
 use async_trait::async_trait;
 
+use crate::types::payments::PaymentMarker;
 use crate::types::{InternalPaymentMethod, StoredCredentialUsage, Transaction};
-use crate::{Error, Gateway, MerchantInitiatedType, PaymentMarker};
+use crate::{Error, Gateway, MerchantInitiatedType};
 
 /// Payment gateway trait for one-step payment flows.
 ///

@@ -8,6 +8,7 @@
 //! By making these structures canonical, the core decouples the business logic
 //! from the specific data formats required by external Payment Gateways (PAGs),
 //! upholding the core's role as a stable abstraction layer.
+mod access_confirmation;
 mod account_number;
 mod address;
 mod authorization_code;
@@ -32,7 +33,7 @@ mod installments;
 mod metadata;
 mod national_id;
 mod offer_id;
-mod payment_methods;
+pub(crate) mod payment_methods;
 pub(crate) mod payment_token;
 pub mod payments;
 mod phone_number;
@@ -42,8 +43,10 @@ mod reason_for_refund;
 mod reason_text;
 mod recipient_id;
 mod recipients;
+mod required_action;
 mod reversal_reason;
 mod routing_number;
+mod stored_credential_token;
 mod stored_credential_usage;
 mod street_address;
 mod subscription;
@@ -56,6 +59,7 @@ mod transaction_id;
 mod transaction_idempotence_key;
 mod virtual_payment_address;
 
+pub use access_confirmation::AccessConfirmation;
 pub use account_number::AccountNumber;
 pub use address::Address;
 pub use authorization_code::AuthorizationCode;
@@ -90,8 +94,10 @@ pub use reason_for_refund::ReasonForRefund;
 pub use reason_text::ReasonText;
 pub use recipient_id::RecipientId;
 pub use recipients::Recipients;
+pub use required_action::RequiredAction;
 pub use reversal_reason::ReversalReason;
 pub use routing_number::RoutingNumber;
+pub use stored_credential_token::StoredCredentialToken;
 pub use stored_credential_usage::StoredCredentialUsage;
 pub use street_address::StreetAddress;
 pub use subscription::Subscription;
