@@ -13,6 +13,7 @@ version = "0.1.0"
 [dependencies]
 async-trait = { version = "0.1", default-features = false }
 codes-iso-3166 = { version = "0.1", default-features = false }
+codes-iso-639 = { version = "0.1", default-features = false }
 email_address = { version = "0.2", default-features = false }
 iban_validate = { version = "5", default-features = false }
 iso_currency = { version = "0.5", default-features = false }
@@ -20,6 +21,7 @@ luhn3 = { version = "1", default-features = false }
 rust_decimal = { version = "1", default-features = false }
 strum_macros = { version = "0.27", default-features = false }
 thiserror = { version = "2", default-features = false }
+uuid = { version = "1", default-features = false, features = ["std"] }
 zeroize = { version = "1", default-features = false }
 zeroize_derive = { version = "1", default-features = false }
 

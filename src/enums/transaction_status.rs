@@ -16,7 +16,7 @@ pub enum TransactionStatus {
     Pending,
     /// Transaction rejected by issuer or gateway
     Declined,
-    /// Transaction failed due to technical error
+    /// Transaction failed due to a technical error
     Failed,
     /// Previously authorized transaction canceled before capture
     Voided,

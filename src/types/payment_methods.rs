@@ -8,6 +8,7 @@ mod credit_card;
 mod crypto_payment;
 mod direct_carrier_billing;
 mod instant_payment;
+mod secured_payment;
 mod sepa;
 mod stored_credential;
 mod vault;
@@ -21,6 +22,7 @@ pub use credit_card::CreditCard;
 pub use crypto_payment::CryptoPayment;
 pub use direct_carrier_billing::DirectCarrierBilling;
 pub use instant_payment::InstantAccount;
+pub use secured_payment::SecuredPayment;
 pub use sepa::SEPA;
 pub use stored_credential::StoredCredential;
 pub use vault::Vault;
@@ -28,7 +30,6 @@ pub use vault::Vault;
 
 /// Marker trait for types that can be used as payment methods.
 pub(crate) trait PaymentMethod {}
-impl PaymentMethod for StoredCredential {}
 impl PaymentMethod for BankPayment {}
 impl PaymentMethod for BNPL {}
 impl PaymentMethod for CashVoucher {}

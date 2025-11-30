@@ -7,46 +7,32 @@
 
 use async_trait::async_trait;
 
-use crate::types::{AccessConfirmation, Metadata, RequiredAction, payment_methods::*};
+use crate::types::{Confirmation, Metadata, RequiredAction, payment_methods::*};
 use crate::{Error, Gateway};
-
-/// Marker trait for payment method types that can be used as input to the authorization step.
-///
-/// Implemented for all payment method types that can initiate the authorization flow:
-/// cards, bank payments, BNPL, vouchers, etc.
-pub(crate) trait OriginalPaymentMethod: PaymentMethod {}
-impl OriginalPaymentMethod for BankPayment {}
-impl OriginalPaymentMethod for BNPL {}
-impl OriginalPaymentMethod for CashVoucher {}
-impl OriginalPaymentMethod for CreditCard {}
-impl OriginalPaymentMethod for CryptoPayment {}
-impl OriginalPaymentMethod for DirectCarrierBilling {}
-impl OriginalPaymentMethod for SEPA {}
-impl OriginalPaymentMethod for Vault {}
 
 /// Marker trait for payment method types that result from successful authorization.
 ///
 /// Can be either:
 /// - `StoredCredential` — when authorization creates a reusable token (mandate, SetupIntent)
-/// - Any `OriginalPaymentMethod` — when authorization is a passthrough (no transformation)
-pub(crate) trait AuthorizedPaymentMethod: PaymentMethod {}
+/// - Any `PaymentMethod` — when authorization is a passthrough (no transformation)
+pub(crate) trait AuthorizedPaymentMethod {}
 impl AuthorizedPaymentMethod for StoredCredential {}
-impl<T: OriginalPaymentMethod> AuthorizedPaymentMethod for T {}
+impl<T: PaymentMethod> AuthorizedPaymentMethod for T {}
 
 /// Request for the authorization step.
 ///
 /// Contains the payment method to authorize and optional confirmation data
 /// from a previous customer action.
 #[allow(private_bounds)]
-pub struct Request<PaymentMethod: OriginalPaymentMethod> {
+pub struct Request<P: PaymentMethod> {
     /// The payment method to authorize.
-    pub payment_method: PaymentMethod,
+    pub payment_method: P,
 
     /// Confirmation data from a completed customer action.
     ///
     /// - `None` — initial request, no prior customer action
     /// - `Some(confirmation)` — customer completed the required action (redirect, approval, etc.)
-    pub confirmation: Option<AccessConfirmation>,
+    pub confirmation: Option<Confirmation>,
 }
 
 /// Response from the authorization step.

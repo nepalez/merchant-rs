@@ -159,6 +159,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "codes-iso-639"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30dbd0357410908cd59147abbb5d40a9b9a5d9261285c272844cf53dbaa6f7a8"
+dependencies = [
+ "codes-agency",
+ "codes-common",
+ "csv",
+ "tera",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -444,6 +456,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "codes-iso-3166",
+ "codes-iso-639",
  "email_address",
  "iban_validate",
  "iso_currency",
@@ -453,6 +466,7 @@ dependencies = [
  "static_assertions",
  "strum_macros",
  "thiserror",
+ "uuid",
  "zeroize",
  "zeroize_derive",
 ]
@@ -946,6 +960,16 @@ name = "unicode-ident"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f63a545481291138910575129486daeaf8ac54aee4387fe7906919f7830c7d9d"
+
+[[package]]
+name = "uuid"
+version = "1.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2f87b8aa10b915a06587d0dec516c282ff295b475d94abf425d62b57710070a2"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "version_check"

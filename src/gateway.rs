@@ -9,11 +9,14 @@
 //! changing client code.
 
 pub mod authorize;
+pub mod secure;
 
 use async_trait::async_trait;
 
+use crate::types::payment_methods::PaymentMethod;
 use crate::types::{InstallmentsMarker, PaymentMarker};
-use authorize::{AuthorizedPaymentMethod, OriginalPaymentMethod};
+use authorize::AuthorizedPaymentMethod;
+use secure::SecuredPaymentMarker;
 
 /// Root trait for payment gateway adapters.
 ///
@@ -41,13 +44,19 @@ pub trait Gateway: Send + Sync {
     /// The input payment method type accepted by this gateway.
     ///
     /// Examples: `CreditCard`, `BankPayment`, `SEPA`, `BNPL`.
-    type OriginalPaymentMethod: OriginalPaymentMethod;
+    type PaymentMethod: PaymentMethod;
 
     /// The output payment method type after successful authorization.
     ///
     /// Either `StoredCredential` (for mandate/SetupIntent) or the original
     /// payment method type unchanged (passthrough).
     type AuthorizedPaymentMethod: AuthorizedPaymentMethod;
+
+    /// The output payment method type after successful securitization (3DS).
+    ///
+    /// Either `SecuredPayment` (for CIT card payments requiring 3DS) or the original
+    /// authorized payment method type unchanged (a passthrough for MIT or non-card).
+    type SecuredPaymentMethod: SecuredPaymentMarker;
 
     /// Authorize a payment method for future charges.
     ///
@@ -62,6 +71,22 @@ pub trait Gateway: Send + Sync {
     /// * `Response::RequiresAction` — customer action needed (redirect, approval)
     async fn authorize(
         &self,
-        request: authorize::Request<Self::OriginalPaymentMethod>,
+        request: authorize::Request<Self::PaymentMethod>,
     ) -> Result<authorize::Response<Self::AuthorizedPaymentMethod>, crate::Error>;
+
+    /// Secure a payment method via 3D Secure authentication.
+    ///
+    /// This step handles Strong Customer Authentication (SCA) for card payments:
+    /// - **CIT card payments**: performs 3DS authentication (frictionless or challenge)
+    /// - **MIT payments**: passthrough (authentication not required)
+    /// - **Non-card payments**: passthrough (3DS not applicable)
+    ///
+    /// # Returns
+    ///
+    /// * `Response::Secured` — payment method secured, ready for charge
+    /// * `Response::RequiresAction` — customer action needed (3DS challenge)
+    async fn secure(
+        &self,
+        request: secure::Request<Self::AuthorizedPaymentMethod>,
+    ) -> Result<secure::Response<Self::SecuredPaymentMethod>, crate::Error>;
 }
